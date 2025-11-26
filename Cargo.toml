@@ -1,0 +1,29 @@
+[package]
+name = "pane"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+color-eyre = "0.6.3"
+crossterm = { version = "0.28.1", features = ["event-stream"] }
+futures = "0.3"
+ratatui = "0.29.0"
+tui-input = "0.14.0"
+
+config = "0.13"
+serde = { version = "1.0", features = ["derive"] }
+serde_with = { version = "3.0", features = ["json"] }
+
+dirs = "5.0"
+directories = "5.0"
+
+
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+tracing-appender = "0.2"
+tokio = { version = "1.48.0", features = ["full", "time"] }
+toml = "0.8"
+chrono = "0.4.42"
+
+[dev-dependencies]
+insta = "1.44.1"
