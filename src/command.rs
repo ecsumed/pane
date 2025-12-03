@@ -8,6 +8,7 @@ use std::process::Stdio;
 use tokio::io::{AsyncReadExt, BufReader};
 
 use crate::logging::{debug, info, warn};
+use crate::pane::PaneKey;
 
 use tokio::task::JoinHandle;
 
@@ -61,24 +62,28 @@ pub struct Command {
 
 impl Command {
     pub async fn run_command_task(
-        id: usize,
+        id: PaneKey,
         exec: String,
         interval: Duration,
+        state: CommandState,
         mut control_rx: mpsc::Receiver<CommandControl>,
-        output_tx: tokio::sync::mpsc::Sender<(usize, String)>,
+        output_tx: tokio::sync::mpsc::Sender<(PaneKey, String)>,
     ) {
         let interval_duration = interval;
         let mut interval = time::interval(interval);
         interval.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
 
-        let mut is_paused = false;
+        let mut is_paused = match state {
+            CommandState::Paused => true,
+            _ => false
+        };
 
         loop {
             tokio::select! {
                 Some(control) = control_rx.recv() => {
                     match control {
                         CommandControl::Stop => {
-                            info!("Pane {} task received stop command.", id);
+                            info!("Pane {:?} task received stop command.", id);
                             break;
                         }
                         // CommandControl::SetInterval(new_interval) => {
@@ -87,30 +92,30 @@ impl Command {
                         //     interval.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
                         // }
                         CommandControl::IncreaseInterval => {
-                            info!("Pane {} task received increase interval.", id);
+                            info!("Pane {:?} task received increase interval.", id);
                             // TODO: increase interval
                         }
                         CommandControl::DecreaseInterval => {
-                            info!("Pane {} task received increase interval.", id);
+                            info!("Pane {:?} task received increase interval.", id);
                             // TODO: decrease interval
                         }
                         CommandControl::Pause => {
-                            info!("Pane {} paused", id);
+                            info!("Pane {:?} paused", id);
                             is_paused = true;
                         }
                         CommandControl::Resume => {
-                            info!("Pane {} resumed", id);
+                            info!("Pane {:?} resumed", id);
                             is_paused = false;
                             if let Err(e) = Self::run_and_send_output(id, &exec, output_tx.clone()).await {
-                                warn!("Pane {} resume execution failed: {}", id, e);
+                                warn!("Pane {:?} resume execution failed: {}", id, e);
                             }
                             let now = time::Instant::now();
                             interval.reset_at(now + interval_duration);
                         }
                         CommandControl::Execute => {
-                            info!("Pane {} received ad-hoc execution command.", id);
+                            info!("Pane {:?} received ad-hoc execution command.", id);
                             if let Err(e) = Self::run_and_send_output(id, &exec, output_tx.clone()).await {
-                                warn!("Pane {} ad-hoc execution failed: {}", id, e);
+                                warn!("Pane {:?} ad-hoc execution failed: {}", id, e);
                             }
                             let now = time::Instant::now();
                             interval.reset_at(now + interval_duration);
@@ -118,13 +123,13 @@ impl Command {
                     }
                 }
                 _ = interval.tick(), if !is_paused => {
-                    info!("Pane {} task running command: {}", id, exec);
+                    info!("Pane {:?} task running command: {}", id, exec);
                     if let Err(e) = Self::run_and_send_output(
                         id,
                         &exec,
                         output_tx.clone(),
                     ).await {
-                        warn!("Pane {} task failed to run command: {}", id, e);
+                        warn!("Pane {:?} task failed to run command: {}", id, e);
                     }
                 }
             }
@@ -132,9 +137,9 @@ impl Command {
     }
 
     async fn run_and_send_output(
-        id: usize,
+        id: PaneKey,
         exec: &str,
-        output_tx: mpsc::Sender<(usize, String)>,
+        output_tx: mpsc::Sender<(PaneKey, String)>,
     ) -> Result<(), io::Error> {
         let mut command = SysCommand::new("sh")
             .arg("-c")
@@ -167,7 +172,7 @@ impl Command {
         };
 
         if let Err(e) = output_tx.send((id, output_message)).await {
-            warn!("Failed to send output for pane {}: {}", id, e);
+            warn!("Failed to send output for pane {:?}: {}", id, e);
         }
 
         Ok(())

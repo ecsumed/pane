@@ -1,4 +1,5 @@
 use crate::logging::{debug, info, warn};
+use crate::pane::CardinalDirection;
 use crate::session::{load_session, save_session};
 use crate::{app::AppControl, command::CommandControl, mode::InputMode, App};
 use crossterm::event::{self, Event, KeyCode};
@@ -29,11 +30,26 @@ async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<()> 
                 KeyCode::Char('c') => {
                     app.input_state.mode = InputMode::Editing;
                 }
+
+                // NAVIGATION
                 KeyCode::Tab => {
                     app.pane_manager.cycle_panes();
                 }
+                KeyCode::Up => {
+                    app.pane_manager.change_active(&CardinalDirection::Up, app.pane_area);
+                }
+                KeyCode::Down => {
+                    app.pane_manager.change_active(&CardinalDirection::Down, app.pane_area);
+                }
+                KeyCode::Left => {
+                    app.pane_manager.change_active(&CardinalDirection::Left, app.pane_area);
+                }
+                KeyCode::Right => {
+                    app.pane_manager.change_active(&CardinalDirection::Right, app.pane_area);
+                }
+
                 KeyCode::Char('x') => {
-                    let id = app.pane_manager.get_active_pane_id();
+                    let id = app.pane_manager.active_pane_id;
                     if let Err(e) = app
                         .app_control_tx
                         .send(AppControl::SendControl(id, CommandControl::Stop))
@@ -44,7 +60,7 @@ async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<()> 
                     app.pane_manager.kill_pane();
                 }
                 KeyCode::Char(' ') => {
-                    let id = app.pane_manager.get_active_pane_id();
+                    let id = app.pane_manager.active_pane_id;
                     if let Err(e) = app
                         .app_control_tx
                         .send(AppControl::SendControl(id, CommandControl::Execute))
@@ -54,7 +70,7 @@ async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<()> 
                     }
                 }
                 KeyCode::Char('p') => {
-                    let id = app.pane_manager.get_active_pane_id();
+                    let id = app.pane_manager.active_pane_id;
                     if let Err(e) = app
                         .app_control_tx
                         .send(AppControl::SendControl(id, CommandControl::Pause))
@@ -64,7 +80,7 @@ async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<()> 
                     }
                 }
                 KeyCode::Char('r') => {
-                    let id = app.pane_manager.get_active_pane_id();
+                    let id = app.pane_manager.active_pane_id;
                     if let Err(e) = app
                         .app_control_tx
                         .send(AppControl::SendControl(id, CommandControl::Resume))
@@ -74,7 +90,7 @@ async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<()> 
                     }
                 }
                 KeyCode::Char('i') => {
-                    let id = app.pane_manager.get_active_pane_id();
+                    let id = app.pane_manager.active_pane_id;
                     if let Err(e) = app
                         .app_control_tx
                         .send(AppControl::SendControl(
@@ -87,7 +103,7 @@ async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<()> 
                     }
                 }
                 KeyCode::Char('d') => {
-                    let id = app.pane_manager.get_active_pane_id();
+                    let id = app.pane_manager.active_pane_id;
                     if let Err(e) = app
                         .app_control_tx
                         .send(AppControl::SendControl(
@@ -115,6 +131,18 @@ async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<()> 
                         info!("Session loaded successfully!");
                     }
                 }
+                KeyCode::Char('+') => {
+                    app.pane_manager.resize_pane(&CardinalDirection::Right, 1);
+                }
+                KeyCode::Char('-') => {
+                    app.pane_manager.resize_pane(&CardinalDirection::Left, -1);
+                }
+                KeyCode::Char('>') => {
+                    app.pane_manager.resize_pane(&CardinalDirection::Down, 1);
+                }
+                KeyCode::Char('<') => {
+                    app.pane_manager.resize_pane(&CardinalDirection::Up, -1);
+                }
                 _ => {}
             }
         }
@@ -129,7 +157,7 @@ async fn handle_editing_mode_keys(app: &mut App, event: Event) -> io::Result<()>
         if key_event.kind == event::KeyEventKind::Press {
             match key_event.code {
                 KeyCode::Enter => {
-                    let id = app.pane_manager.get_active_pane_id();
+                    let id = app.pane_manager.active_pane_id;
                     let exec = input.value().to_string();
                     if let Err(e) = app
                         .app_control_tx

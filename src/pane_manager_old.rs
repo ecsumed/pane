@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use tracing::trace;
 
 use crate::logging::debug;
-use crate::pane::Panes;
+use crate::pane::{Panes, ResizeDirection};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct PaneManager {
@@ -104,5 +104,24 @@ impl PaneManager {
 
     pub fn get_active_pane_id(&self) -> usize {
         self.active_pane_id
+    }
+
+    pub fn increase_pane_size(&mut self, resize_direction: &ResizeDirection) -> bool {
+        let res = self.panes.resize_pane(self.active_pane_id, 1, resize_direction);
+        debug!("{:?}", self.panes);
+        res
+    }
+
+    pub fn decrease_pane_size(&mut self, resize_direction: &ResizeDirection) -> bool {
+        let res = self.panes.resize_pane(self.active_pane_id, -1, resize_direction);
+        debug!("{:?}", self.panes);
+        res
+    }
+
+    pub fn change_active(&mut self, direction: &ResizeDirection) {
+        if let Some(next_id) = self.panes.find_next_pane(self.active_pane_id, direction) {
+            self.active_pane_id = next_id;
+            debug!("Active pane id: {}", self.active_pane_id);
+        }
     }
 }

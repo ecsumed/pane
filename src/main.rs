@@ -18,7 +18,6 @@ mod controls;
 mod logging;
 mod mode;
 mod pane;
-mod pane_manager;
 mod session;
 mod ui;
 
