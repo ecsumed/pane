@@ -127,7 +127,12 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
                     }
                 }
                 KeyCode::Char('L') => {
+                    info!("Fetching sessions mode");
                     app.mode = AppMode::new_session_load(app);
+                }
+                KeyCode::Char('S') => {
+                    info!("Saving sessions mode");
+                    app.mode = AppMode::new_session_save();
                 }
 
                 KeyCode::Char('+') => {

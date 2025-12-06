@@ -14,16 +14,16 @@ use std::io;
 
 use super::utils::centered_rect;
 
-pub fn draw_input_popup(frame: &mut Frame, app: &App) {
+pub fn draw_session_save_popup(frame: &mut Frame, app: &App) {
     let popup_area = centered_rect(60, frame.area());
 
     Clear.render(popup_area, frame.buffer_mut());
 
-    if let AppMode::CmdEdit { input } = &app.mode {
+    if let AppMode::SessionSave { input } = &app.mode {
         let input_widget = Paragraph::new(input.value()).block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Enter Command"),
+                .title("Enter Session Name"),
         );
         
         frame.render_widget(input_widget, popup_area);

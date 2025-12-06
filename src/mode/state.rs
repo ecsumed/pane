@@ -11,10 +11,12 @@ pub enum AppMode {
     CmdEdit {
         input: Input,
     },
-    Observing,
     SessionLoad {
         state: ListState, 
         items: Vec<String>,
+    },
+    SessionSave {
+        input: Input,
     },
 }
 
@@ -30,7 +32,9 @@ impl AppMode {
     }
 
     pub fn new_session_load(app: &App) -> Self {
-        let sessions = session::fetch_session_filenames(&app.config).unwrap();
+        let sessions = session::fetch_session_filenames(&app.config
+        
+        ).unwrap();
 
         let mut state = ListState::default();
         if !sessions.is_empty() {
@@ -42,9 +46,14 @@ impl AppMode {
             state,
         }
     }
-    
-    pub fn new_observing() -> Self {
-        AppMode::Observing
+
+    pub fn new_session_save() -> Self {
+        AppMode::SessionSave {
+            input: Input::default(),
+        }
     }
 
+    // pub fn new_observing() -> Self {
+    //     AppMode::Observing
+    // }
 }

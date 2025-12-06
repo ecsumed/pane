@@ -10,7 +10,7 @@ use std::io::{self, ErrorKind};
 use std::path::PathBuf;
 use std::collections::HashMap;
 
-pub fn save_session(app: &App) -> io::Result<()> {
+pub fn save_session_by_name(app: &App, session_filename: &str) -> io::Result<()> {
     let session_state = SessionState {
         pane_manager: app.pane_manager.clone(),
         tasks: app
@@ -26,11 +26,25 @@ pub fn save_session(app: &App) -> io::Result<()> {
     let sessions_dir = &app.config.sessions_dir;
     fs::create_dir_all(sessions_dir)?;
 
-    let session_filename = generate_session_filename();
-    let session_path = sessions_dir.join(session_filename);
+    use std::path::Path;
+    let path = Path::new(session_filename);
+    
+    let final_filename = if path.extension().map_or(false, |ext| ext == "toml") {
+        session_filename.to_string()
+    } else {
+        format!("{}.toml", session_filename)
+    };
+
+    let session_path = sessions_dir.join(final_filename);
 
     fs::write(session_path, toml_string)?;
     Ok(())
+}
+
+pub fn save_session(app: &App) -> io::Result<()> {
+    let session_filename = generate_session_filename();
+    
+    save_session_by_name(app, &session_filename)
 }
 
 pub fn load_session_by_name(app: &mut App, session_filename: &str) -> io::Result<()> {

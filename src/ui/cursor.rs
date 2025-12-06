@@ -15,7 +15,7 @@ use super::utils::centered_rect;
 
 pub fn manage_cursor<B: Backend>(app: &App, terminal: &mut Terminal<B>) -> io::Result<()> {
     match &app.mode {
-        AppMode::CmdEdit {input}=> {
+        AppMode::CmdEdit { input } | AppMode::SessionSave { input } => {
             let term_size = terminal.size()?;
             let term_rect = Rect::new(0, 0, term_size.width, term_size.height);
             let popup_area = centered_rect(60, term_rect);
