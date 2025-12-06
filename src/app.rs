@@ -9,7 +9,7 @@ use tokio::time::interval;
 
 use crate::command::{Command, CommandControl, CommandSerializableState, CommandState};
 use crate::config::AppConfig;
-use crate::mode::InputState;
+use crate::mode::{self, AppMode};
 use crate::pane::{PaneKey, PaneManager};
 use crate::{controls, ui};
 use crossterm::event::{Event, EventStream};
@@ -17,6 +17,7 @@ use futures::{FutureExt, StreamExt};
 use std::io::{self, Result};
 
 use crate::logging::{debug, info, warn};
+use crate::ui::draw::draw_ui;
 
 type DefaultTerminal = Terminal<CrosstermBackend<std::io::Stdout>>;
 
@@ -29,7 +30,7 @@ pub enum AppControl {
 pub struct App {
     pub pane_manager: PaneManager,
     pub tasks: HashMap<PaneKey, Command>,
-    pub input_state: InputState,
+    pub mode: AppMode,
     pub exit: bool,
     pub output_rx: mpsc::Receiver<(PaneKey, String)>,
     pub output_tx: mpsc::Sender<(PaneKey, String)>,
@@ -46,7 +47,7 @@ impl App {
         Self {
             pane_manager: PaneManager::new(),
             tasks: HashMap::new(),
-            input_state: InputState::default(),
+            mode: AppMode::default(),
             exit: false,
             output_rx,
             output_tx,
@@ -62,7 +63,11 @@ impl App {
         let mut events = EventStream::new();
 
         loop {
-            terminal.draw(|frame| self.draw(frame))?;
+            terminal.draw(|frame| {
+                self.pane_area = frame.area();
+
+                draw_ui(self, frame);
+            })?;
 
             ui::manage_cursor(self, terminal)?;
 
@@ -104,7 +109,7 @@ impl App {
                                     warn!("Failed to send command control: {}", e);
                                 }
                             }
-                        },
+                        }
                     }
                 },
                 _ = tick_interval.tick() => {
@@ -116,12 +121,6 @@ impl App {
             }
         }
         Ok(())
-    }
-
-    fn draw(&mut self, frame: &mut Frame) {
-        self.pane_area = frame.area();
-        ui::draw_main_ui(self, frame);
-        ui::draw_input_popup(self, frame);
     }
 
     pub fn exit(&mut self) {

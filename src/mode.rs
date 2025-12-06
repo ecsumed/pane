@@ -1,14 +1,3 @@
-use tui_input::Input;
+mod state;
 
-#[derive(Debug, Default)]
-pub struct InputState {
-    pub input: Input,
-    pub mode: InputMode,
-}
-
-#[derive(Debug, PartialEq, Default)]
-pub enum InputMode {
-    #[default]
-    Normal,
-    Editing,
-}
+pub use self::state::AppMode;

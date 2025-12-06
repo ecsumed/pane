@@ -8,7 +8,7 @@ use serde_with::serde_as;
 use slotmap::SlotMap;
 
 use super::node::{PaneNode, PaneKey};
-use super::enums::{PaneNodeData, CardinalDirection};
+use super::node_data::{PaneNodeData, CardinalDirection};
 use crate::logging::{info, debug, trace};
 use crate::session::PaneKeyAsString;
 
