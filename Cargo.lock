@@ -969,6 +969,8 @@ dependencies = [
  "serde",
  "serde_with",
  "slotmap",
+ "strum",
+ "strum_macros",
  "tokio",
  "toml 0.8.23",
  "tracing",

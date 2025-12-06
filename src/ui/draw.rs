@@ -16,6 +16,8 @@ use crate::ui::pane::draw_panes;
 use crate::ui::cmd_input::draw_input_popup;
 use crate::ui::session_load::draw_session_list;
 use crate::ui::session_save::draw_session_save_popup;
+use crate::ui::display_select::draw_display_type_select;
+
 use crate::ui::utils::centered_rect;
 
 pub fn draw_ui(app: &mut App, frame: &mut Frame) {
@@ -31,6 +33,9 @@ pub fn draw_ui(app: &mut App, frame: &mut Frame) {
         }
         AppMode::SessionSave { .. } => {
             draw_session_save_popup(frame, app)
+        }
+        AppMode::DisplayTypeSelect { .. } => {
+            draw_display_type_select(frame, app)
         }
         _ => ()
     }

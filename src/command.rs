@@ -9,6 +9,7 @@ use tokio::io::{AsyncReadExt, BufReader};
 
 use crate::logging::{debug, info, warn};
 use crate::pane::PaneKey;
+use crate::ui::DisplayType;
 
 use tokio::task::JoinHandle;
 
@@ -19,7 +20,6 @@ pub enum CommandControl {
     Pause,
     IncreaseInterval,
     DecreaseInterval,
-    // SetInterval(Duration),
     Execute,
 }
 
@@ -46,6 +46,7 @@ pub struct CommandSerializableState {
     pub output_history: Vec<String>,
     pub last_output: String,
     pub state: CommandState,
+    pub display_type: DisplayType,
 }
 
 #[derive(Debug)]
@@ -55,7 +56,7 @@ pub struct Command {
     pub output_history: Vec<String>,
     pub last_output: String,
     pub state: CommandState,
-
+    pub display_type: DisplayType,
     pub task_handle: Option<JoinHandle<()>>,
     pub control_tx: mpsc::Sender<CommandControl>,
 }
@@ -185,6 +186,7 @@ impl Command {
             output_history: self.output_history.clone(),
             last_output: self.last_output.clone(),
             state: self.state,
+            display_type: self.display_type,
         }
     }
 }

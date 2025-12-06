@@ -5,3 +5,4 @@ mod normal_mode;
 mod edit_mode;
 mod session_load_mode;
 mod session_save_mode;
+mod display_select_mode;

@@ -2,15 +2,54 @@ use crate::command::Command;
 use crate::mode::AppMode;
 use crate::pane::{PaneKey, PaneManager, PaneNodeData};
 use crate::App;
+use crate::ui::DisplayType;
+use crate::ui::display_modes::render_command_output;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::{Backend, Frame, Rect};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::Line;
+use ratatui::widgets::block::Title;
 use ratatui::widgets::{Block, Borders, Clear, Padding, Paragraph, Widget};
 use ratatui::Terminal;
 use std::collections::HashMap;
 use std::io;
+
+fn create_pane_block<'a>(
+    is_active: bool,
+    exec_str: &'a str, 
+    interval_secs_str: &'a str, 
+    state_str: &'a str,
+    display_type_str: &'a str
+) -> Block<'a> {
+    let border_style = if is_active {
+        Style::default()
+            .fg(Color::Green)
+            .add_modifier(Modifier::BOLD)
+    } else {
+        Style::default()
+    };
+
+    let title_left = Line::from(vec![
+        " Command ".into(),
+        exec_str.blue().bold(),
+        " ".into(),
+        " Interval ".into(),
+        interval_secs_str.blue().bold(),
+        "s".blue().bold(),
+    ]);
+
+    let title_right = Line::from(vec![" State ".into(), state_str.blue().bold()]);
+
+    let title_bottom = Line::from(display_type_str).right_aligned();
+
+    Block::default()
+        .borders(Borders::ALL)
+        .title(title_left)
+        .title(title_right.right_aligned())
+        .title_bottom(title_bottom)
+        .border_style(border_style)
+}
 
 pub fn draw_panes(
     frame: &mut Frame,
@@ -31,51 +70,37 @@ pub fn draw_panes(
                 let is_active = node_key == manager.active_pane_id;
                 
                 let command = commands.get(&node_key);
-                let (output, exec, interval_secs, state) = command
-                    .map(|cmd| {
-                        (
-                            cmd.last_output.clone(),
-                            cmd.exec.clone(),
-                            cmd.interval.as_secs().to_string(),
-                            cmd.state.to_string(),
-                        )
-                    })
-                    .unwrap_or_else(|| {
-                        (
-                            "N/A".to_string(),
-                            "N/A".to_string(),
-                            "0".to_string(),
-                            "N/A".to_string(),
-                        )
-                    });
 
-                let border_style = if is_active {
-                    Style::default()
-                        .fg(Color::Green)
-                        .add_modifier(Modifier::BOLD)
+                if let Some(cmd) = command {
+                    let interval_str = cmd.interval.as_secs().to_string();
+                    let state_str = cmd.state.to_string();
+                    let display_str = format!("{:?}", cmd.display_type);
+
+
+                    let block = create_pane_block(
+                        is_active,
+                        &cmd.exec,
+                        &interval_str,
+                        &state_str,
+                        &display_str,
+                    );
+
+                    render_command_output(frame, area, cmd, block); 
+
                 } else {
-                    Style::default()
-                };
+                    let display_str_na = format!("{:?}", DisplayType::RawText);
 
-                let title_left = Line::from(vec![
-                    " Command ".into(),
-                    exec.blue().bold(),
-                    " ".into(),
-                    " Interval ".into(),
-                    interval_secs.blue().bold(),
-                    "s".blue().bold(),
-                ]);
-
-                let title_right = Line::from(vec![" State ".into(), state.blue().bold()]);
-
-                let block = Block::default()
-                    .borders(Borders::ALL)
-                    .title(title_left)
-                    .title(title_right.right_aligned())
-                    .border_style(border_style);
-                let content_widget = Paragraph::new(output).block(block);
-
-                frame.render_widget(content_widget, area);
+                    let block = create_pane_block(
+                        is_active,
+                        "N/A",
+                        "N/A",
+                        "N/A",
+                        &display_str_na
+                    );
+                    
+                    frame.render_widget(block.clone(), area);
+                    frame.render_widget(Paragraph::new("N/A"), block.inner(area));
+                }
             }
             PaneNodeData::Split { direction, children } => {
                 let total_weight: u32 = children.iter().filter_map(|key| manager.nodes.get(*key)).map(|node| node.weight as u32).sum();

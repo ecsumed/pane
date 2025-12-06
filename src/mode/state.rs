@@ -1,8 +1,10 @@
 use ratatui::widgets::ListState;
 use tui_input::Input;
+use strum::IntoEnumIterator;
 
 use crate::app::{self, App};
 use crate::session;
+use crate::ui::DisplayType;
 
 #[derive(Debug, Default)]
 pub enum AppMode {
@@ -18,6 +20,10 @@ pub enum AppMode {
     SessionSave {
         input: Input,
     },
+    DisplayTypeSelect { 
+        state: ListState, 
+        items: Vec<DisplayType> 
+    }
 }
 
 impl AppMode {
@@ -50,6 +56,18 @@ impl AppMode {
     pub fn new_session_save() -> Self {
         AppMode::SessionSave {
             input: Input::default(),
+        }
+    }
+
+    pub fn new_display_type_select() -> Self {
+        let items: Vec<DisplayType> = DisplayType::iter().collect();
+
+        let mut state = ListState::default();
+        if !items.is_empty() { state.select(Some(0)); }
+
+        AppMode::DisplayTypeSelect{
+            items,
+            state
         }
     }
 

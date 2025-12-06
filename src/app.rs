@@ -9,6 +9,7 @@ use tokio::time::interval;
 
 use crate::command::{Command, CommandControl, CommandSerializableState, CommandState};
 use crate::config::AppConfig;
+use crate::ui::DisplayType;
 use crate::mode::{self, AppMode};
 use crate::pane::{PaneKey, PaneManager};
 use crate::{controls, ui};
@@ -25,6 +26,7 @@ type DefaultTerminal = Terminal<CrosstermBackend<std::io::Stdout>>;
 pub enum AppControl {
     SetCommand(PaneKey, String),
     SendControl(PaneKey, CommandControl),
+    SetDisplay(PaneKey, DisplayType)
 }
 
 pub struct App {
@@ -100,14 +102,16 @@ impl App {
                                     CommandControl::DecreaseInterval => {
                                         command.interval -= Duration::from_secs(1);
                                     },
-                                    // CommandControl::SetInterval(new_interval) => {
-                                    //     command.interval = new_interval;
-                                    // }
                                     _ => {}
                                 }
                                 if let Err(e) = command.control_tx.send(cmd_ctrl).await {
                                     warn!("Failed to send command control: {}", e);
                                 }
+                            }
+                        }
+                        AppControl::SetDisplay(id, display) => {
+                            if let Some(command) = self.tasks.get_mut(&id) {
+                                command.display_type = display;
                             }
                         }
                     }
@@ -150,6 +154,7 @@ impl App {
             output_history: Vec::new(),
             last_output: String::new(),
             state: CommandState::Running,
+            display_type: DisplayType::default(),
             task_handle: Some(task_handle),
             control_tx,
         };
@@ -181,6 +186,7 @@ impl App {
                 output_history: state.output_history,
                 last_output: state.last_output,
                 state: state.state,
+                display_type: state.display_type,
                 task_handle: Some(task_handle),
                 control_tx,
             };

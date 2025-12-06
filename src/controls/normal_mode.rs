@@ -134,6 +134,10 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
                     info!("Saving sessions mode");
                     app.mode = AppMode::new_session_save();
                 }
+                KeyCode::Char('D') => {
+                    info!("Display select mode");
+                    app.mode = AppMode::new_display_type_select();
+                }
 
                 KeyCode::Char('+') => {
                     app.pane_manager.resize_pane(&CardinalDirection::Right, 1);
