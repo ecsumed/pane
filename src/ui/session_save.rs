@@ -1,7 +1,7 @@
 use crate::mode::AppMode;
 use crate::App;
 use ratatui::layout::Position;
-use ratatui::prelude::{Backend, Frame};
+use ratatui::prelude::Frame;
 use ratatui::widgets::{Block, Borders, Clear, Paragraph, Widget};
 
 use super::utils::centered_rect;

@@ -31,12 +31,7 @@ pub enum AppMode {
 }
 
 impl AppMode {
-    pub fn new() -> Self {
-        AppMode::Normal
-    }
-
     pub fn new_cmd_edit() -> Self {
-        let history = HistoryManager::new();
         AppMode::CmdEdit {
             input: Input::default(),
             state: ListState::default(),
