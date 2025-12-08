@@ -1,34 +1,28 @@
-use crate::command::Command;
 use crate::mode::AppMode;
-use crate::pane::{PaneKey, PaneManager, PaneNodeData};
 use crate::App;
-use ratatui::buffer::Buffer;
-use ratatui::layout::{Constraint, Direction, Layout, Position};
 use ratatui::prelude::{Backend, Frame, Rect};
-use ratatui::style::{Color, Modifier, Style, Stylize};
-use ratatui::text::Line;
-use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Padding, Paragraph, Widget};
-use ratatui::Terminal;
-use std::collections::HashMap;
-use std::io;
-
-use crate::logging::{debug, info, warn};
-use super::utils::centered_rect;
+use ratatui::style::{Modifier, Style, Stylize};
+use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Widget};
 
 pub fn draw_input_popup(frame: &mut Frame, app: &mut App) {
-    if let AppMode::CmdEdit { input, state, suggestions, .. } = &mut app.mode {
+    if let AppMode::CmdEdit {
+        input,
+        state,
+        suggestions,
+        ..
+    } = &mut app.mode
+    {
         let frame_area = frame.area();
         let percent_x = 60;
-        
+
         let input_area_width = frame_area.width * percent_x / 100;
         let input_area_x = (frame_area.width.saturating_sub(input_area_width)) / 2;
-        let input_area_y = (frame_area.height.saturating_sub(3)) / 2; 
-        
+        let input_area_y = (frame_area.height.saturating_sub(3)) / 2;
+
         let input_area = Rect::new(input_area_x, input_area_y, input_area_width, 3);
 
         Clear.render(input_area, frame.buffer_mut());
 
-        
         let num_suggestions = suggestions.len() as u16;
         let suggestions_height = num_suggestions + if num_suggestions > 0 { 1 } else { 0 };
 
@@ -46,16 +40,16 @@ pub fn draw_input_popup(frame: &mut Frame, app: &mut App) {
         );
         frame.render_widget(input_widget, input_area);
 
-        let cursor_x = input_area.x + 1 + input.cursor() as u16; 
+        let cursor_x = input_area.x + 1 + input.cursor() as u16;
         let cursor_y = input_area.y + 1;
-        frame.set_cursor_position((cursor_x, cursor_y)); 
+        frame.set_cursor_position((cursor_x, cursor_y));
 
         if !suggestions.is_empty() && suggestions_area.height > 0 {
             let list_items: Vec<ListItem> = suggestions
                 .iter()
                 .map(|s| ListItem::new(s.as_str()))
                 .collect();
-            
+
             let suggestions_list = List::new(list_items)
                 .block(Block::default().borders(Borders::LEFT | Borders::RIGHT | Borders::BOTTOM))
                 .highlight_style(Style::default().add_modifier(Modifier::REVERSED));

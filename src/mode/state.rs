@@ -2,7 +2,7 @@ use ratatui::widgets::ListState;
 use strum::IntoEnumIterator;
 use tui_input::Input;
 
-use crate::app::{self, App};
+use crate::app::App;
 use crate::command::HistoryManager;
 use crate::session;
 use crate::ui::DisplayType;
@@ -41,7 +41,7 @@ impl AppMode {
             input: Input::default(),
             state: ListState::default(),
             suggestions: Vec::new(),
-            history: HistoryManager::new()
+            history: HistoryManager::new(),
         }
     }
 

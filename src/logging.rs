@@ -1,5 +1,3 @@
-use std::io;
-use tracing::Level;
 use tracing_appender::non_blocking;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_appender::rolling;

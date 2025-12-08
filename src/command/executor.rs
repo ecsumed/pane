@@ -1,7 +1,7 @@
 use std::io;
 use std::process::Stdio;
-use tokio::process::Command as SysCommand;
 use tokio::io::{AsyncReadExt, BufReader};
+use tokio::process::Command as SysCommand;
 use tokio::sync::mpsc;
 
 use crate::logging::warn;

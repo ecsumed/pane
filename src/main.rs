@@ -1,5 +1,3 @@
-#![allow(unused_imports)]
-
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
@@ -8,7 +6,6 @@ use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io::{self, stdout};
 
 use crate::app::App;
-use crate::config::AppConfig;
 use crate::logging::info;
 
 mod app;

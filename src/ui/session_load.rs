@@ -1,13 +1,10 @@
 use crate::{app::App, mode::AppMode};
 use ratatui::{
-    buffer::Buffer,
-    layout::{Constraint, Direction, Layout, Rect},
+    layout::{Constraint, Direction, Layout},
     style::{Modifier, Style, Stylize},
-    widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph, Widget},
+    widgets::{Block, Borders, Clear, List, ListItem, Widget},
     Frame,
 };
-
-use super::utils::centered_rect;
 
 pub fn draw_session_list(frame: &mut Frame, app: &mut App) {
     if let AppMode::SessionLoad { items, state } = &mut app.mode {

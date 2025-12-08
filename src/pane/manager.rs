@@ -1,4 +1,3 @@
-use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt;
 
@@ -9,7 +8,7 @@ use slotmap::SlotMap;
 
 use super::node::{PaneKey, PaneNode};
 use super::node_data::{CardinalDirection, PaneNodeData};
-use crate::logging::{debug, info, trace};
+use crate::logging::{debug, info};
 use crate::session::PaneKeyAsString;
 
 #[serde_as]
@@ -515,7 +514,7 @@ impl PaneManager {
                     .map(|n| n.weight)
                     .sum();
 
-                let mut constraints: Vec<Constraint> = if total_weight > 0 {
+                let constraints: Vec<Constraint> = if total_weight > 0 {
                     children
                         .iter()
                         .map(|&key| {

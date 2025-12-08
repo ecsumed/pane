@@ -1,16 +1,8 @@
-use crate::command::Command;
 use crate::mode::AppMode;
-use crate::pane::{PaneKey, PaneManager, PaneNodeData};
 use crate::App;
-use ratatui::buffer::Buffer;
-use ratatui::layout::{Constraint, Direction, Layout, Position};
-use ratatui::prelude::{Backend, Frame, Rect};
-use ratatui::style::{Color, Modifier, Style, Stylize};
-use ratatui::text::Line;
-use ratatui::widgets::{Block, Borders, Clear, Padding, Paragraph, Widget};
-use ratatui::Terminal;
-use std::collections::HashMap;
-use std::io;
+use ratatui::layout::Position;
+use ratatui::prelude::{Backend, Frame};
+use ratatui::widgets::{Block, Borders, Clear, Paragraph, Widget};
 
 use super::utils::centered_rect;
 

@@ -1,9 +1,8 @@
 use crate::command::Command;
 use ratatui::{
     layout::Rect,
-    layout::{Alignment, Constraint, Direction, Layout},
     text::{Line, Text},
-    widgets::{Paragraph, Widget},
+    widgets::Paragraph,
     Frame,
 };
 

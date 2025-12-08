@@ -3,7 +3,7 @@ use crate::mode::AppMode;
 use crossterm::event::{self, Event, KeyCode};
 use std::io;
 
-use crate::logging::{debug, info, warn};
+use crate::logging::{info, warn};
 
 pub async fn handle_display_type_select_keys(app: &mut App, event: Event) -> io::Result<()> {
     if let AppMode::DisplayTypeSelect { items, state } = &mut app.mode {

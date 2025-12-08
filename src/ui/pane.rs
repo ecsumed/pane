@@ -1,19 +1,13 @@
 use crate::command::Command;
-use crate::mode::AppMode;
 use crate::pane::{PaneKey, PaneManager, PaneNodeData};
 use crate::ui::display_modes::render_command_output;
 use crate::ui::DisplayType;
-use crate::App;
-use ratatui::buffer::Buffer;
-use ratatui::layout::{Constraint, Direction, Layout};
-use ratatui::prelude::{Backend, Frame, Rect};
+use ratatui::layout::{Constraint, Layout};
+use ratatui::prelude::{Frame, Rect};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::Line;
-use ratatui::widgets::block::Title;
-use ratatui::widgets::{Block, Borders, Clear, Padding, Paragraph, Widget};
-use ratatui::Terminal;
+use ratatui::widgets::{Block, Borders, Paragraph};
 use std::collections::HashMap;
-use std::io;
 
 fn create_pane_block<'a>(
     is_active: bool,

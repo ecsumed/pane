@@ -1,10 +1,10 @@
 use std::time::Duration;
-use tokio::time::{self, MissedTickBehavior};
 use tokio::sync::mpsc;
+use tokio::time::{self, MissedTickBehavior};
 
+use super::{CommandControl, CommandState};
 use crate::logging::{info, warn};
 use crate::pane::PaneKey;
-use super::{CommandControl, CommandState};
 
 impl super::Command {
     pub async fn run_command_task(

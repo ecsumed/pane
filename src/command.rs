@@ -1,7 +1,7 @@
-mod types;
 mod executor;
-mod task_loop;
 mod history_manager;
+mod task_loop;
+mod types;
 
-pub use types::{Command, CommandControl, CommandState, CommandSerializableState};
 pub use history_manager::HistoryManager;
+pub use types::{Command, CommandControl, CommandSerializableState, CommandState};

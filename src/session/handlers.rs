@@ -1,14 +1,10 @@
 use super::models::SessionState;
-use super::utils::{generate_session_filename, is_session_file};
+use super::utils::generate_session_filename;
 
 use crate::app::App;
-use crate::command::{Command, CommandSerializableState};
-use crate::pane::PaneKey;
 
-use std::collections::HashMap;
 use std::fs;
 use std::io::{self, ErrorKind};
-use std::path::PathBuf;
 
 pub fn save_session_by_name(app: &App, session_filename: &str) -> io::Result<()> {
     let session_state = SessionState {

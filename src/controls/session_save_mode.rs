@@ -1,5 +1,5 @@
-use crate::app::{App, AppControl};
-use crate::logging::{debug, error, info, warn};
+use crate::app::App;
+use crate::logging::{error, info};
 use crate::mode::AppMode;
 use crate::session::save_session_by_name;
 use crossterm::event::{self, Event, KeyCode};

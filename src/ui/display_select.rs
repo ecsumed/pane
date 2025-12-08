@@ -1,12 +1,10 @@
 use crate::{app::App, mode::AppMode};
 use ratatui::{
-    layout::{Constraint, Direction, Layout, Rect},
+    layout::{Constraint, Direction, Layout},
     style::{Modifier, Style, Stylize},
     widgets::{Block, Borders, Clear, List, ListItem, StatefulWidget, Widget},
     Frame,
 };
-
-use super::utils::centered_rect;
 
 pub fn draw_display_type_select(frame: &mut Frame, app: &mut App) {
     if let AppMode::DisplayTypeSelect { items, state } = &mut app.mode {

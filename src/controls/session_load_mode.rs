@@ -1,12 +1,11 @@
-use crate::app::{App, AppControl};
+use crate::app::App;
 use crate::mode::AppMode;
 use crate::session::load_session_by_name;
 use crossterm::event::{self, Event, KeyCode};
-use ratatui::widgets::ListState;
 use std::io;
 use tracing::error;
 
-use crate::logging::{debug, info, warn};
+use crate::logging::info;
 
 pub async fn handle_session_load_keys(app: &mut App, event: Event) -> io::Result<()> {
     if let AppMode::SessionLoad { items, state } = &mut app.mode {

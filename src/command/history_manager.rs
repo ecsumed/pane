@@ -1,8 +1,8 @@
+use crate::logging::{debug, warn};
 use std::env;
 use std::fs;
-use std::path::PathBuf;
 use std::io;
-use crate::logging::{debug, info, warn};
+use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct HistoryManager {
@@ -28,7 +28,7 @@ impl HistoryManager {
         };
 
         let path = PathBuf::from(history_file_path);
-        
+
         if !path.exists() {
             warn!("History file not found at {:?}", path);
             return Ok(Vec::new());

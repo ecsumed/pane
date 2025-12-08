@@ -1,7 +1,6 @@
 use chrono::{DateTime, Local};
 use std::fs;
-use std::io::{self, ErrorKind};
-use std::path::PathBuf;
+use std::io::{self};
 
 use crate::config::AppConfig;
 

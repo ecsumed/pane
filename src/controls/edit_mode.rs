@@ -3,14 +3,18 @@ use crate::command::HistoryManager;
 use crate::mode::AppMode;
 use crossterm::event::{self, Event, KeyCode};
 use ratatui::widgets::ListState;
-use tui_input::Input;
 use std::{io, mem};
 use tui_input::backend::crossterm::EventHandler;
+use tui_input::Input;
 
-use crate::logging::{debug, info, warn};
+use crate::logging::{debug, warn};
 
-
-fn update_suggestions(input: &mut Input, history: &mut HistoryManager, state: &mut ListState, suggestions: &mut Vec<String>) {
+fn update_suggestions(
+    input: &mut Input,
+    history: &mut HistoryManager,
+    state: &mut ListState,
+    suggestions: &mut Vec<String>,
+) {
     let input_value = input.value().to_string();
 
     *suggestions = history.filter(&input_value);
@@ -25,7 +29,13 @@ fn update_suggestions(input: &mut Input, history: &mut HistoryManager, state: &m
 }
 
 pub async fn handle_editing_mode_keys(app: &mut App, event: Event) -> io::Result<()> {
-    if let AppMode::CmdEdit { input, state, suggestions, history } = &mut app.mode {
+    if let AppMode::CmdEdit {
+        input,
+        state,
+        suggestions,
+        history,
+    } = &mut app.mode
+    {
         if let Event::Key(key_event) = event {
             if key_event.kind == event::KeyEventKind::Press {
                 match key_event.code {
@@ -35,7 +45,7 @@ pub async fn handle_editing_mode_keys(app: &mut App, event: Event) -> io::Result
                         } else {
                             input.value().to_string()
                         };
-                        
+
                         let id = app.pane_manager.active_pane_id;
                         if let Err(e) = app
                             .app_control_tx
@@ -82,11 +92,11 @@ pub async fn handle_editing_mode_keys(app: &mut App, event: Event) -> io::Result
                     KeyCode::Tab => {
                         if let Some(index) = state.selected() {
                             if let Some(suggestion) = suggestions.get(index).cloned() {
+                                let current_input =
+                                    mem::replace(input, tui_input::Input::default());
 
-                                let current_input = mem::replace(input, tui_input::Input::default());
-                                
                                 let updated_input = current_input.with_value(suggestion);
-                                
+
                                 let _ = mem::replace(input, updated_input);
                             }
                         }

@@ -1,23 +1,22 @@
 use ratatui::backend::{Backend, CrosstermBackend};
 use ratatui::layout::Rect;
-use ratatui::{Frame, Terminal};
+use ratatui::Terminal;
 use std::collections::HashMap;
 use std::time::Duration;
-use tokio::sync::mpsc::{self, Sender};
-use tokio::sync::watch;
+use tokio::sync::mpsc::{self};
 use tokio::time::interval;
 
 use crate::command::{Command, CommandControl, CommandSerializableState, CommandState};
 use crate::config::AppConfig;
-use crate::mode::{self, AppMode};
+use crate::controls;
+use crate::mode::AppMode;
 use crate::pane::{PaneKey, PaneManager};
 use crate::ui::DisplayType;
-use crate::{controls, ui};
-use crossterm::event::{Event, EventStream};
+use crossterm::event::EventStream;
 use futures::{FutureExt, StreamExt};
 use std::io::{self, Result};
 
-use crate::logging::{debug, info, warn};
+use crate::logging::{info, warn};
 use crate::ui::draw::draw_ui;
 
 type DefaultTerminal = Terminal<CrosstermBackend<std::io::Stdout>>;
