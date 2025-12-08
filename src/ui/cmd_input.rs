@@ -1,7 +1,7 @@
 use crate::mode::AppMode;
 use crate::App;
-use ratatui::prelude::{Backend, Frame, Rect};
-use ratatui::style::{Modifier, Style, Stylize};
+use ratatui::prelude::{Frame, Rect};
+use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Widget};
 
 pub fn draw_input_popup(frame: &mut Frame, app: &mut App) {
@@ -32,6 +32,8 @@ pub fn draw_input_popup(frame: &mut Frame, app: &mut App) {
             input_area.width,
             suggestions_height,
         );
+
+        Clear.render(suggestions_area, frame.buffer_mut());
 
         let input_widget = Paragraph::new(input.value()).block(
             Block::default()
