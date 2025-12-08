@@ -1,4 +1,4 @@
-use super::node_data::PaneNodeData; 
+use super::node_data::PaneNodeData;
 use ratatui::layout::Direction;
 use serde::{Deserialize, Serialize};
 use slotmap::new_key_type;

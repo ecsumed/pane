@@ -1,4 +1,4 @@
-use slotmap::{SlotMap, new_key_type};
+use slotmap::{new_key_type, SlotMap};
 
 pub mod manager;
 pub mod node;
@@ -6,5 +6,5 @@ pub mod node_data;
 pub mod serialization;
 
 pub use self::manager::PaneManager;
-pub use self::node::{PaneNode, PaneKey};
+pub use self::node::{PaneKey, PaneNode};
 pub use self::node_data::{CardinalDirection, PaneNodeData};

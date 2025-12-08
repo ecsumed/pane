@@ -1,7 +1,7 @@
 use chrono::{DateTime, Local};
 use std::fs;
-use std::path::PathBuf;
 use std::io::{self, ErrorKind};
+use std::path::PathBuf;
 
 use crate::config::AppConfig;
 
@@ -12,14 +12,17 @@ pub fn generate_session_filename() -> String {
 }
 
 pub fn is_session_file(entry: &fs::DirEntry) -> bool {
-    entry.file_type().map(|ft| ft.is_file()).unwrap_or(false) &&
-    entry.path().extension().map(|ext| ext == "toml").unwrap_or(false)
+    entry.file_type().map(|ft| ft.is_file()).unwrap_or(false)
+        && entry
+            .path()
+            .extension()
+            .map(|ext| ext == "toml")
+            .unwrap_or(false)
 }
-
 
 pub fn fetch_session_filenames(config: &AppConfig) -> io::Result<Vec<String>> {
     let sessions_dir = &config.sessions_dir;
-    
+
     if !sessions_dir.exists() {
         return Ok(Vec::new());
     }
@@ -27,9 +30,7 @@ pub fn fetch_session_filenames(config: &AppConfig) -> io::Result<Vec<String>> {
     let filenames: Vec<String> = fs::read_dir(sessions_dir)?
         .filter_map(Result::ok)
         .filter(is_session_file)
-        .filter_map(|entry| {
-            entry.file_name().into_string().ok()
-        })
+        .filter_map(|entry| entry.file_name().into_string().ok())
         .collect();
 
     Ok(filenames)

@@ -1,11 +1,10 @@
 use crate::app::{App, AppControl};
+use crate::logging::{debug, error, info, warn};
 use crate::mode::AppMode;
+use crate::session::save_session_by_name;
 use crossterm::event::{self, Event, KeyCode};
 use std::io;
 use tui_input::backend::crossterm::EventHandler;
-use crate::logging::{debug, info, warn, error};
-use crate::session::save_session_by_name;
-
 
 pub async fn handle_session_save_keys(app: &mut App, event: Event) -> io::Result<()> {
     if let AppMode::SessionSave { input } = &mut app.mode {

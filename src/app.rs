@@ -9,9 +9,9 @@ use tokio::time::interval;
 
 use crate::command::{Command, CommandControl, CommandSerializableState, CommandState};
 use crate::config::AppConfig;
-use crate::ui::DisplayType;
 use crate::mode::{self, AppMode};
 use crate::pane::{PaneKey, PaneManager};
+use crate::ui::DisplayType;
 use crate::{controls, ui};
 use crossterm::event::{Event, EventStream};
 use futures::{FutureExt, StreamExt};
@@ -26,7 +26,7 @@ type DefaultTerminal = Terminal<CrosstermBackend<std::io::Stdout>>;
 pub enum AppControl {
     SetCommand(PaneKey, String),
     SendControl(PaneKey, CommandControl),
-    SetDisplay(PaneKey, DisplayType)
+    SetDisplay(PaneKey, DisplayType),
 }
 
 pub struct App {
@@ -70,8 +70,6 @@ impl App {
 
                 draw_ui(self, frame);
             })?;
-
-            ui::manage_cursor(self, terminal)?;
 
             tokio::select! {
                 Some((id, output)) = self.output_rx.recv() => {
@@ -144,7 +142,15 @@ impl App {
 
         let cmd = exec.clone();
         let task_handle = tokio::spawn(async move {
-            Command::run_command_task(id, cmd, interval, CommandState::Running, control_rx, output_tx_clone).await;
+            Command::run_command_task(
+                id,
+                cmd,
+                interval,
+                CommandState::Running,
+                control_rx,
+                output_tx_clone,
+            )
+            .await;
         });
 
         info!("Adding new command: {}", &exec);
@@ -175,8 +181,15 @@ impl App {
             let cmd_exec = state.exec.clone();
             let cmd_state = state.state;
             let task_handle = tokio::spawn(async move {
-                Command::run_command_task(id, cmd_exec, interval, cmd_state, control_rx, output_tx_clone)
-                    .await;
+                Command::run_command_task(
+                    id,
+                    cmd_exec,
+                    interval,
+                    cmd_state,
+                    control_rx,
+                    output_tx_clone,
+                )
+                .await;
             });
 
             info!("Restarting command for id: {:?}", id);
@@ -235,20 +248,20 @@ impl App {
 //     async fn test_set_command_adds_new_task() {
 //         let config = mock_config();
 //         let mut app = App::new(config);
-        
+
 //         // Get the key for the initial root pane
 //         let pane_key = app.pane_manager.get_all_pane_keys()[0];
-        
+
 //         let exec = "echo hello";
-    
+
 //         app.set_command(pane_key, exec.to_string()).await;
-    
+
 //         assert_eq!(app.tasks.len(), 1);
 //         let command = app.tasks.get(&pane_key).unwrap();
 //         assert_eq!(command.exec, exec);
 //         assert_eq!(command.state, CommandState::Running);
 //         assert!(command.task_handle.is_some());
-    
+
 //         if let Some(handle) = command.task_handle.as_ref() {
 //             handle.abort();
 //         }

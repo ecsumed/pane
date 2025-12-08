@@ -2,9 +2,9 @@ use crate::app::{App, AppControl};
 use crate::mode::AppMode;
 use crate::session::load_session_by_name;
 use crossterm::event::{self, Event, KeyCode};
+use ratatui::widgets::ListState;
 use std::io;
 use tracing::error;
-use ratatui::widgets::ListState;
 
 use crate::logging::{debug, info, warn};
 
@@ -15,7 +15,11 @@ pub async fn handle_session_load_keys(app: &mut App, event: Event) -> io::Result
                 match key_event.code {
                     KeyCode::Up => {
                         if let Some(selected) = state.selected() {
-                            let next = if selected == 0 { items.len() - 1 } else { selected - 1 };
+                            let next = if selected == 0 {
+                                items.len() - 1
+                            } else {
+                                selected - 1
+                            };
                             state.select(Some(next));
                         }
                     }

@@ -1,7 +1,7 @@
 use crate::command::CommandSerializableState;
 use crate::pane::{PaneKey, PaneManager};
 use serde::{de, Deserialize, Serialize};
-use serde_with::{DeserializeAs, SerializeAs, serde_as};
+use serde_with::{serde_as, DeserializeAs, SerializeAs};
 use slotmap::{Key, KeyData};
 use std::collections::HashMap;
 
@@ -22,8 +22,7 @@ impl<'de> DeserializeAs<'de, PaneKey> for PaneKeyAsString {
         D: serde::Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        let key_data = s.parse::<u64>()
-            .map_err(de::Error::custom)?;
+        let key_data = s.parse::<u64>().map_err(de::Error::custom)?;
         Ok(PaneKey::from(KeyData::from_ffi(key_data)))
     }
 }

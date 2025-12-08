@@ -8,7 +8,6 @@ use ratatui::layout::Direction;
 use std::io;
 use tracing::{error, info, warn};
 
-
 pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<()> {
     if let Event::Key(key_event) = event {
         if key_event.kind == event::KeyEventKind::Press {
@@ -31,16 +30,20 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
                     app.pane_manager.cycle_panes();
                 }
                 KeyCode::Up => {
-                    app.pane_manager.change_active(&CardinalDirection::Up, app.pane_area);
+                    app.pane_manager
+                        .change_active(&CardinalDirection::Up, app.pane_area);
                 }
                 KeyCode::Down => {
-                    app.pane_manager.change_active(&CardinalDirection::Down, app.pane_area);
+                    app.pane_manager
+                        .change_active(&CardinalDirection::Down, app.pane_area);
                 }
                 KeyCode::Left => {
-                    app.pane_manager.change_active(&CardinalDirection::Left, app.pane_area);
+                    app.pane_manager
+                        .change_active(&CardinalDirection::Left, app.pane_area);
                 }
                 KeyCode::Right => {
-                    app.pane_manager.change_active(&CardinalDirection::Right, app.pane_area);
+                    app.pane_manager
+                        .change_active(&CardinalDirection::Right, app.pane_area);
                 }
 
                 KeyCode::Char('x') => {

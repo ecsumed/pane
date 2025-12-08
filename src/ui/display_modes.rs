@@ -1,14 +1,14 @@
-use ratatui::{Frame, layout::Rect, widgets::Block};
 use crate::command::Command;
+use ratatui::{layout::Rect, widgets::Block, Frame};
 
-pub mod types;
-pub mod raw_text;
 pub mod multiline;
+pub mod raw_text;
+pub mod types;
 
 pub use types::DisplayType;
 
 pub fn render_command_output(frame: &mut Frame, area: Rect, command: &Command, block: Block) {
-    let inner_area = block.inner(area); 
+    let inner_area = block.inner(area);
 
     frame.render_widget(block.clone(), area);
 

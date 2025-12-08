@@ -12,7 +12,11 @@ pub async fn handle_display_type_select_keys(app: &mut App, event: Event) -> io:
                 match key_event.code {
                     KeyCode::Up => {
                         if let Some(selected) = state.selected() {
-                            let next = if selected == 0 { items.len() - 1 } else { selected - 1 };
+                            let next = if selected == 0 {
+                                items.len() - 1
+                            } else {
+                                selected - 1
+                            };
                             state.select(Some(next));
                         }
                     }

@@ -1,15 +1,20 @@
-use ratatui::{
-    Frame, buffer::Buffer, layout::{Constraint, Direction, Layout, Rect}, style::{Modifier, Style, Stylize}, widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph, Widget}
-};
 use crate::{app::App, mode::AppMode};
+use ratatui::{
+    buffer::Buffer,
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Modifier, Style, Stylize},
+    widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph, Widget},
+    Frame,
+};
 
 use super::utils::centered_rect;
 
 pub fn draw_session_list(frame: &mut Frame, app: &mut App) {
     if let AppMode::SessionLoad { items, state } = &mut app.mode {
         let area = frame.area();
-        
-        let list_items: Vec<ListItem> = items.iter()
+
+        let list_items: Vec<ListItem> = items
+            .iter()
             .enumerate()
             .map(|(i, s)| {
                 let mut item = ListItem::new(s.as_str());
@@ -21,7 +26,7 @@ pub fn draw_session_list(frame: &mut Frame, app: &mut App) {
             })
             .collect();
 
-        const POPUP_HEIGHT: u16 = 6; 
+        const POPUP_HEIGHT: u16 = 6;
         const POPUP_WIDTH: u16 = 60;
 
         let popup_area = Layout::default()
@@ -46,7 +51,7 @@ pub fn draw_session_list(frame: &mut Frame, app: &mut App) {
 
         let list_widget = List::new(list_items)
             .block(Block::default().title("Load Session").borders(Borders::ALL));
-            
+
         frame.render_stateful_widget(list_widget, popup_area, state);
     }
 }

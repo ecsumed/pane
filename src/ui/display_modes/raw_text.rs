@@ -1,4 +1,4 @@
-use ratatui::{Frame, layout::Rect, widgets::Paragraph};
+use ratatui::{layout::Rect, widgets::Paragraph, Frame};
 
 use crate::command::Command;
 
@@ -8,7 +8,7 @@ pub fn render(frame: &mut Frame, area: Rect, cmd: &Command) {
     let mut widget = Paragraph::new(cmd.last_output.as_str());
 
     if matches!(cmd.display_type, DisplayType::RawWrapped) {
-        widget = widget.wrap(ratatui::widgets::Wrap { trim: true }); 
+        widget = widget.wrap(ratatui::widgets::Wrap { trim: true });
     }
 
     frame.render_widget(widget, area);

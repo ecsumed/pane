@@ -5,10 +5,10 @@ use crate::app::App;
 use crate::command::{Command, CommandSerializableState};
 use crate::pane::PaneKey;
 
+use std::collections::HashMap;
 use std::fs;
 use std::io::{self, ErrorKind};
 use std::path::PathBuf;
-use std::collections::HashMap;
 
 pub fn save_session_by_name(app: &App, session_filename: &str) -> io::Result<()> {
     let session_state = SessionState {
@@ -28,7 +28,7 @@ pub fn save_session_by_name(app: &App, session_filename: &str) -> io::Result<()>
 
     use std::path::Path;
     let path = Path::new(session_filename);
-    
+
     let final_filename = if path.extension().map_or(false, |ext| ext == "toml") {
         session_filename.to_string()
     } else {
@@ -43,7 +43,7 @@ pub fn save_session_by_name(app: &App, session_filename: &str) -> io::Result<()>
 
 pub fn save_session(app: &App) -> io::Result<()> {
     let session_filename = generate_session_filename();
-    
+
     save_session_by_name(app, &session_filename)
 }
 
@@ -94,9 +94,10 @@ pub fn load_latest_session(app: &mut App) -> io::Result<()> {
         .max()
         .ok_or_else(|| io::Error::new(ErrorKind::NotFound, "No session files found"))?;
 
-    let latest_filename = latest_session_path.file_name()
-                                              .and_then(|name| name.to_str())
-                                              .ok_or_else(|| io::Error::new(ErrorKind::InvalidData, "Invalid filename"))?;
+    let latest_filename = latest_session_path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| io::Error::new(ErrorKind::InvalidData, "Invalid filename"))?;
 
     load_session_by_name(app, latest_filename)
 }
