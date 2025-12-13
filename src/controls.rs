@@ -1,5 +1,6 @@
 pub use self::dispatcher::handle_event;
 
+pub mod actions;
 mod dispatcher;
 mod display_select_mode;
 mod edit_mode;

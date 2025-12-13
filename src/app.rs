@@ -1,3 +1,5 @@
+use crokey::Combiner;
+use crossterm::event::EventStream;
 use ratatui::backend::CrosstermBackend;
 use ratatui::layout::Rect;
 use ratatui::Terminal;
@@ -5,14 +7,12 @@ use std::collections::HashMap;
 use std::time::Duration;
 use tokio::sync::mpsc::{self};
 use tokio::time::interval;
-
 use crate::command::{Command, CommandControl, CommandSerializableState, CommandState};
 use crate::config::AppConfig;
 use crate::controls;
 use crate::mode::AppMode;
 use crate::pane::{PaneKey, PaneManager};
 use crate::ui::DisplayType;
-use crossterm::event::EventStream;
 use futures::{FutureExt, StreamExt};
 use std::io::{self, Result};
 
@@ -33,6 +33,7 @@ pub struct App {
     pub tasks: HashMap<PaneKey, Command>,
     pub mode: AppMode,
     pub exit: bool,
+    pub combiner: Combiner,
     pub output_rx: mpsc::Receiver<(PaneKey, String)>,
     pub output_tx: mpsc::Sender<(PaneKey, String)>,
     pub app_control_tx: mpsc::Sender<AppControl>,
@@ -50,6 +51,7 @@ impl App {
             tasks: HashMap::new(),
             mode: AppMode::default(),
             exit: false,
+            combiner: Combiner::default(),
             output_rx,
             output_tx,
             app_control_tx,
@@ -137,7 +139,7 @@ impl App {
 
         let (control_tx, control_rx) = mpsc::channel(1);
         let output_tx_clone = self.output_tx.clone();
-        let interval = Duration::from_secs(5);
+        let interval = self.config.interval;
 
         let cmd = exec.clone();
         let task_handle = tokio::spawn(async move {

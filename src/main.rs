@@ -1,7 +1,7 @@
-use crossterm::terminal::{
+use crokey::crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
-use crossterm::ExecutableCommand;
+use crokey::crossterm::ExecutableCommand;
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io::{self, stdout};
 
@@ -36,13 +36,8 @@ fn restore() -> io::Result<()> {
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
-    let _guard = logging::init_tracing();
-
-    info!("Application starting up.");
-
     let config = match config::AppConfig::load() {
         Ok(cfg) => {
-            info!("{}", cfg);
             cfg
         }
         Err(e) => {
@@ -50,6 +45,12 @@ async fn main() -> io::Result<()> {
             std::process::exit(1);
         }
     };
+
+    let log_level_filter = logging::get_log_level_filter(config.log_level.as_deref()); 
+    let _guard = logging::init_tracing(log_level_filter, &config.logs_dir);
+
+    info!("Application starting up.");
+    info!("{}", config);
 
     let mut terminal = init()?;
 

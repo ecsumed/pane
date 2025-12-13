@@ -3,159 +3,161 @@ use crate::command::CommandControl;
 use crate::mode::AppMode;
 use crate::pane::CardinalDirection;
 use crate::session::{load_latest_session, save_session};
-use crossterm::event::{self, Event, KeyCode};
+use crokey::KeyCombination;
+use crokey::crossterm::event::{self, Event};
 use ratatui::layout::Direction;
 use std::io;
-use tracing::{error, info, warn};
+use crate::logging::{info, warn, debug, error};
+
+use super::actions::Action;
 
 pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<()> {
     if let Event::Key(key_event) = event {
         if key_event.kind == event::KeyEventKind::Press {
-            match key_event.code {
-                KeyCode::Char('q') => {
-                    app.exit();
-                }
-                KeyCode::Char('h') => {
-                    app.pane_manager.split_pane(Direction::Horizontal);
-                }
-                KeyCode::Char('v') => {
-                    app.pane_manager.split_pane(Direction::Vertical);
-                }
-                KeyCode::Char('c') => {
-                    app.mode = AppMode::new_cmd_edit();
-                }
 
-                // NAVIGATION
-                KeyCode::Tab => {
-                    app.pane_manager.cycle_panes();
-                }
-                KeyCode::Up => {
-                    app.pane_manager
-                        .change_active(&CardinalDirection::Up, app.pane_area);
-                }
-                KeyCode::Down => {
-                    app.pane_manager
-                        .change_active(&CardinalDirection::Down, app.pane_area);
-                }
-                KeyCode::Left => {
-                    app.pane_manager
-                        .change_active(&CardinalDirection::Left, app.pane_area);
-                }
-                KeyCode::Right => {
-                    app.pane_manager
-                        .change_active(&CardinalDirection::Right, app.pane_area);
-                }
-
-                KeyCode::Char('x') => {
-                    let id = app.pane_manager.active_pane_id;
-                    if let Err(e) = app
-                        .app_control_tx
-                        .send(AppControl::SendControl(id, CommandControl::Stop))
-                        .await
-                    {
-                        warn!("Failed to send AppControl::SendControl: {}", e);
+            let key_combination: KeyCombination = KeyCombination::from(key_event);
+            if let Some(action) = app.config.keybindings.get(&key_combination) {
+                match action {
+                    Action::Quit => {
+                        app.exit();
                     }
-                    app.pane_manager.kill_pane();
-                }
-                KeyCode::Char(' ') => {
-                    let id = app.pane_manager.active_pane_id;
-                    if let Err(e) = app
-                        .app_control_tx
-                        .send(AppControl::SendControl(id, CommandControl::Execute))
-                        .await
-                    {
-                        warn!("Failed to send AppControl::SendControl: {}", e);
+                    Action::SplitHorizontal => {
+                        app.pane_manager.split_pane(Direction::Horizontal);
                     }
-                }
-                KeyCode::Char('p') => {
-                    let id = app.pane_manager.active_pane_id;
-                    if let Err(e) = app
-                        .app_control_tx
-                        .send(AppControl::SendControl(id, CommandControl::Pause))
-                        .await
-                    {
-                        warn!("Failed to send AppControl::SendControl: {}", e);
+                    Action::SplitVertical => {
+                        app.pane_manager.split_pane(Direction::Vertical);
                     }
-                }
-                KeyCode::Char('r') => {
-                    let id = app.pane_manager.active_pane_id;
-                    if let Err(e) = app
-                        .app_control_tx
-                        .send(AppControl::SendControl(id, CommandControl::Resume))
-                        .await
-                    {
-                        warn!("Failed to send AppControl::SendControl: {}", e);
+                    Action::EnterCmdMode => {
+                        app.mode = AppMode::new_cmd_edit();
                     }
-                }
-                KeyCode::Char('i') => {
-                    let id = app.pane_manager.active_pane_id;
-                    if let Err(e) = app
-                        .app_control_tx
-                        .send(AppControl::SendControl(
-                            id,
-                            CommandControl::IncreaseInterval,
-                        ))
-                        .await
-                    {
-                        warn!("Failed to send AppControl::SendControl: {}", e);
+                    Action::CyclePanes => app.pane_manager.cycle_panes(),
+                    Action::MoveUp => {
+                        app.pane_manager
+                            .change_active(&CardinalDirection::Up, app.pane_area);
                     }
-                }
-                KeyCode::Char('d') => {
-                    let id = app.pane_manager.active_pane_id;
-                    if let Err(e) = app
-                        .app_control_tx
-                        .send(AppControl::SendControl(
-                            id,
-                            CommandControl::DecreaseInterval,
-                        ))
-                        .await
-                    {
-                        warn!("Failed to send AppControl::SendControl: {}", e);
+                    Action::MoveDown => {
+                        app.pane_manager
+                            .change_active(&CardinalDirection::Down, app.pane_area);
                     }
-                }
-                KeyCode::Char('s') => {
-                    info!("Saving session...");
-                    if let Err(e) = save_session(&app) {
-                        error!("Error saving session: {}", e);
-                    } else {
-                        info!("Session saved successfully!");
+                    Action::MoveLeft => {
+                        app.pane_manager
+                            .change_active(&CardinalDirection::Left, app.pane_area);
                     }
-                }
-                KeyCode::Char('l') => {
-                    info!("Loading latest session...");
-                    if let Err(e) = load_latest_session(app) {
-                        error!("Error loading session: {}", e);
-                    } else {
-                        info!("Session loaded successfully!");
+                    Action::MoveRight => {
+                        app.pane_manager
+                            .change_active(&CardinalDirection::Right, app.pane_area);
                     }
+                    Action::KillPane => {
+                        let id = app.pane_manager.active_pane_id;
+                        if let Err(e) = app
+                            .app_control_tx
+                            .send(AppControl::SendControl(id, CommandControl::Stop))
+                            .await
+                        {
+                            warn!("Failed to send AppControl::SendControl: {}", e);
+                        }
+                        app.pane_manager.kill_pane();
+                    }
+                    Action::Confirm => {
+                        let id = app.pane_manager.active_pane_id;
+                        if let Err(e) = app
+                            .app_control_tx
+                            .send(AppControl::SendControl(id, CommandControl::Execute))
+                            .await
+                        {
+                            warn!("Failed to send AppControl::SendControl: {}", e);
+                        }
+                    }
+                    Action::Pause => {
+                        let id = app.pane_manager.active_pane_id;
+                        if let Err(e) = app
+                            .app_control_tx
+                            .send(AppControl::SendControl(id, CommandControl::Pause))
+                            .await
+                        {
+                            warn!("Failed to send AppControl::SendControl: {}", e);
+                        }
+                    }
+                    Action::Resume => {
+                        let id = app.pane_manager.active_pane_id;
+                        if let Err(e) = app
+                            .app_control_tx
+                            .send(AppControl::SendControl(id, CommandControl::Resume))
+                            .await
+                        {
+                            warn!("Failed to send AppControl::SendControl: {}", e);
+                        }
+                    }
+                    Action::IntervalIncrease => {
+                        let id = app.pane_manager.active_pane_id;
+                        if let Err(e) = app
+                            .app_control_tx
+                            .send(AppControl::SendControl(
+                                id,
+                                CommandControl::IncreaseInterval,
+                            ))
+                            .await
+                        {
+                            warn!("Failed to send AppControl::SendControl: {}", e);
+                        }
+                    }
+                    Action::IntervalDecrease => {
+                        let id = app.pane_manager.active_pane_id;
+                        if let Err(e) = app
+                            .app_control_tx
+                            .send(AppControl::SendControl(
+                                id,
+                                CommandControl::DecreaseInterval,
+                            ))
+                            .await
+                        {
+                            warn!("Failed to send AppControl::SendControl: {}", e);
+                        }
+                    }
+                    Action::SaveSession => {
+                        info!("Saving session...");
+                        if let Err(e) = save_session(&app) {
+                            error!("Error saving session: {}", e);
+                        } else {
+                            info!("Session saved successfully!");
+                        }
+                    }
+                    Action::LoadLatestSession => {
+                        info!("Loading latest session...");
+                        if let Err(e) = load_latest_session(app) {
+                            error!("Error loading session: {}", e);
+                        } else {
+                            info!("Session loaded successfully!");
+                        }
+                    }
+                    Action::EnterSessionLoadMode => {
+                        info!("Fetching sessions mode");
+                        app.mode = AppMode::new_session_load(app);
+                    }
+                    Action::EnterSessionSaveMode => {
+                        info!("Saving sessions mode");
+                        app.mode = AppMode::new_session_save();
+                    }
+                    Action::EnterDisplaySelectMode => {
+                        info!("Display select mode");
+                        app.mode = AppMode::new_display_type_select();
+                    }
+                    Action::PaneIncreaseVertical => {
+                        app.pane_manager.resize_pane(&CardinalDirection::Right, 1);
+                    }
+                    Action::PaneDecreaseVertical => {
+                        app.pane_manager.resize_pane(&CardinalDirection::Left, -1);
+                    }
+                    Action::PaneIncreaseHorizontal => {
+                        app.pane_manager.resize_pane(&CardinalDirection::Down, 1);
+                    }
+                    Action::PaneDecreaseHorizontal => {
+                        app.pane_manager.resize_pane(&CardinalDirection::Up, -1);
+                    }
+                    _ => ()
                 }
-                KeyCode::Char('L') => {
-                    info!("Fetching sessions mode");
-                    app.mode = AppMode::new_session_load(app);
-                }
-                KeyCode::Char('S') => {
-                    info!("Saving sessions mode");
-                    app.mode = AppMode::new_session_save();
-                }
-                KeyCode::Char('D') => {
-                    info!("Display select mode");
-                    app.mode = AppMode::new_display_type_select();
-                }
-
-                KeyCode::Char('+') => {
-                    app.pane_manager.resize_pane(&CardinalDirection::Right, 1);
-                }
-                KeyCode::Char('-') => {
-                    app.pane_manager.resize_pane(&CardinalDirection::Left, -1);
-                }
-                KeyCode::Char('>') => {
-                    app.pane_manager.resize_pane(&CardinalDirection::Down, 1);
-                }
-                KeyCode::Char('<') => {
-                    app.pane_manager.resize_pane(&CardinalDirection::Up, -1);
-                }
-                _ => {}
-            }
+            //}
+        }
         }
     }
     Ok(())

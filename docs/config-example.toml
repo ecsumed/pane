@@ -1,0 +1,17 @@
+interval = "5s"
+
+[keys]
+quit = 'q'
+enter_cmd_mode = 'c'
+split_horizontal = 'h'
+split_vertical = 'v'
+kill_pane = 'x'
+pause = 'p'
+resume = 'r'
+increase_interval = 'i'
+decrease_interval = 'd'
+save_session = 's'
+load_latest_session = 'l'
+enter_session_load_mode = 'L'
+enter_session_save_mode = 'S'
+enter_display_select_mode = 'D'

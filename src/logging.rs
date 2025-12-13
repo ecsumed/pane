@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use tracing_appender::non_blocking;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_appender::rolling;
@@ -5,8 +7,8 @@ use tracing_subscriber::{filter::LevelFilter, fmt, prelude::*, util::SubscriberI
 
 pub use tracing::{debug, error, info, warn};
 
-pub fn init_tracing() -> WorkerGuard {
-    let file_appender = rolling::daily("./logs", "ratatui-app.log");
+pub fn init_tracing(log_level_filter: LevelFilter, logs_dir: &PathBuf) -> WorkerGuard {
+    let file_appender = rolling::daily(logs_dir, "ratatui-app.log");
     let (non_blocking_appender, guard) = non_blocking(file_appender);
 
     let file_layer = fmt::Layer::new()
@@ -15,11 +17,22 @@ pub fn init_tracing() -> WorkerGuard {
         .with_target(false)
         .with_thread_ids(true)
         .with_thread_names(true)
-        .with_filter(LevelFilter::TRACE);
+        .with_filter(log_level_filter);
 
     tracing_subscriber::registry().with(file_layer).init();
 
     info!("Tracing initialized.");
 
     guard
+}
+
+pub fn get_log_level_filter(log_level_str: Option<&str>) -> LevelFilter {
+    match log_level_str {
+        Some("error") => LevelFilter::ERROR,
+        Some("warn") => LevelFilter::WARN,
+        Some("info") => LevelFilter::INFO,
+        Some("debug") => LevelFilter::DEBUG,
+        Some("trace") => LevelFilter::TRACE,
+        _ => LevelFilter::OFF, 
+    }
 }

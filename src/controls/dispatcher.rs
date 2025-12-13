@@ -1,6 +1,6 @@
+use crossterm::event::Event;
 use crate::app::App;
 use crate::mode::AppMode;
-use crossterm::event::Event;
 use std::io;
 
 use super::display_select_mode::handle_display_type_select_keys;

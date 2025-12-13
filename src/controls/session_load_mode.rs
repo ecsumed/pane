@@ -1,51 +1,55 @@
-use crate::app::App;
+use crate::{app::App, controls::actions::Action};
 use crate::mode::AppMode;
 use crate::session::load_session_by_name;
-use crossterm::event::{self, Event, KeyCode};
+use crokey::KeyCombination;
+use crokey::crossterm::event::{self, Event};
 use std::io;
-use tracing::error;
 
-use crate::logging::info;
+use crate::logging::{info, warn, debug, error};
 
 pub async fn handle_session_load_keys(app: &mut App, event: Event) -> io::Result<()> {
     if let AppMode::SessionLoad { items, state } = &mut app.mode {
         if let Event::Key(key_event) = event {
             if key_event.kind == event::KeyEventKind::Press {
-                match key_event.code {
-                    KeyCode::Up => {
-                        if let Some(selected) = state.selected() {
-                            let next = if selected == 0 {
-                                items.len() - 1
-                            } else {
-                                selected - 1
-                            };
-                            state.select(Some(next));
-                        }
-                    }
-                    KeyCode::Down => {
-                        if let Some(selected) = state.selected() {
-                            let next = (selected + 1) % items.len();
-                            state.select(Some(next));
-                        }
-                    }
-                    KeyCode::Enter => {
-                        if let Some(selected) = state.selected() {
-                            let session_filename = items[selected].clone();
-
-                            info!("Loading session: {}", session_filename);
-
-                            if let Err(e) = load_session_by_name(app, &session_filename) {
-                                error!("Error loading session: {}", e);
-                            } else {
-                                info!("Session loaded successfully!");
+                let key_combination: KeyCombination = KeyCombination::from(key_event);
+                if let Some(action) = app.config.keybindings.get(&key_combination) {
+                    match action {
+                        Action::MoveUp => {
+                            if let Some(selected) = state.selected() {
+                                let next = if selected == 0 {
+                                    items.len() - 1
+                                } else {
+                                    selected - 1
+                                };
+                                state.select(Some(next));
                             }
                         }
-                        app.mode = AppMode::Normal;
+                        Action::MoveDown => {
+                            debug!("move down");
+                            if let Some(selected) = state.selected() {
+                                let next = (selected + 1) % items.len();
+                                state.select(Some(next));
+                            }
+                        }
+                        Action::Confirm => {
+                            if let Some(selected) = state.selected() {
+                                let session_filename = items[selected].clone();
+
+                                info!("Loading session: {}", session_filename);
+
+                                if let Err(e) = load_session_by_name(app, &session_filename) {
+                                    error!("Error loading session: {}", e);
+                                } else {
+                                    info!("Session loaded successfully!");
+                                }
+                            }
+                            app.mode = AppMode::Normal;
+                        }
+                        Action::Escape => {
+                            app.mode = AppMode::Normal;
+                        }
+                        _ => {}
                     }
-                    KeyCode::Esc => {
-                        app.mode = AppMode::Normal;
-                    }
-                    _ => {}
                 }
             }
         }
