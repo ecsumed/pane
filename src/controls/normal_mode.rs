@@ -94,7 +94,7 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
                             .app_control_tx
                             .send(AppControl::SendControl(
                                 id,
-                                CommandControl::IncreaseInterval,
+                                CommandControl::IntervalIncrease,
                             ))
                             .await
                         {
@@ -107,7 +107,7 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
                             .app_control_tx
                             .send(AppControl::SendControl(
                                 id,
-                                CommandControl::DecreaseInterval,
+                                CommandControl::IntervalDecrease,
                             ))
                             .await
                         {

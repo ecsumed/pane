@@ -91,19 +91,25 @@ impl App {
                         },
                         AppControl::SendControl(id, cmd_ctrl) => {
                             if let Some(command) = self.tasks.get_mut(&id) {
-                                match cmd_ctrl {
+                                let command_to_send = match cmd_ctrl {
+                                    CommandControl::IntervalIncrease => {
+                                        command.interval += Duration::from_secs(1);
+                                        CommandControl::IntervalSet(command.interval)
+                                    }
+                                    CommandControl::IntervalDecrease => {
+                                        command.interval = command.interval.saturating_sub(Duration::from_secs(1));
+                                        CommandControl::IntervalSet(command.interval)
+                                    }
+                                    _ => cmd_ctrl,
+                                };
+
+                                match &command_to_send {
                                     CommandControl::Pause => command.state = CommandState::Paused,
                                     CommandControl::Resume => command.state = CommandState::Running,
                                     CommandControl::Stop => command.state = CommandState::Stopped,
-                                    CommandControl::IncreaseInterval => {
-                                        command.interval += Duration::from_secs(1);
-                                    },
-                                    CommandControl::DecreaseInterval => {
-                                        command.interval -= Duration::from_secs(1);
-                                    },
                                     _ => {}
                                 }
-                                if let Err(e) = command.control_tx.send(cmd_ctrl).await {
+                                if let Err(e) = command.control_tx.send(command_to_send).await {
                                     warn!("Failed to send command control: {}", e);
                                 }
                             }

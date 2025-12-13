@@ -11,8 +11,9 @@ pub enum CommandControl {
     Resume,
     Stop,
     Pause,
-    IncreaseInterval,
-    DecreaseInterval,
+    IntervalIncrease,
+    IntervalDecrease,
+    IntervalSet(Duration),
     Execute,
 }
 
@@ -55,7 +56,6 @@ pub struct Command {
     pub control_tx: mpsc::Sender<CommandControl>,
 }
 
-// Implementations that bridge to the rest of the app might stay here or move to mod.rs/executor.rs
 impl Command {
     pub fn to_serializable_state(&self) -> CommandSerializableState {
         CommandSerializableState {
