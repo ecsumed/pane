@@ -1,6 +1,7 @@
-use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::time::Duration;
+
+use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 

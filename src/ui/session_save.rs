@@ -1,10 +1,10 @@
-use crate::mode::AppMode;
-use crate::App;
 use ratatui::layout::Position;
 use ratatui::prelude::Frame;
 use ratatui::widgets::{Block, Borders, Clear, Paragraph, Widget};
 
 use super::utils::centered_rect;
+use crate::mode::AppMode;
+use crate::App;
 
 pub fn draw_session_save_popup(frame: &mut Frame, app: &App) {
     if let AppMode::SessionSave { input } = &app.mode {

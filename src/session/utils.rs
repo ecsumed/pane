@@ -1,6 +1,7 @@
-use chrono::{DateTime, Local};
 use std::fs;
 use std::io::{self};
+
+use chrono::{DateTime, Local};
 
 use crate::config::AppConfig;
 

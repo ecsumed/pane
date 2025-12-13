@@ -1,9 +1,11 @@
-use crate::command::CommandSerializableState;
-use crate::pane::{PaneKey, PaneManager};
+use std::collections::HashMap;
+
 use serde::{de, Deserialize, Serialize};
 use serde_with::{serde_as, DeserializeAs, SerializeAs};
 use slotmap::{Key, KeyData};
-use std::collections::HashMap;
+
+use crate::command::CommandSerializableState;
+use crate::pane::{PaneKey, PaneManager};
 
 pub struct PaneKeyAsString;
 

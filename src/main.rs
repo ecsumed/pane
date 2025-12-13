@@ -1,9 +1,11 @@
+use std::io::{self, stdout};
+
 use crokey::crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
 use crokey::crossterm::ExecutableCommand;
-use ratatui::{backend::CrosstermBackend, Terminal};
-use std::io::{self, stdout};
+use ratatui::backend::CrosstermBackend;
+use ratatui::Terminal;
 
 use crate::app::App;
 use crate::logging::info;
@@ -12,8 +14,8 @@ mod app;
 mod command;
 mod config;
 mod controls;
-mod logging;
 mod history;
+mod logging;
 mod mode;
 mod pane;
 mod session;
@@ -38,16 +40,14 @@ fn restore() -> io::Result<()> {
 #[tokio::main]
 async fn main() -> io::Result<()> {
     let config = match config::AppConfig::load() {
-        Ok(cfg) => {
-            cfg
-        }
+        Ok(cfg) => cfg,
         Err(e) => {
             eprintln!("Failed to load configuration: {}", e);
             std::process::exit(1);
         }
     };
 
-    let log_level_filter = logging::get_log_level_filter(config.log_level.as_deref()); 
+    let log_level_filter = logging::get_log_level_filter(config.log_level.as_deref());
     let _guard = logging::init_tracing(log_level_filter, &config.logs_dir);
 
     info!("Application starting up.");

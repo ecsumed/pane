@@ -1,5 +1,8 @@
+use ratatui::layout::Rect;
+use ratatui::widgets::Block;
+use ratatui::Frame;
+
 use crate::command::Command;
-use ratatui::{layout::Rect, widgets::Block, Frame};
 
 pub mod multiline;
 pub mod raw_text;

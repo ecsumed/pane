@@ -1,20 +1,20 @@
+use std::io;
+
+use crokey::crossterm::event::{self, Event};
+use crokey::KeyCombination;
+use ratatui::layout::Direction;
+
+use super::actions::Action;
 use crate::app::{App, AppControl};
 use crate::command::CommandControl;
+use crate::logging::{debug, error, info, warn};
 use crate::mode::AppMode;
 use crate::pane::CardinalDirection;
 use crate::session::{load_latest_session, save_session};
-use crokey::KeyCombination;
-use crokey::crossterm::event::{self, Event};
-use ratatui::layout::Direction;
-use std::io;
-use crate::logging::{info, warn, debug, error};
-
-use super::actions::Action;
 
 pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<()> {
     if let Event::Key(key_event) = event {
         if key_event.kind == event::KeyEventKind::Press {
-
             let key_combination: KeyCombination = KeyCombination::from(key_event);
             if let Some(action) = app.config.keybindings.get(&key_combination) {
                 match action {
@@ -154,10 +154,10 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
                     Action::PaneDecreaseHorizontal => {
                         app.pane_manager.resize_pane(&CardinalDirection::Up, -1);
                     }
-                    _ => ()
+                    _ => (),
                 }
-            //}
-        }
+                //}
+            }
         }
     }
     Ok(())

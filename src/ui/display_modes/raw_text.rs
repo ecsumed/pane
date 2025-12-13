@@ -1,8 +1,9 @@
-use ratatui::{layout::Rect, widgets::Paragraph, Frame};
-
-use crate::command::Command;
+use ratatui::layout::Rect;
+use ratatui::widgets::Paragraph;
+use ratatui::Frame;
 
 use super::DisplayType;
+use crate::command::Command;
 
 pub fn render(frame: &mut Frame, area: Rect, cmd: &Command) {
     let mut widget = Paragraph::new(cmd.last_output.as_str());

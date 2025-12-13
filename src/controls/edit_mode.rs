@@ -1,14 +1,15 @@
-use crate::app::{App, AppControl};
-use crate::history::HistoryManager;
-use crate::controls::actions::Action;
-use crate::mode::AppMode;
+use std::{io, mem};
+
 use crossterm::event::{self, Event};
 use ratatui::widgets::ListState;
-use std::{io, mem};
 use tui_input::backend::crossterm::EventHandler;
 use tui_input::Input;
 
+use crate::app::{App, AppControl};
+use crate::controls::actions::Action;
+use crate::history::HistoryManager;
 use crate::logging::{debug, warn};
+use crate::mode::AppMode;
 
 fn update_suggestions(
     input: &mut Input,

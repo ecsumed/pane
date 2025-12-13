@@ -1,10 +1,9 @@
-use super::models::SessionState;
-use super::utils::generate_session_filename;
-
-use crate::app::App;
-
 use std::fs;
 use std::io::{self, ErrorKind};
+
+use super::models::SessionState;
+use super::utils::generate_session_filename;
+use crate::app::App;
 
 pub fn save_session_by_name(app: &App, session_filename: &str) -> io::Result<()> {
     let session_state = SessionState {

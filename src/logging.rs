@@ -1,11 +1,12 @@
 use std::path::PathBuf;
 
-use tracing_appender::non_blocking;
-use tracing_appender::non_blocking::WorkerGuard;
-use tracing_appender::rolling;
-use tracing_subscriber::{filter::LevelFilter, fmt, prelude::*, util::SubscriberInitExt};
-
 pub use tracing::{debug, error, info, warn};
+use tracing_appender::non_blocking::WorkerGuard;
+use tracing_appender::{non_blocking, rolling};
+use tracing_subscriber::filter::LevelFilter;
+use tracing_subscriber::fmt;
+use tracing_subscriber::prelude::*;
+use tracing_subscriber::util::SubscriberInitExt;
 
 pub fn init_tracing(log_level_filter: LevelFilter, logs_dir: &PathBuf) -> WorkerGuard {
     let file_appender = rolling::daily(logs_dir, "ratatui-app.log");
@@ -33,6 +34,6 @@ pub fn get_log_level_filter(log_level_str: Option<&str>) -> LevelFilter {
         Some("info") => LevelFilter::INFO,
         Some("debug") => LevelFilter::DEBUG,
         Some("trace") => LevelFilter::TRACE,
-        _ => LevelFilter::OFF, 
+        _ => LevelFilter::OFF,
     }
 }

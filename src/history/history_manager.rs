@@ -1,8 +1,7 @@
-use crate::logging::{debug, warn};
-use std::env;
-use std::fs;
-use std::io;
 use std::path::PathBuf;
+use std::{env, fs, io};
+
+use crate::logging::{debug, warn};
 
 #[derive(Debug, Clone)]
 pub struct HistoryManager {

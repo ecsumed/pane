@@ -9,7 +9,12 @@ use crate::pane::PaneKey;
 use crate::ui::DisplayType;
 
 impl Command {
-    pub fn spawn(id: PaneKey, exec: String, interval: Duration, output_tx: mpsc::Sender<(PaneKey, String)>) -> Self {
+    pub fn spawn(
+        id: PaneKey,
+        exec: String,
+        interval: Duration,
+        output_tx: mpsc::Sender<(PaneKey, String)>,
+    ) -> Self {
         let (control_tx, control_rx) = mpsc::channel(1);
 
         let cmd = exec.clone();
@@ -46,7 +51,7 @@ impl Command {
 
         for (id, state) in tasks_state {
             let new_cmd = Self::spawn_from_state(id, state, output_tx.clone());
-            
+
             info!("Restarting command for id: {:?}", id);
             running_tasks.insert(id, new_cmd);
         }
@@ -60,21 +65,13 @@ impl Command {
         output_tx: mpsc::Sender<(PaneKey, String)>,
     ) -> Command {
         let (control_tx, control_rx) = mpsc::channel(1);
-        
+
         let interval = state.interval;
         let exec = state.exec.clone();
         let cmd_state = state.state;
 
         let task_handle = tokio::spawn(async move {
-            Self::run_command_task(
-                id,
-                exec,
-                interval,
-                cmd_state,
-                control_rx,
-                output_tx,
-            )
-            .await;
+            Self::run_command_task(id, exec, interval, cmd_state, control_rx, output_tx).await;
         });
 
         Command {
@@ -110,7 +107,10 @@ impl Command {
         }
 
         if let Err(e) = self.control_tx.send(worker_instruction).await {
-            warn!("Task {:?} is no longer running. Cannot send {:?}: {e}", id, worker_instruction);
+            warn!(
+                "Task {:?} is no longer running. Cannot send {:?}: {e}",
+                id, worker_instruction
+            );
         }
     }
 
@@ -122,7 +122,7 @@ impl Command {
             self.output_history.remove(0);
         }
     }
-    
+
     pub fn update_display(&mut self, display: DisplayType) {
         self.display_type = display;
     }

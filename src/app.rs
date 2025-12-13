@@ -1,23 +1,24 @@
+use std::collections::HashMap;
+use std::io::{self, Result};
+use std::time::Duration;
+
 use crokey::Combiner;
 use crossterm::event::EventStream;
+use futures::{FutureExt, StreamExt};
 use ratatui::backend::CrosstermBackend;
 use ratatui::layout::Rect;
 use ratatui::Terminal;
-use std::collections::HashMap;
-use std::time::Duration;
 use tokio::sync::mpsc::{self};
 use tokio::time::interval;
+
 use crate::command::{Command, CommandControl, CommandSerializableState, CommandState};
 use crate::config::AppConfig;
 use crate::controls;
+use crate::logging::{info, warn};
 use crate::mode::AppMode;
 use crate::pane::{PaneKey, PaneManager};
-use crate::ui::DisplayType;
-use futures::{FutureExt, StreamExt};
-use std::io::{self, Result};
-
-use crate::logging::{info, warn};
 use crate::ui::draw::draw_ui;
+use crate::ui::DisplayType;
 
 type DefaultTerminal = Terminal<CrosstermBackend<std::io::Stdout>>;
 
@@ -117,10 +118,12 @@ impl App {
 
     pub async fn set_command(&mut self, id: PaneKey, exec: String) {
         if let Some(old) = self.tasks.insert(
-            id, 
-            Command::spawn(id, exec, self.config.interval, self.output_tx.clone())
+            id,
+            Command::spawn(id, exec, self.config.interval, self.output_tx.clone()),
         ) {
-            if let Some(h) = old.task_handle { h.abort(); }
+            if let Some(h) = old.task_handle {
+                h.abort();
+            }
         }
     }
 
@@ -129,14 +132,11 @@ impl App {
         pane_manager: PaneManager,
         tasks_state: HashMap<PaneKey, CommandSerializableState>,
     ) -> io::Result<()> {
-        let running_tasks = Command::restore_tasks(
-            tasks_state, 
-            self.output_tx.clone()
-        );
-    
+        let running_tasks = Command::restore_tasks(tasks_state, self.output_tx.clone());
+
         self.pane_manager = pane_manager;
         self.tasks = running_tasks;
-    
+
         Ok(())
     }
 }

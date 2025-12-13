@@ -1,11 +1,13 @@
-use crokey::KeyCombination;
-use directories::ProjectDirs;
-use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fmt};
+use std::collections::HashMap;
+use std::fmt;
 use std::path::PathBuf;
 use std::time::Duration;
 
-use super::utils::{app_name, get_home_dir, deserialize_duration };
+use crokey::KeyCombination;
+use directories::ProjectDirs;
+use serde::{Deserialize, Serialize};
+
+use super::utils::{app_name, deserialize_duration, get_home_dir};
 use crate::controls::actions::Action;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -24,7 +26,11 @@ impl fmt::Display for AppConfig {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "Configuration loaded successfully:")?;
         writeln!(f, "  Interval: {:?}", self.interval)?;
-        writeln!(f, "  Log Level: {}", self.log_level.as_deref().unwrap_or("N/A"))?;
+        writeln!(
+            f,
+            "  Log Level: {}",
+            self.log_level.as_deref().unwrap_or("N/A")
+        )?;
         writeln!(f, "  Logs Directory: {:?}", self.logs_dir)?;
         writeln!(f, "  Sessions Directory: {:?}", self.sessions_dir)?;
         writeln!(f, "  Snapshot Directory: {:?}", self.snapshot_dir)?;
@@ -32,7 +38,7 @@ impl fmt::Display for AppConfig {
         writeln!(f, "  Keys:")?;
 
         for (combination, action) in self.keybindings.iter() {
-            let key_str = format!("{:?}", combination.codes); 
+            let key_str = format!("{:?}", combination.codes);
             writeln!(f, "    Key: {:<12} -> Action: {:?}", key_str, action)?;
         }
         Ok(())
@@ -51,14 +57,8 @@ impl AppConfig {
                 "interval",
                 default_config.interval.as_secs().to_string() + "s",
             )?
-            .set_default(
-                "log_level",
-                default_config.log_level,
-            )?
-            .set_default(
-                "logs_dir",
-                default_config.logs_dir.to_str().unwrap_or(""),
-            )?
+            .set_default("log_level", default_config.log_level)?
+            .set_default("logs_dir", default_config.logs_dir.to_str().unwrap_or(""))?
             .set_default(
                 "sessions_dir",
                 default_config.sessions_dir.to_str().unwrap_or(""),

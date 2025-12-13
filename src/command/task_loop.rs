@@ -1,8 +1,9 @@
 use std::time::Duration;
+
 use tokio::sync::mpsc;
 use tokio::time::{self, MissedTickBehavior};
 
-use super::{CommandControl, CommandState, Command};
+use super::{Command, CommandControl, CommandState};
 use crate::logging::{info, warn};
 use crate::pane::PaneKey;
 
@@ -35,7 +36,7 @@ impl Command {
                             tick_interval.set_missed_tick_behavior(MissedTickBehavior::Skip);
                             info!("Pane {:?} interval set to {:?}", id, duration);
                         }
-        
+
                         CommandControl::Pause => { info!("Pane {:?} paused", id); is_paused = true; }
                         CommandControl::Resume => {
                             info!("Pane {:?} resumed", id);

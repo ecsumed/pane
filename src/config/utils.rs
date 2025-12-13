@@ -1,9 +1,8 @@
-use serde::{de, Deserializer, Deserialize};
 use std::path::PathBuf;
 use std::time::Duration;
 
 use directories::ProjectDirs;
-
+use serde::{de, Deserialize, Deserializer};
 
 pub fn app_name() -> &'static str {
     env!("CARGO_PKG_NAME")

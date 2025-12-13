@@ -1,11 +1,13 @@
-use crate::{app::App, controls::actions::Action};
-use crate::mode::AppMode;
-use crate::session::load_session_by_name;
-use crokey::KeyCombination;
-use crokey::crossterm::event::{self, Event};
 use std::io;
 
-use crate::logging::{info, warn, debug, error};
+use crokey::crossterm::event::{self, Event};
+use crokey::KeyCombination;
+
+use crate::app::App;
+use crate::controls::actions::Action;
+use crate::logging::{debug, error, info, warn};
+use crate::mode::AppMode;
+use crate::session::load_session_by_name;
 
 pub async fn handle_session_load_keys(app: &mut App, event: Event) -> io::Result<()> {
     if let AppMode::SessionLoad { items, state } = &mut app.mode {

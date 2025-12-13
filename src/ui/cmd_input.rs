@@ -1,8 +1,9 @@
-use crate::mode::AppMode;
-use crate::App;
 use ratatui::prelude::{Frame, Rect};
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Widget};
+
+use crate::mode::AppMode;
+use crate::App;
 
 pub fn draw_input_popup(frame: &mut Frame, app: &mut App) {
     if let AppMode::CmdEdit {

@@ -1,10 +1,9 @@
+use ratatui::layout::Rect;
+use ratatui::text::{Line, Text};
+use ratatui::widgets::Paragraph;
+use ratatui::Frame;
+
 use crate::command::Command;
-use ratatui::{
-    layout::Rect,
-    text::{Line, Text},
-    widgets::Paragraph,
-    Frame,
-};
 
 pub fn render(frame: &mut Frame, area: Rect, command: &Command) {
     let history_lines: Vec<Line> = command

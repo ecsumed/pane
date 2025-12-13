@@ -1,6 +1,7 @@
+use std::cmp::min;
+
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::Rect;
-use std::cmp::min;
 
 pub fn centered_rect(percent_x: u16, frame_area: Rect, min_height: u16) -> Rect {
     let final_height = min(min_height, frame_area.height);

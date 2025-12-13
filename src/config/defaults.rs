@@ -1,14 +1,12 @@
 use std::collections::HashMap;
 use std::time::Duration;
 
-use crate::config::utils::default_logging_dir_path;
-use crate::controls::actions::Action;
 use crokey::{key, KeyCombination};
 
-use super::utils::{default_snapshot_dir_path, default_sessions_dir_path};
-
+use super::utils::{app_name, default_sessions_dir_path, default_snapshot_dir_path};
 use super::AppConfig;
-use super::utils::app_name;
+use crate::config::utils::default_logging_dir_path;
+use crate::controls::actions::Action;
 
 pub const DEFAULT_INTERVAL_SECS: u64 = 5;
 pub const LOG_LEVEL: Option<String> = None;
@@ -56,7 +54,7 @@ impl Default for AppConfig {
             logs_dir: default_logging_dir_path(&proj_dirs),
             sessions_dir: default_sessions_dir_path(&proj_dirs),
             snapshot_dir: default_snapshot_dir_path(&proj_dirs),
-            keybindings:default_keybindings(),
+            keybindings: default_keybindings(),
         }
     }
 }
