@@ -4,6 +4,7 @@ use tokio::sync::mpsc;
 use tokio::time::{self, MissedTickBehavior};
 
 use super::{Command, CommandControl, CommandState};
+use crate::command::CommandOutput;
 use crate::logging::{info, warn};
 use crate::pane::PaneKey;
 
@@ -14,7 +15,7 @@ impl Command {
         interval: Duration,
         state: CommandState,
         mut control_rx: mpsc::Receiver<CommandControl>,
-        output_tx: tokio::sync::mpsc::Sender<(PaneKey, String)>,
+        output_tx: tokio::sync::mpsc::Sender<(PaneKey, CommandOutput)>,
     ) {
         let interval_duration = interval;
         let mut tick_interval = time::interval(interval);

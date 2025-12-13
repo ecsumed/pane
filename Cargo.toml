@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-chrono = "0.4.42"
+chrono = { version = "0.4.42", features = ["serde"]}
 color-eyre = "0.6.3"
 config = "0.13"
 crokey = { git = "https://github.com/Canop/crokey", rev = "fe682ca1d5f5f3b324380511983c395f7a18836a"}

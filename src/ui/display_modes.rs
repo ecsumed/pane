@@ -7,6 +7,7 @@ use crate::command::Command;
 pub mod multiline;
 pub mod raw_text;
 pub mod types;
+mod utils;
 
 pub use types::DisplayType;
 
@@ -19,7 +20,7 @@ pub fn render_command_output(frame: &mut Frame, area: Rect, command: &Command, b
         DisplayType::RawText | DisplayType::RawWrapped => {
             raw_text::render(frame, inner_area, command);
         }
-        DisplayType::MultiLine => {
+        DisplayType::MultiLine | DisplayType::MultiLineTime | DisplayType::MultiLineDateTime => {
             multiline::render(frame, inner_area, command);
         }
     }

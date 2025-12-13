@@ -1,10 +1,12 @@
 use std::io;
 use std::process::Stdio;
 
+use chrono::{Local, NaiveDateTime};
 use tokio::io::{AsyncReadExt, BufReader};
 use tokio::process::Command as SysCommand;
 use tokio::sync::mpsc;
 
+use crate::command::CommandOutput;
 use crate::logging::warn;
 use crate::pane::PaneKey;
 
@@ -12,7 +14,7 @@ impl super::Command {
     pub async fn run_and_send_output(
         id: PaneKey,
         exec: &str,
-        output_tx: mpsc::Sender<(PaneKey, String)>,
+        output_tx: mpsc::Sender<(PaneKey, CommandOutput)>,
     ) -> Result<(), io::Error> {
         let mut command = SysCommand::new("sh")
             .arg("-c")
@@ -44,7 +46,13 @@ impl super::Command {
             )
         };
 
-        if let Err(e) = output_tx.send((id, output_message)).await {
+        let now_datetime: NaiveDateTime = Local::now().naive_local();
+        let cmd_output = CommandOutput{
+            output: output_message,
+            time: now_datetime,
+        };
+
+        if let Err(e) = output_tx.send((id, cmd_output)).await {
             warn!("Failed to send output for pane {:?}: {}", id, e);
         }
 

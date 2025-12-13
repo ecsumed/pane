@@ -11,7 +11,7 @@ use ratatui::Terminal;
 use tokio::sync::mpsc::{self};
 use tokio::time::interval;
 
-use crate::command::{Command, CommandControl, CommandSerializableState};
+use crate::command::{Command, CommandControl, CommandOutput, CommandSerializableState};
 use crate::config::AppConfig;
 use crate::controls;
 use crate::mode::AppMode;
@@ -34,8 +34,8 @@ pub struct App {
     pub mode: AppMode,
     pub exit: bool,
     pub combiner: Combiner,
-    pub output_rx: mpsc::Receiver<(PaneKey, String)>,
-    pub output_tx: mpsc::Sender<(PaneKey, String)>,
+    pub output_rx: mpsc::Receiver<(PaneKey, CommandOutput)>,
+    pub output_tx: mpsc::Sender<(PaneKey, CommandOutput)>,
     pub app_control_tx: mpsc::Sender<AppControl>,
     pub app_control_rx: mpsc::Receiver<AppControl>,
     pub config: AppConfig,
@@ -75,7 +75,7 @@ impl App {
             tokio::select! {
                 Some((id, output)) = self.output_rx.recv() => {
                     if let Some(command) = self.tasks.get_mut(&id) {
-                        command.record_output(output);
+                        command.record_output(output, self.config.max_history);
                     }
                 },
 

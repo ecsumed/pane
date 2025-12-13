@@ -4,12 +4,24 @@ use ratatui::widgets::Paragraph;
 use ratatui::Frame;
 
 use crate::command::Command;
+use crate::ui::DisplayType;
 
 pub fn render(frame: &mut Frame, area: Rect, command: &Command) {
     let history_lines: Vec<Line> = command
         .output_history
         .iter()
-        .map(|s| Line::from(s.as_str()))
+        .map(|entry| {
+            let content = match command.display_type {
+                DisplayType::MultiLineDateTime => {
+                    format!("[{}] {}", entry.time.format("%Y-%m-%d %H:%M:%S"), entry.output)
+                }
+                DisplayType::MultiLineTime => {
+                    format!("[{}] {}", entry.time.format("%H:%M:%S"), entry.output)
+                }
+                _ => entry.output.clone(),
+            };
+            Line::from(content)
+        })
         .collect();
 
     let total_lines = history_lines.len();

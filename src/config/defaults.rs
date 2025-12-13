@@ -8,8 +8,9 @@ use super::AppConfig;
 use crate::config::utils::default_logging_dir_path;
 use crate::controls::actions::Action;
 
-pub const DEFAULT_INTERVAL_SECS: u64 = 5;
-pub const LOG_LEVEL: Option<String> = None;
+const INTERVAL_SECS: u64 = 5;
+const MAX_HISTORY: usize = 1000;
+const LOG_LEVEL: Option<String> = None;
 
 pub fn default_keybindings() -> HashMap<KeyCombination, Action> {
     HashMap::from([
@@ -49,8 +50,9 @@ impl Default for AppConfig {
         let proj_dirs = ProjectDirs::from("io", app_name(), app_name());
 
         AppConfig {
-            interval: Duration::from_secs(DEFAULT_INTERVAL_SECS),
+            interval: Duration::from_secs(INTERVAL_SECS),
             log_level: LOG_LEVEL,
+            max_history: MAX_HISTORY,
             logs_dir: default_logging_dir_path(&proj_dirs),
             sessions_dir: default_sessions_dir_path(&proj_dirs),
             snapshot_dir: default_snapshot_dir_path(&proj_dirs),

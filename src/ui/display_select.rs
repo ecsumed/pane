@@ -1,10 +1,10 @@
-use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Widget};
 use ratatui::Frame;
 
 use crate::app::App;
 use crate::mode::AppMode;
+use crate::ui::utils::centered_rect;
 
 pub fn draw_display_type_select(frame: &mut Frame, app: &mut App) {
     if let AppMode::DisplayTypeSelect { items, state } = &mut app.mode {
@@ -15,26 +15,8 @@ pub fn draw_display_type_select(frame: &mut Frame, app: &mut App) {
             .map(|dt| ListItem::new(format!("{:?}", dt)))
             .collect::<Vec<_>>();
 
-        const POPUP_HEIGHT: u16 = 6;
-        const POPUP_WIDTH: u16 = 60;
-
-        let popup_area = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Percentage((100 - POPUP_HEIGHT) / 2),
-                Constraint::Length(POPUP_HEIGHT),
-                Constraint::Percentage((100 - POPUP_HEIGHT) / 2),
-            ])
-            .split(area)[1];
-
-        let popup_area = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([
-                Constraint::Percentage((100 - POPUP_WIDTH) / 2),
-                Constraint::Length(POPUP_WIDTH),
-                Constraint::Percentage((100 - POPUP_WIDTH) / 2),
-            ])
-            .split(popup_area)[1];
+        let percent_x = 60;
+        let popup_area = centered_rect(percent_x, area, 7);
 
         Clear.render(popup_area, frame.buffer_mut());
 

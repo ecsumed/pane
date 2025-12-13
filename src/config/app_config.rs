@@ -15,6 +15,7 @@ use crate::controls::actions::Action;
 pub struct AppConfig {
     #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
+    pub max_history: usize,
     pub sessions_dir: PathBuf,
     pub snapshot_dir: PathBuf,
     pub logs_dir: PathBuf,
@@ -26,6 +27,7 @@ impl fmt::Display for AppConfig {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "Configuration loaded successfully:")?;
         writeln!(f, "  Interval: {:?}", self.interval)?;
+        writeln!(f, "  Max History: {}", self.max_history)?;
         writeln!(
             f,
             "  Log Level: {}",
@@ -56,6 +58,10 @@ impl AppConfig {
             .set_default(
                 "interval",
                 default_config.interval.as_secs().to_string() + "s",
+            )?
+            .set_default(
+                "max_history",
+                default_config.max_history as i64,
             )?
             .set_default("log_level", default_config.log_level)?
             .set_default("logs_dir", default_config.logs_dir.to_str().unwrap_or(""))?

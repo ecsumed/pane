@@ -1,6 +1,8 @@
+use std::collections::VecDeque;
 use std::fmt;
 use std::time::Duration;
 
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
@@ -39,8 +41,7 @@ impl fmt::Display for CommandState {
 pub struct CommandSerializableState {
     pub exec: String,
     pub interval: Duration,
-    pub output_history: Vec<String>,
-    pub last_output: String,
+    pub output_history: VecDeque<CommandOutput>,
     pub state: CommandState,
     pub display_type: DisplayType,
 }
@@ -49,12 +50,17 @@ pub struct CommandSerializableState {
 pub struct Command {
     pub exec: String,
     pub interval: Duration,
-    pub output_history: Vec<String>,
-    pub last_output: String,
+    pub output_history: VecDeque<CommandOutput>,
     pub state: CommandState,
     pub display_type: DisplayType,
     pub task_handle: Option<JoinHandle<()>>,
     pub control_tx: mpsc::Sender<CommandControl>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CommandOutput {
+    pub output: String,
+    pub time: NaiveDateTime,
 }
 
 impl Command {
@@ -63,7 +69,6 @@ impl Command {
             exec: self.exec.clone(),
             interval: self.interval,
             output_history: self.output_history.clone(),
-            last_output: self.last_output.clone(),
             state: self.state,
             display_type: self.display_type,
         }
