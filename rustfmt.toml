@@ -1,0 +1,5 @@
+# Group imports into: std, external crates, and local crate items
+group_imports = "StdExternalCrate"
+
+# Merge imports from the same module into a single line
+imports_granularity = "Module"

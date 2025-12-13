@@ -3,7 +3,7 @@ use strum::IntoEnumIterator;
 use tui_input::Input;
 
 use crate::app::App;
-use crate::command::HistoryManager;
+use crate::history::HistoryManager;
 use crate::session;
 use crate::ui::DisplayType;
 

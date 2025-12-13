@@ -75,8 +75,7 @@ impl App {
             tokio::select! {
                 Some((id, output)) = self.output_rx.recv() => {
                     if let Some(command) = self.tasks.get_mut(&id) {
-                        command.last_output = output;
-                        command.output_history.push(command.last_output.clone());
+                        command.record_output(output);
                     }
                 },
 
@@ -91,32 +90,12 @@ impl App {
                         },
                         AppControl::SendControl(id, cmd_ctrl) => {
                             if let Some(command) = self.tasks.get_mut(&id) {
-                                let command_to_send = match cmd_ctrl {
-                                    CommandControl::IntervalIncrease => {
-                                        command.interval += Duration::from_secs(1);
-                                        CommandControl::IntervalSet(command.interval)
-                                    }
-                                    CommandControl::IntervalDecrease => {
-                                        command.interval = command.interval.saturating_sub(Duration::from_secs(1));
-                                        CommandControl::IntervalSet(command.interval)
-                                    }
-                                    _ => cmd_ctrl,
-                                };
-
-                                match &command_to_send {
-                                    CommandControl::Pause => command.state = CommandState::Paused,
-                                    CommandControl::Resume => command.state = CommandState::Running,
-                                    CommandControl::Stop => command.state = CommandState::Stopped,
-                                    _ => {}
-                                }
-                                if let Err(e) = command.control_tx.send(command_to_send).await {
-                                    warn!("Failed to send command control: {}", e);
-                                }
+                                command.handle_control_signal(id, cmd_ctrl).await;
                             }
                         }
                         AppControl::SetDisplay(id, display) => {
                             if let Some(command) = self.tasks.get_mut(&id) {
-                                command.display_type = display;
+                                command.update_display(display);
                             }
                         }
                     }
@@ -137,41 +116,12 @@ impl App {
     }
 
     pub async fn set_command(&mut self, id: PaneKey, exec: String) {
-        if let Some(mut existing_cmd) = self.tasks.remove(&id) {
-            if let Some(handle) = existing_cmd.task_handle.take() {
-                handle.abort();
-            }
+        if let Some(old) = self.tasks.insert(
+            id, 
+            Command::spawn(id, exec, self.config.interval, self.output_tx.clone())
+        ) {
+            if let Some(h) = old.task_handle { h.abort(); }
         }
-
-        let (control_tx, control_rx) = mpsc::channel(1);
-        let output_tx_clone = self.output_tx.clone();
-        let interval = self.config.interval;
-
-        let cmd = exec.clone();
-        let task_handle = tokio::spawn(async move {
-            Command::run_command_task(
-                id,
-                cmd,
-                interval,
-                CommandState::Running,
-                control_rx,
-                output_tx_clone,
-            )
-            .await;
-        });
-
-        info!("Adding new command: {}", &exec);
-        let new_cmd = Command {
-            exec,
-            interval,
-            output_history: Vec::new(),
-            last_output: String::new(),
-            state: CommandState::Running,
-            display_type: DisplayType::default(),
-            task_handle: Some(task_handle),
-            control_tx,
-        };
-        self.tasks.insert(id, new_cmd);
     }
 
     pub fn load_session(
@@ -179,43 +129,14 @@ impl App {
         pane_manager: PaneManager,
         tasks_state: HashMap<PaneKey, CommandSerializableState>,
     ) -> io::Result<()> {
-        let mut running_tasks = HashMap::new();
-
-        for (id, state) in tasks_state.into_iter() {
-            let (control_tx, control_rx) = mpsc::channel(1);
-            let output_tx_clone = self.output_tx.clone(); // Clone the sender for the new task
-            let interval = state.interval;
-            let cmd_exec = state.exec.clone();
-            let cmd_state = state.state;
-            let task_handle = tokio::spawn(async move {
-                Command::run_command_task(
-                    id,
-                    cmd_exec,
-                    interval,
-                    cmd_state,
-                    control_rx,
-                    output_tx_clone,
-                )
-                .await;
-            });
-
-            info!("Restarting command for id: {:?}", id);
-            let new_cmd = Command {
-                exec: state.exec,
-                interval,
-                output_history: state.output_history,
-                last_output: state.last_output,
-                state: state.state,
-                display_type: state.display_type,
-                task_handle: Some(task_handle),
-                control_tx,
-            };
-            running_tasks.insert(id, new_cmd);
-        }
-
+        let running_tasks = Command::restore_tasks(
+            tasks_state, 
+            self.output_tx.clone()
+        );
+    
         self.pane_manager = pane_manager;
         self.tasks = running_tasks;
-
+    
         Ok(())
     }
 }

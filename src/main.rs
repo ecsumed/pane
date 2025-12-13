@@ -13,6 +13,7 @@ mod command;
 mod config;
 mod controls;
 mod logging;
+mod history;
 mod mode;
 mod pane;
 mod session;

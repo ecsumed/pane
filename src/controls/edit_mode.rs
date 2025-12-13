@@ -1,5 +1,5 @@
 use crate::app::{App, AppControl};
-use crate::command::HistoryManager;
+use crate::history::HistoryManager;
 use crate::controls::actions::Action;
 use crate::mode::AppMode;
 use crossterm::event::{self, Event};
