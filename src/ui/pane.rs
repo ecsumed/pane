@@ -27,12 +27,10 @@ fn create_pane_block<'a>(
     };
 
     let title_left = Line::from(vec![
-        " Command ".into(),
+        "Every ".into(),
+        interval_secs_str.dark_gray().bold(),
+        "s: ".dark_gray().bold(),
         exec_str.blue().bold(),
-        " ".into(),
-        " Interval ".into(),
-        interval_secs_str.blue().bold(),
-        "s".blue().bold(),
     ]);
 
     let title_right = Line::from(vec![" State ".into(), state_str.blue().bold()]);
