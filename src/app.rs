@@ -11,10 +11,9 @@ use ratatui::Terminal;
 use tokio::sync::mpsc::{self};
 use tokio::time::interval;
 
-use crate::command::{Command, CommandControl, CommandSerializableState, CommandState};
+use crate::command::{Command, CommandControl, CommandSerializableState};
 use crate::config::AppConfig;
 use crate::controls;
-use crate::logging::{info, warn};
 use crate::mode::AppMode;
 use crate::pane::{PaneKey, PaneManager};
 use crate::ui::draw::draw_ui;

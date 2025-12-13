@@ -7,7 +7,7 @@ use ratatui::layout::Direction;
 use super::actions::Action;
 use crate::app::{App, AppControl};
 use crate::command::CommandControl;
-use crate::logging::{debug, error, info, warn};
+use crate::logging::{error, info, warn};
 use crate::mode::AppMode;
 use crate::pane::CardinalDirection;
 use crate::session::{load_latest_session, save_session};

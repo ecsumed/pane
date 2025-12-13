@@ -123,13 +123,6 @@ impl PaneManager {
         Ok(())
     }
 
-    pub fn get_root_pane_key(&self) -> Option<PaneKey> {
-        self.nodes
-            .iter()
-            .find(|(_, node)| node.parent.is_none())
-            .map(|(key, _)| key)
-    }
-
     pub fn pane_key_to_friendly_id(&self, node_key: &PaneKey) -> Option<usize> {
         self.pane_key_to_friendly_id.get(node_key).copied()
     }
@@ -409,72 +402,6 @@ impl PaneManager {
                 continue;
             }
         }
-    }
-
-    // Private helper to perform the actual resize on a known split.
-    fn resize_in_split(
-        &mut self,
-        split_id: PaneKey,
-        active_id: PaneKey,
-        amount: i8,
-        direction: &CardinalDirection,
-    ) -> bool {
-        let parent_node = self.nodes.get(split_id).expect("Split exists");
-        let children = parent_node
-            .data
-            .get_children()
-            .expect("Split must have children");
-        let active_index = children
-            .iter()
-            .position(|&id| id == active_id)
-            .expect("Active pane in split");
-
-        let mut delta = 0;
-        let mut sibling_id: Option<PaneKey> = None;
-
-        match (direction, parent_node.data.get_direction()) {
-            (CardinalDirection::Left, Some(Direction::Vertical)) if active_index > 0 => {
-                sibling_id = Some(children[active_index - 1]);
-                delta = -amount as i16;
-            }
-            (CardinalDirection::Right, Some(Direction::Vertical))
-                if active_index < children.len() - 1 =>
-            {
-                sibling_id = Some(children[active_index + 1]);
-                delta = amount as i16;
-            }
-            (CardinalDirection::Up, Some(Direction::Horizontal)) if active_index > 0 => {
-                sibling_id = Some(children[active_index - 1]);
-                delta = -amount as i16;
-            }
-            (CardinalDirection::Down, Some(Direction::Horizontal))
-                if active_index < children.len() - 1 =>
-            {
-                sibling_id = Some(children[active_index + 1]);
-                delta = amount as i16;
-            }
-            _ => return false,
-        }
-
-        if let Some(sibling_id) = sibling_id {
-            let current_weight_active = self.nodes[active_id].weight as i16;
-            let current_weight_sibling = self.nodes[sibling_id].weight as i16;
-
-            let new_active_weight_signed = current_weight_active + delta;
-            let new_sibling_weight_signed = current_weight_sibling - delta;
-
-            let final_active_weight = new_active_weight_signed.max(1) as u16;
-            let final_sibling_weight = new_sibling_weight_signed.max(1) as u16;
-
-            if final_active_weight != current_weight_active as u16
-                || final_sibling_weight != current_weight_sibling as u16
-            {
-                self.nodes.get_mut(active_id).unwrap().weight = final_active_weight;
-                self.nodes.get_mut(sibling_id).unwrap().weight = final_sibling_weight;
-                return true;
-            }
-        }
-        false
     }
 
     pub fn get_pane_bounds(&self, total_size: Rect) -> BTreeMap<PaneKey, Rect> {

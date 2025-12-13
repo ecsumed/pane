@@ -5,7 +5,7 @@ use crokey::KeyCombination;
 
 use crate::app::App;
 use crate::controls::actions::Action;
-use crate::logging::{debug, error, info, warn};
+use crate::logging::{debug, error, info};
 use crate::mode::AppMode;
 use crate::session::load_session_by_name;
 
