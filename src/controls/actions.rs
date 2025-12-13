@@ -6,6 +6,7 @@ pub enum Action {
     CyclePanes,
     EnterCmdMode,
     EnterDisplaySelectMode,
+    EnterHelpMode,
     EnterSessionLoadMode,
     EnterSessionSaveMode,
     Escape,

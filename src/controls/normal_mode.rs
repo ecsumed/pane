@@ -154,6 +154,10 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
                     Action::PaneDecreaseHorizontal => {
                         app.pane_manager.resize_pane(&CardinalDirection::Up, -1);
                     }
+                    Action::EnterHelpMode => {
+                        info!("Help mode");
+                        app.mode = AppMode::Help;
+                    }
                     _ => (),
                 }
                 //}

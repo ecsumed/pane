@@ -1,15 +1,25 @@
+use ratatui::layout::{Constraint, Layout};
 use ratatui::prelude::Frame;
 
 use crate::mode::AppMode;
 use crate::ui::cmd_input::draw_input_popup;
 use crate::ui::display_select::draw_display_type_select;
+use crate::ui::help_menu::draw_help_menu;
 use crate::ui::pane::draw_panes;
 use crate::ui::session_load::draw_session_list;
 use crate::ui::session_save::draw_session_save_popup;
+use crate::ui::status_line::draw_status_line;
 use crate::App;
 
 pub fn draw_ui(app: &mut App, frame: &mut Frame) {
-    draw_panes(frame, &app.pane_manager, &app.tasks);
+    let [main_area, status_area] = Layout::vertical([
+        Constraint::Min(0),
+        Constraint::Length(1),
+    ])
+    .areas(frame.area());
+
+    draw_panes(frame, main_area, &app.pane_manager, &app.tasks);
+    draw_status_line(frame,status_area,  &app);
 
     // Popups and overlays
     match &mut app.mode {
@@ -17,6 +27,7 @@ pub fn draw_ui(app: &mut App, frame: &mut Frame) {
         AppMode::SessionLoad { .. } => draw_session_list(frame, app),
         AppMode::SessionSave { .. } => draw_session_save_popup(frame, app),
         AppMode::DisplayTypeSelect { .. } => draw_display_type_select(frame, app),
-        _ => (),
+        AppMode::Help { .. } => draw_help_menu(frame, app),
+        AppMode::Normal => (),
     }
 }

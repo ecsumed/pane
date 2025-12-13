@@ -1,3 +1,5 @@
+use std::fmt;
+
 use ratatui::widgets::ListState;
 use strum::IntoEnumIterator;
 use tui_input::Input;
@@ -28,6 +30,21 @@ pub enum AppMode {
         state: ListState,
         items: Vec<DisplayType>,
     },
+    Help,
+}
+
+impl fmt::Display for AppMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let name = match self {
+            AppMode::Normal => "Normal",
+            AppMode::CmdEdit { .. } => "Command Edit",
+            AppMode::SessionLoad { .. } => "Load Session",
+            AppMode::SessionSave { .. } => "Save Session",
+            AppMode::DisplayTypeSelect { .. } => "Select Display",
+            AppMode::Help => "Help",
+        };
+        write!(f, "{}", name)
+    }
 }
 
 impl AppMode {

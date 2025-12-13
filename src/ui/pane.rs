@@ -47,7 +47,7 @@ fn create_pane_block<'a>(
         .border_style(border_style)
 }
 
-pub fn draw_panes(frame: &mut Frame, manager: &PaneManager, commands: &HashMap<PaneKey, Command>) {
+pub fn draw_panes(frame: &mut Frame, area: Rect, manager: &PaneManager, commands: &HashMap<PaneKey, Command>) {
     fn draw_pane_node_recursive(
         frame: &mut Frame,
         area: Rect,
@@ -124,8 +124,6 @@ pub fn draw_panes(frame: &mut Frame, manager: &PaneManager, commands: &HashMap<P
         .find(|(_, node)| node.parent.is_none())
         .map(|(key, _)| key);
     if let Some(key) = root_key {
-        draw_pane_node_recursive(frame, frame.area(), manager, commands, key);
-    } else {
-        // TODO: Handle case where no root exists (e.g., draw a placeholder)
+        draw_pane_node_recursive(frame, area, manager, commands, key);
     }
 }

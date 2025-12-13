@@ -18,6 +18,7 @@ pub fn default_keybindings() -> HashMap<KeyCombination, Action> {
         (key!(tab), Action::CyclePanes),
         (key!(c), Action::EnterCmdMode),
         (key!(shift - d), Action::EnterDisplaySelectMode),
+        (key!('?'), Action::EnterHelpMode),
         (key!(shift - l), Action::EnterSessionLoadMode),
         (key!(shift - s), Action::EnterSessionSaveMode),
         (key!(esc), Action::Escape),

@@ -8,6 +8,7 @@ use super::normal_mode::handle_normal_mode_keys;
 use super::session_load_mode::handle_session_load_keys;
 use super::session_save_mode::handle_session_save_keys;
 use crate::app::App;
+use crate::controls::help_mode::handle_help_keys;
 use crate::mode::AppMode;
 
 pub async fn handle_event(app: &mut App, event: Event) -> io::Result<()> {
@@ -21,6 +22,8 @@ pub async fn handle_event(app: &mut App, event: Event) -> io::Result<()> {
         AppMode::SessionSave { .. } => handle_session_save_keys(app, event).await?,
 
         AppMode::DisplayTypeSelect { .. } => handle_display_type_select_keys(app, event).await?,
+
+        AppMode::Help { .. } => handle_help_keys(app, event).await?,
     }
     Ok(())
 }
