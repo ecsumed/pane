@@ -29,7 +29,9 @@ pub fn draw_session_list(frame: &mut Frame, app: &mut App) {
         Clear.render(popup_area, frame.buffer_mut());
 
         let list_widget = List::new(list_items)
-            .block(Block::default().title("Load Session").borders(Borders::ALL));
+            .block(Block::default().title("Load Session").borders(Borders::ALL))
+            .highlight_style(Style::default().add_modifier(Modifier::BOLD))
+            .highlight_symbol(">> ");
 
         frame.render_stateful_widget(list_widget, popup_area, state);
     }

@@ -1,16 +1,25 @@
-use ratatui::layout::Rect;
+use ratatui::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui::text::Line;
 use ratatui::Frame;
-use ratatui::widgets::{Block, Paragraph};
+use ratatui::widgets::Paragraph;
 
 use crate::app::App;
 
 
 pub fn draw_status_line(frame: &mut Frame, area: Rect, app: &App) {
-    let status_content = Line::from(format!(" {}", app.mode));
+    let [left_area, right_area] = Layout::horizontal([
+        Constraint::Min(0),
+        Constraint::Length(25),
+    ])
+    .areas(area);
 
-    let widget = Paragraph::new(status_content)
-        .block(Block::default());
+    let left_content = Line::from(format!(" {}", app.mode));
+    let left_widget = Paragraph::new(left_content);
 
-    frame.render_widget(widget, area);
+    let right_content = Line::from("?-Help q/esc - Quit/Back ");
+    let right_widget = Paragraph::new(right_content)
+        .alignment(Alignment::Right);
+
+    frame.render_widget(left_widget, left_area);
+    frame.render_widget(right_widget, right_area);
 }

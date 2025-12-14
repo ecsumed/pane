@@ -47,7 +47,7 @@ pub async fn handle_display_type_select_keys(app: &mut App, event: Event) -> io:
                             }
                             app.mode = AppMode::Normal;
                         }
-                        Action::Escape => {
+                        Action::Escape | Action::Quit => {
                             app.mode = AppMode::Normal;
                         }
                         _ => {}

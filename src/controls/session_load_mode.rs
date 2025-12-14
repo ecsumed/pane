@@ -27,7 +27,6 @@ pub async fn handle_session_load_keys(app: &mut App, event: Event) -> io::Result
                             }
                         }
                         Action::MoveDown => {
-                            debug!("move down");
                             if let Some(selected) = state.selected() {
                                 let next = (selected + 1) % items.len();
                                 state.select(Some(next));
@@ -47,7 +46,7 @@ pub async fn handle_session_load_keys(app: &mut App, event: Event) -> io::Result
                             }
                             app.mode = AppMode::Normal;
                         }
-                        Action::Escape => {
+                        Action::Escape | Action::Quit => {
                             app.mode = AppMode::Normal;
                         }
                         _ => {}

@@ -18,7 +18,7 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
             let key_combination: KeyCombination = KeyCombination::from(key_event);
             if let Some(action) = app.config.keybindings.get(&key_combination) {
                 match action {
-                    Action::Quit => {
+                    Action::Quit | Action::Escape => {
                         app.exit();
                     }
                     Action::SplitHorizontal => {
