@@ -8,7 +8,7 @@ use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 
 use super::utils::{app_name, deserialize_duration, get_home_dir};
-use crate::controls::actions::Action;
+use crate::controls::{KeyMode, actions::Action};
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(default)]
@@ -20,7 +20,7 @@ pub struct AppConfig {
     pub snapshot_dir: PathBuf,
     pub logs_dir: PathBuf,
     pub log_level: Option<String>,
-    pub keybindings: HashMap<KeyCombination, Action>,
+    pub keybindings: HashMap<KeyMode, HashMap<KeyCombination, Action>>,
 }
 
 impl fmt::Display for AppConfig {
@@ -37,11 +37,12 @@ impl fmt::Display for AppConfig {
         writeln!(f, "  Sessions Directory: {:?}", self.sessions_dir)?;
         writeln!(f, "  Snapshot Directory: {:?}", self.snapshot_dir)?;
 
-        writeln!(f, "  Keys:")?;
-
-        for (combination, action) in self.keybindings.iter() {
-            let key_str = format!("{:?}", combination.codes);
-            writeln!(f, "    Key: {:<12} -> Action: {:?}", key_str, action)?;
+        for (keymode, bindings) in self.keybindings.iter() {
+            writeln!(f, "  Keys {}:", keymode)?;
+            for (combination, action) in bindings.iter() {
+                let key_str = format!("{:?}", combination.codes);
+                writeln!(f, "    Key: {:<12} -> Action: {:?}", key_str, action)?;
+            }
         }
         Ok(())
     }

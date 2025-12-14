@@ -5,6 +5,7 @@ use strum::IntoEnumIterator;
 use tui_input::Input;
 
 use crate::app::App;
+use crate::controls::KeyMode;
 use crate::history::HistoryManager;
 use crate::pane::PaneKey;
 use crate::session;
@@ -78,6 +79,18 @@ impl fmt::Display for AppMode {
 }
 
 impl AppMode {
+    pub fn key_mode(&self) -> KeyMode {
+        match self {
+            AppMode::Normal => KeyMode::Normal,
+            AppMode::CmdEdit { .. } => KeyMode::CmdEdit,
+            AppMode::SessionLoad { .. } => KeyMode::SessionLoad,
+            AppMode::SessionSave { .. } => KeyMode::SessionSave,
+            AppMode::DisplayTypeSelect { .. } => KeyMode::DisplayTypeSelect,
+            AppMode::Observe { .. } => KeyMode::Observe,
+            AppMode::Help => KeyMode::Help,
+        }
+    }
+
     pub fn new_cmd_edit() -> Self {
         AppMode::CmdEdit {
             input: Input::default(),
