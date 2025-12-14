@@ -1,19 +1,63 @@
+use std::collections::HashMap;
+
+use crokey::KeyCombination;
 use ratatui::layout::{Constraint, Layout};
-use ratatui::style::{Color, Style, Stylize};
+use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Widget};
 use ratatui::Frame;
 
 use crate::app::App;
+use crate::controls::KeyMode;
+use crate::controls::actions::Action;
 use crate::ui::utils::centered_rect;
+
+pub fn build_keybinding_list<'a>(
+    bindings_by_mode: &'a [(&'a KeyMode, &'a HashMap<KeyCombination, Action>)]
+) -> Vec<ListItem<'a>> {
+    let mut items: Vec<ListItem<'static>> = Vec::new();
+
+    for (mode, bindings) in bindings_by_mode.into_iter() {
+        if bindings.is_empty() {
+            continue;
+        }
+        items.push(ListItem::new(Line::from(vec![
+            Span::styled(
+                format!("--- {:?} Mode ---", mode),
+                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
+            )
+        ])));
+
+        let mut sorted_actions: Vec<_> = bindings.iter().collect();
+        sorted_actions.sort_by(|a, b| format!("{:?}", a.1).cmp(&format!("{:?}", b.1)));
+        
+
+        let mode_items: Vec<ListItem> = bindings
+            .into_iter()
+            .map(|(key, action)| {
+                ListItem::new(Line::from(vec![
+                    Span::styled(format!("{: <12}", key.to_string()), Color::Yellow),
+                    Span::raw(" → "),
+                    Span::styled(format!("{:?}", action), Style::default().italic().fg(Color::Gray)),
+                ]))
+            })
+            .collect();
+            
+        items.extend(mode_items);
+        items.push(ListItem::new(Line::from(vec![])));
+    }
+
+    items
+}
 
 pub fn draw_help_menu(frame: &mut Frame, app: &mut App) {
     let area = frame.area();
     
-    let settings_count = 4;
-    let bindings_count = app.config.keybindings.len();
-    let content_height = std::cmp::max(settings_count, bindings_count) as u16;
-    let total_height = (content_height + 4).min(area.height - 2);
+    let total_keybindings_count = app.config.keybindings.values()
+    .map(|inner_map| inner_map.len())
+    .sum::<usize>();
+    let mode_header_count: usize = app.config.keybindings.len();
+    let total_height = (total_keybindings_count + mode_header_count) as u16;
 
     let popup_area = centered_rect(75, area, total_height);
 
@@ -53,19 +97,10 @@ pub fn draw_help_menu(frame: &mut Frame, app: &mut App) {
         .border_style(Style::default().fg(Color::DarkGray));
     frame.render_widget(separator_widget, sep_area);
 
-    let mut bindings: Vec<_> = config.keybindings.iter().collect();
-    bindings.sort_by(|a, b| format!("{:?}", a.1).cmp(&format!("{:?}", b.1)));
-
-    let key_items: Vec<ListItem> = bindings
-        .into_iter()
-        .map(|(key, action)| {
-            ListItem::new(Line::from(vec![
-                Span::styled(format!("{: <12}", key.to_string()), Color::Yellow),
-                Span::raw(" → "),
-                Span::styled(format!("{:?}", action), Style::default().italic()),
-            ]))
-        })
-        .collect();
+    
+    let mut bindings_ref_vec: Vec<_> = config.keybindings.iter().collect();
+    bindings_ref_vec.sort_by_key(|(mode, _map)| format!("{:?}", mode));    
+    let key_items: Vec<ListItem> = build_keybinding_list(&bindings_ref_vec);
 
     frame.render_widget(List::new(key_items).block(Block::default().title(" Keybindings ")), right_area);
 }
