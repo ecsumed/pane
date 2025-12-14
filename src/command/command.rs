@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 
+use crate::command::serialization::naivedatetime_format;
 use crate::ui::DisplayType;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -60,6 +61,7 @@ pub struct Command {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CommandOutput {
     pub output: String,
+    #[serde(with = "naivedatetime_format")]
     pub time: NaiveDateTime,
 }
 

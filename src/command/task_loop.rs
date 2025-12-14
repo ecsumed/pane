@@ -5,7 +5,7 @@ use tokio::time::{self, MissedTickBehavior};
 
 use super::{Command, CommandControl, CommandState};
 use crate::command::CommandOutput;
-use crate::logging::{info, warn};
+use crate::logging::{info, debug, warn};
 use crate::pane::PaneKey;
 
 impl Command {
@@ -58,7 +58,7 @@ impl Command {
                     }
                 }
                 _ = tick_interval.tick(), if !is_paused => {
-                    info!("Pane {:?} task running command: {}", id, exec);
+                    debug!("Pane {:?} task running command: {}", id, exec);
                     if let Err(e) = Self::run_and_send_output(id, &exec, output_tx.clone()).await {
                         warn!("Pane {:?} task failed to run command: {}", id, e);
                     }
