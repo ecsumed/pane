@@ -30,7 +30,7 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
                     Action::EnterCmdMode => {
                         app.mode = AppMode::new_cmd_edit();
                     }
-                    Action::CyclePanes => app.pane_manager.cycle_panes(),
+                    Action::Cycle => app.pane_manager.cycle_panes(),
                     Action::MoveUp => {
                         app.pane_manager
                             .change_active(&CardinalDirection::Up, app.pane_area);
@@ -157,6 +157,10 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
                     Action::EnterHelpMode => {
                         info!("Help mode");
                         app.mode = AppMode::Help;
+                    }
+                    Action::EnterObserveMode => {
+                        info!("Observe mode");
+                        app.mode = AppMode::new_observing(&app);
                     }
                     _ => (),
                 }

@@ -1,3 +1,3 @@
 mod state;
 
-pub use self::state::AppMode;
+pub use self::state::{AppMode, DiffMode};

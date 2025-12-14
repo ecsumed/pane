@@ -4,7 +4,7 @@ use ratatui::layout::{Constraint, Layout};
 use ratatui::prelude::{Frame, Rect};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::Line;
-use ratatui::widgets::{Block, Borders, Paragraph};
+use ratatui::widgets::{Block, Borders, Padding, Paragraph};
 
 use crate::command::Command;
 use crate::pane::{PaneKey, PaneManager, PaneNodeData};
@@ -45,6 +45,7 @@ fn create_pane_block<'a>(
         .title_bottom(title_bottom_left)
         .title_bottom(title_bottom_right)
         .border_style(border_style)
+        .padding(Padding::new(1, 1, 1, 1))
 }
 
 pub fn draw_panes(frame: &mut Frame, area: Rect, manager: &PaneManager, commands: &HashMap<PaneKey, Command>) {

@@ -15,10 +15,11 @@ const LOG_LEVEL: Option<String> = None;
 pub fn default_keybindings() -> HashMap<KeyCombination, Action> {
     HashMap::from([
         (key!(enter), Action::Confirm),
-        (key!(tab), Action::CyclePanes),
+        (key!(z), Action::Cycle),
         (key!(c), Action::EnterCmdMode),
         (key!(shift - d), Action::EnterDisplaySelectMode),
         (key!('?'), Action::EnterHelpMode),
+        (key!(o), Action::EnterObserveMode),
         (key!(shift - l), Action::EnterSessionLoadMode),
         (key!(shift - s), Action::EnterSessionSaveMode),
         (key!(esc), Action::Escape),

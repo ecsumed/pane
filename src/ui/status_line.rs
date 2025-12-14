@@ -4,7 +4,16 @@ use ratatui::Frame;
 use ratatui::widgets::Paragraph;
 
 use crate::app::App;
+use crate::mode::AppMode;
 
+pub fn mode_output(mode: &AppMode) -> String {
+    match mode {
+        AppMode::Observe { diff_mode, .. } => {
+            format!(" {} -> {}", mode, diff_mode)
+        },
+        _ => format!(" {}", mode),
+    }
+}
 
 pub fn draw_status_line(frame: &mut Frame, area: Rect, app: &App) {
     let [left_area, right_area] = Layout::horizontal([
@@ -13,7 +22,7 @@ pub fn draw_status_line(frame: &mut Frame, area: Rect, app: &App) {
     ])
     .areas(area);
 
-    let left_content = Line::from(format!(" {}", app.mode));
+    let left_content = Line::from(mode_output(&app.mode));
     let left_widget = Paragraph::new(left_content);
 
     let right_content = Line::from("?-Help q/esc - Quit/Back ");

@@ -3,10 +3,11 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum Action {
     Confirm,
-    CyclePanes,
+    Cycle,
     EnterCmdMode,
     EnterDisplaySelectMode,
     EnterHelpMode,
+    EnterObserveMode,
     EnterSessionLoadMode,
     EnterSessionSaveMode,
     Escape,

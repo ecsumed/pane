@@ -1005,6 +1005,7 @@ dependencies = [
  "ratatui",
  "serde",
  "serde_with",
+ "similar",
  "slotmap",
  "strum",
  "strum_macros",
