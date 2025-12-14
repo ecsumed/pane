@@ -15,6 +15,7 @@ fn create_pane_block<'a>(
     is_active: bool,
     exec_str: &'a str,
     interval_secs_str: &'a str,
+    last_exec_time: &'a str,
     state_str: &'a str,
     display_type_str: &'a str,
 ) -> Block<'a> {
@@ -26,22 +27,23 @@ fn create_pane_block<'a>(
         Style::default()
     };
 
-    let title_left = Line::from(vec![
+    let title_top_left = Line::from(vec![
         "Every ".into(),
         interval_secs_str.dark_gray().bold(),
         "s: ".dark_gray().bold(),
         exec_str.blue().bold(),
     ]);
+    let title_top_right = Line::from(vec![" State ".into(), state_str.blue().bold()]).right_aligned();
 
-    let title_right = Line::from(vec![" State ".into(), state_str.blue().bold()]);
-
-    let title_bottom = Line::from(display_type_str).right_aligned();
+    let title_bottom_left = Line::from(vec![" Last updated: ".into(), last_exec_time.blue().bold()]);
+    let title_bottom_right = Line::from(display_type_str).right_aligned();
 
     Block::default()
         .borders(Borders::ALL)
-        .title(title_left)
-        .title(title_right.right_aligned())
-        .title_bottom(title_bottom)
+        .title(title_top_left)
+        .title(title_top_right)
+        .title_bottom(title_bottom_left)
+        .title_bottom(title_bottom_right)
         .border_style(border_style)
 }
 
@@ -67,11 +69,15 @@ pub fn draw_panes(frame: &mut Frame, area: Rect, manager: &PaneManager, commands
                     let interval_str = cmd.interval.as_secs().to_string();
                     let state_str = cmd.state.to_string();
                     let display_str = format!("{:?}", cmd.display_type);
+                    let last_exec_time = cmd.last_output()
+                    .map(|c| c.time.format("%Y-%m-%d %H:%M:%S").to_string())
+                    .unwrap_or_else(|| "N/A".to_string());
 
                     let block = create_pane_block(
                         is_active,
                         &cmd.exec,
                         &interval_str,
+                        &last_exec_time,
                         &state_str,
                         &display_str,
                     );
@@ -80,7 +86,7 @@ pub fn draw_panes(frame: &mut Frame, area: Rect, manager: &PaneManager, commands
                 } else {
                     let display_str_na = format!("{:?}", DisplayType::RawText);
 
-                    let block = create_pane_block(is_active, "N/A", "N/A", "N/A", &display_str_na);
+                    let block = create_pane_block(is_active, "N/A", "N/A", "N/A", "N/A", &display_str_na);
 
                     frame.render_widget(block.clone(), area);
                     frame.render_widget(Paragraph::new("N/A"), block.inner(area));
