@@ -1,13 +1,9 @@
 ### TODO
 * Fix management of `pane_key_to_friendly_id`
-* Add display functionality
-* Add ? mark command
+* Add chart display
 * Add quite mode
-* Fix interval inc/dec
-* Add max_history functionality
-* Seperate out stylings
-* Setup defaults
-* Fix config pull and setup command line flags
+* Separate out stylings
+* Add cli
 * Add observe mode
 * Improve resize functionality
 * Improve move functionality
