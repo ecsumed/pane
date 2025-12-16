@@ -1,4 +1,5 @@
 use std::io::{self, stdout};
+use std::panic::{set_hook, take_hook};
 
 use crokey::crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
@@ -23,9 +24,18 @@ mod ui;
 
 pub type DefaultTerminal = Terminal<CrosstermBackend<std::io::Stdout>>;
 
+pub fn init_panic_hook() {
+    let hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |panic_info| {
+        let _ = restore();
+        hook(panic_info);
+    }));
+}
+
 fn init() -> io::Result<DefaultTerminal> {
     stdout().execute(EnterAlternateScreen)?;
     enable_raw_mode()?;
+    init_panic_hook();
     let backend = CrosstermBackend::new(stdout());
     let terminal = Terminal::new(backend)?;
     Ok(terminal)
@@ -38,7 +48,9 @@ fn restore() -> io::Result<()> {
 }
 
 #[tokio::main]
-async fn main() -> io::Result<()> {
+async fn main() -> color_eyre::Result<()> {
+    color_eyre::install()?;
+
     let config = match config::AppConfig::load() {
         Ok(cfg) => cfg,
         Err(e) => {

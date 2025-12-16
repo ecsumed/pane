@@ -59,7 +59,7 @@ impl App {
         }
     }
 
-    pub async fn run(&mut self, terminal: &mut DefaultTerminal) -> Result<()> {
+    pub async fn run(&mut self, terminal: &mut DefaultTerminal) -> color_eyre::Result<()> {
         let mut tick_interval = interval(Duration::from_millis(250));
         let mut events = EventStream::new();
 
