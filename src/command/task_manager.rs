@@ -87,11 +87,21 @@ impl Command {
     pub async fn handle_control_signal(&mut self, id: PaneKey, cmd_ctrl: CommandControl) {
         let worker_instruction = match cmd_ctrl {
             CommandControl::IntervalIncrease => {
-                self.interval += Duration::from_secs(1);
+                if self.interval < Duration::from_secs(1) {
+                    self.interval += Duration::from_secs_f64(0.1);
+                } else {
+                    self.interval += Duration::from_secs(1);
+                }
                 CommandControl::IntervalSet(self.interval)
             }
             CommandControl::IntervalDecrease => {
-                self.interval = self.interval.saturating_sub(Duration::from_secs(1));
+                if self.interval > Duration::from_secs(1) {
+                    self.interval -= Duration::from_secs(1);
+                } else if self.interval > Duration::from_secs_f64(0.1) {
+                    self.interval -= Duration::from_secs_f64(0.1);
+                } else {
+                    self.interval = Duration::from_secs_f64(0.1);
+                }
                 CommandControl::IntervalSet(self.interval)
             }
             _ => cmd_ctrl,

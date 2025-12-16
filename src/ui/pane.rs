@@ -30,7 +30,7 @@ fn create_pane_block<'a>(
     let title_top_left = Line::from(vec![
         "Every ".into(),
         interval_secs_str.dark_gray().bold(),
-        "s: ".dark_gray().bold(),
+        ": ".dark_gray().bold(),
         exec_str.blue().bold(),
     ]);
     let title_top_right = Line::from(vec![" State ".into(), state_str.blue().bold()]).right_aligned();
@@ -67,7 +67,7 @@ pub fn draw_panes(frame: &mut Frame, area: Rect, manager: &PaneManager, commands
                 let command = commands.get(&node_key);
 
                 if let Some(cmd) = command {
-                    let interval_str = cmd.interval.as_secs().to_string();
+                    let interval_str = format!("{:?}", cmd.interval);
                     let state_str = cmd.state.to_string();
                     let display_str = format!("{:?}", cmd.display_type);
                     let last_exec_time = cmd.last_output()
