@@ -9,7 +9,7 @@ use crate::mode::AppMode;
 pub fn mode_output(mode: &AppMode) -> String {
     match mode {
         AppMode::Observe { diff_mode, .. } => {
-            format!(" {} -> {}", mode, diff_mode)
+            format!(" {} -> {} <tab> - cycle", mode, diff_mode)
         },
         _ => format!(" {}", mode),
     }
