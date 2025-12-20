@@ -84,6 +84,11 @@ impl App {
             tokio::select! {
                 Some((id, output)) = self.output_rx.recv() => {
                     if let Some(command) = self.tasks.get_mut(&id) {
+                        if let Some(code) = output.exit_status {
+                            if code != 0 && self.config.beep {
+                                App::beep()
+                            }
+                        }
                         command.record_output(output, self.config.max_history);
                     }
                 },
@@ -122,6 +127,12 @@ impl App {
 
     pub fn exit(&mut self) {
         self.exit = true;
+    }
+
+    fn beep() {
+        print!("\x07");
+        use std::io::{self, Write};
+        io::stdout().flush().unwrap();
     }
 
     pub async fn set_command(&mut self, id: PaneKey, exec: String) {

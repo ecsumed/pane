@@ -63,6 +63,7 @@ pub struct CommandOutput {
     pub output: String,
     #[serde(with = "naivedatetime_format")]
     pub time: NaiveDateTime,
+    pub exit_status: Option<i32>
 }
 
 impl Command {
