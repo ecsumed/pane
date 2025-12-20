@@ -6,7 +6,7 @@ use tui_input::Input;
 
 use crate::app::App;
 use crate::controls::KeyMode;
-use crate::history::HistoryManager;
+use crate::shell_history::ShellHistoryManager;
 use crate::pane::PaneKey;
 use crate::session;
 use crate::ui::DisplayType;
@@ -19,7 +19,7 @@ pub enum AppMode {
         input: Input,
         state: ListState,
         suggestions: Vec<String>,
-        history: HistoryManager,
+        history: ShellHistoryManager,
     },
     SessionLoad {
         state: ListState,
@@ -96,7 +96,7 @@ impl AppMode {
             input: Input::default(),
             state: ListState::default(),
             suggestions: Vec::new(),
-            history: HistoryManager::new(),
+            history: ShellHistoryManager::new(),
         }
     }
 

@@ -1,18 +1,25 @@
 use std::path::PathBuf;
 use std::{env, fs, io};
 
-use crate::logging::{debug, warn};
+use crate::logging::{debug, trace, warn};
 
 #[derive(Debug, Clone)]
-pub struct HistoryManager {
+pub struct ShellHistoryManager {
     commands: Vec<String>,
 }
 
-impl HistoryManager {
+impl ShellHistoryManager {
     pub fn new() -> Self {
-        let commands = Self::load_history_file().unwrap();
+        let commands = match Self::load_history_file() {
+            Ok(cmds) => cmds,
+            Err(e) => {
+                warn!("Warning: Could not load history due to invalid data: {}", e);
+                Vec::new()
+            }
+        };
 
         debug!("history length: {}", commands.len());
+        trace!("{:?}", commands);
         Self { commands }
     }
 
@@ -26,6 +33,8 @@ impl HistoryManager {
             format!("{home_dir}/.bash_history")
         };
 
+        debug!("Shell history file path: {}", history_file_path);
+
         let path = PathBuf::from(history_file_path);
 
         if !path.exists() {
@@ -33,12 +42,23 @@ impl HistoryManager {
             return Ok(Vec::new());
         }
 
-        let contents = fs::read_to_string(path)?;
+        let bytes = fs::read(path)?; 
+        let contents = String::from_utf8_lossy(&bytes);
+        
         let commands: Vec<String> = contents
-            .lines()
-            .filter(|&line| !line.trim().is_empty() && !line.trim().starts_with('#'))
-            .map(|line| line.trim().to_string())
-            .collect();
+        .lines()
+        .filter(|line| {
+            let trimmed = line.trim();
+            !trimmed.is_empty() && !trimmed.starts_with('#')
+        })
+        .map(|line| {
+            let trimmed = line.trim();
+            match trimmed.split_once(';') {
+                Some((_metadata, command)) => command.trim().to_string(),
+                None => trimmed.to_string(),
+            }
+        })
+        .collect();
 
         Ok(commands)
     }

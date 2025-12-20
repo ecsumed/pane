@@ -15,7 +15,7 @@ mod app;
 mod command;
 mod config;
 mod controls;
-mod history;
+mod shell_history;
 mod logging;
 mod mode;
 mod pane;

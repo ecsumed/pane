@@ -9,13 +9,13 @@ use tui_input::Input;
 use crate::app::{App, AppControl};
 use crate::controls::KeyMode;
 use crate::controls::actions::Action;
-use crate::history::HistoryManager;
+use crate::shell_history::ShellHistoryManager;
 use crate::logging::{debug, warn};
 use crate::mode::AppMode;
 
 fn update_suggestions(
     input: &mut Input,
-    history: &mut HistoryManager,
+    history: &mut ShellHistoryManager,
     state: &mut ListState,
     suggestions: &mut Vec<String>,
 ) {
@@ -25,10 +25,10 @@ fn update_suggestions(
 
     if !suggestions.is_empty() {
         state.select(Some(0));
-        debug!("Suggestions are empty...");
+        debug!("Suggestions found: {}", suggestions.len());
     } else {
         state.select(None);
-        debug!("Suggestions found: {}", suggestions.len());
+        debug!("Suggestions are empty...");
     }
 }
 

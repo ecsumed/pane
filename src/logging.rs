@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-pub use tracing::{debug, error, info, warn};
+pub use tracing::{debug, error, trace, info, warn};
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_appender::{non_blocking, rolling};
 use tracing_subscriber::filter::LevelFilter;
