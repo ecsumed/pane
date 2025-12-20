@@ -12,6 +12,7 @@ use crate::app::App;
 use crate::logging::info;
 
 mod app;
+mod cli;
 mod command;
 mod config;
 mod controls;
@@ -51,13 +52,18 @@ fn restore() -> io::Result<()> {
 async fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
-    let config = match config::AppConfig::load() {
+    let cli_args = cli::parse();
+
+
+    let mut config = match config::AppConfig::load() {
         Ok(cfg) => cfg,
         Err(e) => {
             eprintln!("Failed to load configuration: {}", e);
             std::process::exit(1);
         }
     };
+
+    config.merge_cli(&cli_args);
 
     let log_level_filter = logging::get_log_level_filter(config.log_level.as_deref());
     let _guard = logging::init_tracing(log_level_filter, &config.logs_dir);
@@ -68,7 +74,7 @@ async fn main() -> color_eyre::Result<()> {
     let mut terminal = init()?;
 
     let app_result = {
-        let mut app = App::new(config);
+        let mut app = App::new(config, cli_args.command);
         app.run(&mut terminal).await
     };
 

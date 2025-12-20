@@ -16,6 +16,7 @@ use crate::config::AppConfig;
 use crate::controls;
 use crate::mode::AppMode;
 use crate::pane::{PaneKey, PaneManager};
+use crate::logging::error;
 use crate::ui::draw::draw_ui;
 use crate::ui::DisplayType;
 
@@ -42,11 +43,21 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(config: AppConfig) -> Self {
+    pub fn new(config: AppConfig, command: Vec<String>) -> Self {
         let (output_tx, output_rx) = mpsc::channel(100);
         let (app_control_tx, app_control_rx) = mpsc::channel(10);
+
+        let pane_manager = PaneManager::new();
+
+        if !command.is_empty() {
+            let command = command.join(" ");
+            if let Err(e) = app_control_tx.try_send(AppControl::SetCommand(pane_manager.active_pane_id, command)) {
+                error!("Send failed: {}", e);
+            }
+        }
+
         Self {
-            pane_manager: PaneManager::new(),
+            pane_manager: pane_manager,
             tasks: HashMap::new(),
             mode: AppMode::default(),
             exit: false,

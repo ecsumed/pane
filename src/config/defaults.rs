@@ -10,6 +10,7 @@ use crate::controls::KeyMode;
 use crate::controls::actions::Action;
 
 const INTERVAL_SECS: u64 = 5;
+const BEEP: bool = false;
 const MAX_HISTORY: usize = 1000;
 const LOG_LEVEL: Option<String> = None;
 
@@ -83,6 +84,7 @@ impl Default for AppConfig {
 
         AppConfig {
             interval: Duration::from_secs(INTERVAL_SECS),
+            beep: BEEP,
             log_level: LOG_LEVEL,
             max_history: MAX_HISTORY,
             logs_dir: default_logging_dir_path(&proj_dirs),

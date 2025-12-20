@@ -7,6 +7,7 @@ use crokey::KeyCombination;
 use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 
+use crate::logging::{debug, info};
 use super::utils::{app_name, deserialize_duration, get_home_dir};
 use crate::controls::{KeyMode, actions::Action};
 
@@ -15,6 +16,7 @@ use crate::controls::{KeyMode, actions::Action};
 pub struct AppConfig {
     #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
+    pub beep: bool,
     pub max_history: usize,
     pub sessions_dir: PathBuf,
     pub snapshot_dir: PathBuf,
@@ -27,6 +29,7 @@ impl fmt::Display for AppConfig {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "Configuration loaded successfully:")?;
         writeln!(f, "  Interval: {:?}", self.interval)?;
+        writeln!(f, "  Beep: {}", self.beep)?;
         writeln!(f, "  Max History: {}", self.max_history)?;
         writeln!(
             f,
@@ -105,5 +108,20 @@ impl AppConfig {
         );
 
         builder.build()?.try_deserialize()
+    }
+
+    pub fn merge_cli(&mut self, cli: &crate::cli::Cli) {
+        if cli.beep {
+            self.beep = true;
+        }
+        
+        if let Some(interval) = cli.interval {
+            self.interval = Duration::from_secs(interval);
+        }
+
+        if cli.verbose.is_present() {
+            let level = cli.verbose.log_level_filter().to_string();
+            self.log_level = Some(level.to_lowercase());
+        }
     }
 }
