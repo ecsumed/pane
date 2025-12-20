@@ -32,5 +32,11 @@ tui-input = "0.14.0"
 [dev-dependencies]
 insta = "1.44.1"
 
+[profile.release]
+codegen-units = 1
+lto = "fat"
+opt-level = "s"
+strip = "symbols"
+
 [lints.rust]
 unused_imports = "allow"
