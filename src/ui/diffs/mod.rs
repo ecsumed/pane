@@ -2,9 +2,9 @@ use ratatui::text::Line;
 
 use crate::mode::DiffMode;
 
-mod char;
-mod line;
-mod word;
+pub mod char;
+pub mod line;
+pub mod word;
 mod plain;
 
 pub fn render_diff<'a>(

@@ -7,7 +7,10 @@ pub enum DisplayType {
     RawText,
     MultiLine,
     MultiLineTime,
-    MultiLineDateTime
+    MultiLineDateTime,
+    DiffChar,
+    DiffLine,
+    DiffWord,
     // LineChart,
     // Counter,
     // PieChart,

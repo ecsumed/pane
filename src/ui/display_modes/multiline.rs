@@ -1,6 +1,6 @@
 use ratatui::layout::Rect;
 use ratatui::text::{Line, Text};
-use ratatui::widgets::Paragraph;
+use ratatui::widgets::{Paragraph, Wrap};
 use ratatui::Frame;
 
 use crate::command::Command;
@@ -39,7 +39,7 @@ pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, command: &Comma
     let mut widget = Paragraph::new(text_content);
 
     if config.wrap {
-        widget = widget.wrap(ratatui::widgets::Wrap { trim: true });
+        widget = widget.wrap(Wrap { trim: true });
     }
 
     frame.render_widget(widget, area);

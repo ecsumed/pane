@@ -1,5 +1,5 @@
 use ratatui::layout::Rect;
-use ratatui::widgets::Paragraph;
+use ratatui::widgets::{Paragraph, Wrap};
 use ratatui::Frame;
 
 use super::DisplayType;
@@ -12,7 +12,7 @@ pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, cmd: &Command) 
     let mut widget = Paragraph::new(last_output);
 
     if config.wrap {
-        widget = widget.wrap(ratatui::widgets::Wrap { trim: true });
+        widget = widget.wrap(Wrap { trim: true });
     }
 
     frame.render_widget(widget, area);

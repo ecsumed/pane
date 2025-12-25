@@ -5,6 +5,7 @@ use ratatui::Frame;
 use crate::command::Command;
 use crate::config::AppConfig;
 
+pub mod diff;
 pub mod multiline;
 pub mod raw_text;
 pub mod types;
@@ -23,6 +24,9 @@ pub fn render_command_output(frame: &mut Frame, area: Rect, config: &AppConfig, 
         }
         DisplayType::MultiLine | DisplayType::MultiLineTime | DisplayType::MultiLineDateTime => {
             multiline::render(frame, inner_area, config, command);
+        }
+        DisplayType::DiffChar | DisplayType::DiffWord | DisplayType::DiffLine => {
+            diff::render(frame, inner_area, config, command);
         }
     }
 }
