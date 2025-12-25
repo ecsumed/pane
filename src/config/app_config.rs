@@ -17,6 +17,8 @@ pub struct AppConfig {
     #[serde(deserialize_with = "deserialize_duration")]
     pub interval: Duration,
     pub beep: bool,
+    pub err_exit: bool,
+    pub chg_exit: bool,
     pub max_history: usize,
     pub sessions_dir: PathBuf,
     pub snapshot_dir: PathBuf,
@@ -30,6 +32,8 @@ impl fmt::Display for AppConfig {
         writeln!(f, "Configuration loaded successfully:")?;
         writeln!(f, "  Interval: {:?}", self.interval)?;
         writeln!(f, "  Beep: {}", self.beep)?;
+        writeln!(f, "  Exit on Error: {}", self.err_exit)?;
+        writeln!(f, "  Exit on Change: {}", self.chg_exit)?;
         writeln!(f, "  Max History: {}", self.max_history)?;
         writeln!(
             f,
@@ -113,6 +117,18 @@ impl AppConfig {
     pub fn merge_cli(&mut self, cli: &crate::cli::Cli) {
         if cli.beep {
             self.beep = true;
+        }
+
+        if cli.err_exit {
+            self.err_exit = true;
+        }
+
+        if cli.chg_exit {
+            self.chg_exit = true;
+        }
+
+        if let Some(max_history) = cli.max_history {
+            self.max_history = max_history;
         }
         
         if let Some(interval) = cli.interval {

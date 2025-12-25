@@ -16,7 +16,7 @@ use crate::config::AppConfig;
 use crate::controls;
 use crate::mode::AppMode;
 use crate::pane::{PaneKey, PaneManager};
-use crate::logging::error;
+use crate::logging::{info, error, warn};
 use crate::ui::draw::draw_ui;
 use crate::ui::DisplayType;
 
@@ -83,12 +83,17 @@ impl App {
 
             tokio::select! {
                 Some((id, output)) = self.output_rx.recv() => {
-                    if let Some(command) = self.tasks.get_mut(&id) {
-                        if let Some(code) = output.exit_status {
-                            if code != 0 && self.config.beep {
-                                App::beep()
-                            }
+                    if let Some(code) = output.exit_status {
+                        if code != 0 && self.config.beep {
+                            App::beep()
                         }
+                        if code != 0 && self.config.err_exit {
+                            info!("Exiting because err_exit was set.");
+                            self.exit();
+                        }
+                    }
+
+                    if let Some(command) = self.tasks.get_mut(&id) {
                         command.record_output(output, self.config.max_history);
                     }
                 },
@@ -126,6 +131,13 @@ impl App {
     }
 
     pub fn exit(&mut self) {
+        for (pane_key, _cmd) in &self.tasks {
+            if let Err(e) = self.app_control_tx
+                .try_send(AppControl::SendControl(*pane_key, CommandControl::Stop))
+            {
+                warn!("Failed to send AppControl::SendControl: {}", e);
+            }
+        }
         self.exit = true;
     }
 
