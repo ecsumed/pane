@@ -7,6 +7,7 @@ use ratatui::text::Line;
 use ratatui::widgets::{Block, Borders, Padding, Paragraph};
 
 use crate::command::Command;
+use crate::config::AppConfig;
 use crate::pane::{PaneKey, PaneManager, PaneNodeData};
 use crate::ui::display_modes::render_command_output;
 use crate::ui::DisplayType;
@@ -15,7 +16,7 @@ use crate::ui::panes::border::create_pane_block;
 pub fn draw_recursive(
     frame: &mut Frame,
     area: Rect,
-    zen: bool,
+    config: &AppConfig,
     manager: &PaneManager,
     commands: &HashMap<PaneKey, Command>,
     node_key: PaneKey,
@@ -39,7 +40,7 @@ pub fn draw_recursive(
                 .unwrap_or_else(|| "N/A".to_string());
 
                 let block = create_pane_block(
-                    zen,
+                    config.zen,
                     is_active,
                     &cmd.exec,
                     &interval_str,
@@ -48,11 +49,11 @@ pub fn draw_recursive(
                     &display_str,
                 );
 
-                render_command_output(frame, area, cmd, block);
+                render_command_output(frame, area, config, cmd, block);
             } else {
                 let display_str_na = format!("{:?}", DisplayType::RawText);
 
-                let block = create_pane_block(zen, is_active, "N/A", "N/A", "N/A", "N/A", &display_str_na);
+                let block = create_pane_block(config.zen, is_active, "N/A", "N/A", "N/A", "N/A", &display_str_na);
 
                 frame.render_widget(block.clone(), area);
                 frame.render_widget(Paragraph::new("N/A"), block.inner(area));
@@ -82,7 +83,7 @@ pub fn draw_recursive(
                 .split(area);
 
             for (chunk, child_key) in chunks.iter().zip(children.iter()) {
-                draw_recursive(frame, *chunk, zen, manager, commands, *child_key);
+                draw_recursive(frame, *chunk, config, manager, commands, *child_key);
             }
         }
     }

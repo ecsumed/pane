@@ -15,6 +15,7 @@ const EXIT_ON_ERROR: bool = false;
 const INTERVAL_SECS: u64 = 5;
 const LOG_LEVEL: Option<String> = None;
 const MAX_HISTORY: usize = 10;
+const WRAP: bool = true;
 const ZEN: bool = false;
 
 pub fn default_keybindings() -> HashMap<KeyMode, HashMap<KeyCombination, Action>> {
@@ -92,6 +93,7 @@ impl Default for AppConfig {
             beep: BEEP,
             err_exit: EXIT_ON_ERROR,
             chg_exit: EXIT_ON_CHANGE,
+            wrap: WRAP,
             log_level: LOG_LEVEL,
             max_history: MAX_HISTORY,
             logs_dir: default_logging_dir_path(&proj_dirs),

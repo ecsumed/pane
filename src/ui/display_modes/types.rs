@@ -5,7 +5,6 @@ use strum::EnumIter;
 pub enum DisplayType {
     #[default]
     RawText,
-    RawWrapped,
     MultiLine,
     MultiLineTime,
     MultiLineDateTime

@@ -18,17 +18,21 @@ pub struct Cli {
     #[arg(num_args = 1..)]
     pub command: Vec<String>,
 
-    /// exit if command completes a non-zero status code
+    /// Exit if command completes a non-zero status code
     #[arg(short = 'e', long = "err-exit")]
     pub err_exit: bool,
 
-    /// exit if output changes
+    /// Exit if output changes
     #[arg(short = 'g', long = "chg-exit")]
     pub chg_exit: bool,
 
-    /// max history to keep
+    /// Max history to keep
     #[arg(short = 'm', long = "max-history", value_name = "COUNT")]
     pub max_history: Option<usize>,
+
+    /// Disable line wrapping
+    #[arg(short = 'w', long = "no-wrap")]
+    pub no_wrap: bool,
 
     /// Zen (focus) mode: hides extra info
     #[arg(short = 'z', long = "zen")]

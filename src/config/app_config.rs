@@ -22,6 +22,7 @@ pub struct AppConfig {
     pub beep: bool,
     pub err_exit: bool,
     pub chg_exit: bool,
+    pub wrap: bool,
     pub max_history: usize,
     pub zen: bool,
     pub sessions_dir: PathBuf,
@@ -38,6 +39,7 @@ impl fmt::Display for AppConfig {
         writeln!(f, "  Beep: {}", self.beep)?;
         writeln!(f, "  Exit on Error: {}", self.err_exit)?;
         writeln!(f, "  Exit on Change: {}", self.chg_exit)?;
+        writeln!(f, "  Wrap: {}", self.wrap)?;
         writeln!(f, "  Max History: {}", self.max_history)?;
         writeln!(f, "  Zen: {}", self.zen)?;
         writeln!(
@@ -94,6 +96,10 @@ impl AppConfig {
 
         if cli.zen {
             self.zen = true;
+        }
+
+        if cli.no_wrap {
+            self.wrap = false;
         }
 
         if let Some(max_history) = cli.max_history {

@@ -4,9 +4,10 @@ use ratatui::widgets::Paragraph;
 use ratatui::Frame;
 
 use crate::command::Command;
+use crate::config::AppConfig;
 use crate::ui::DisplayType;
 
-pub fn render(frame: &mut Frame, area: Rect, command: &Command) {
+pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, command: &Command) {
     let history_lines: Vec<Line> = command
         .output_history
         .iter()
@@ -35,7 +36,11 @@ pub fn render(frame: &mut Frame, area: Rect, command: &Command) {
 
     let text_content = Text::from(Vec::from(lines_to_display));
 
-    let widget = Paragraph::new(text_content);
+    let mut widget = Paragraph::new(text_content);
+
+    if config.wrap {
+        widget = widget.wrap(ratatui::widgets::Wrap { trim: true });
+    }
 
     frame.render_widget(widget, area);
 }
