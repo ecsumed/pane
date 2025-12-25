@@ -20,6 +20,7 @@ pub struct AppConfig {
     pub err_exit: bool,
     pub chg_exit: bool,
     pub max_history: usize,
+    pub zen: bool,
     pub sessions_dir: PathBuf,
     pub snapshot_dir: PathBuf,
     pub logs_dir: PathBuf,
@@ -35,6 +36,7 @@ impl fmt::Display for AppConfig {
         writeln!(f, "  Exit on Error: {}", self.err_exit)?;
         writeln!(f, "  Exit on Change: {}", self.chg_exit)?;
         writeln!(f, "  Max History: {}", self.max_history)?;
+        writeln!(f, "  Zen: {}", self.zen)?;
         writeln!(
             f,
             "  Log Level: {}",
@@ -125,6 +127,10 @@ impl AppConfig {
 
         if cli.chg_exit {
             self.chg_exit = true;
+        }
+
+        if cli.zen {
+            self.zen = true;
         }
 
         if let Some(max_history) = cli.max_history {

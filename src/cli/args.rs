@@ -29,4 +29,8 @@ pub struct Cli {
     /// max history to keep
     #[arg(short = 'm', long = "max-history", value_name = "COUNT")]
     pub max_history: Option<usize>,
+
+    /// Zen (focus) mode: hides extra info
+    #[arg(short = 'z', long = "zen")]
+    pub zen: bool,
 }

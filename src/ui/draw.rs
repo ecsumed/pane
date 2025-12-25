@@ -6,7 +6,7 @@ use crate::ui::cmd_input::draw_input_popup;
 use crate::ui::display_select::draw_display_type_select;
 use crate::ui::help_menu::draw_help_menu;
 use crate::ui::observe::draw_observe_mode;
-use crate::ui::pane::draw_panes;
+use crate::ui::panes;
 use crate::ui::session_load::draw_session_list;
 use crate::ui::session_save::draw_session_save_popup;
 use crate::ui::status_line::draw_status_line;
@@ -22,7 +22,7 @@ pub fn draw_ui(app: &mut App, frame: &mut Frame) {
     // Main modes
     match &mut app.mode {
         AppMode::Observe { .. } => draw_observe_mode(frame, main_area, &app.tasks,  &mut app.mode),
-        _ => draw_panes(frame, main_area, &app.pane_manager, &app.tasks),
+        _ => panes::draw(frame, main_area, app.config.zen,&app.pane_manager, &app.tasks),
     }
 
     draw_status_line(frame, status_area,  &app);

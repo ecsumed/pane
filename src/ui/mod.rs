@@ -5,7 +5,7 @@ mod display_select;
 mod help_menu;
 pub mod draw;
 mod observe;
-mod pane;
+mod panes;
 mod session_load;
 mod session_save;
 mod status_line;

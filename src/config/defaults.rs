@@ -10,11 +10,12 @@ use crate::controls::KeyMode;
 use crate::controls::actions::Action;
 
 const BEEP: bool = false;
-const EXIT_ON_ERROR: bool = false;
 const EXIT_ON_CHANGE: bool = false;
+const EXIT_ON_ERROR: bool = false;
 const INTERVAL_SECS: u64 = 5;
 const LOG_LEVEL: Option<String> = None;
 const MAX_HISTORY: usize = 10;
+const ZEN: bool = false;
 
 pub fn default_keybindings() -> HashMap<KeyMode, HashMap<KeyCombination, Action>> {
     let mut map = HashMap::new();
@@ -53,6 +54,7 @@ pub fn default_keybindings() -> HashMap<KeyMode, HashMap<KeyCombination, Action>
         (key!(s), Action::SaveSession),
         (key!(h), Action::SplitHorizontal),
         (key!(v), Action::SplitVertical),
+        (key!(z), Action::ZenToggle),
     ]));
 
     // CMD EDIT MODE BINDINGS
@@ -86,6 +88,7 @@ impl Default for AppConfig {
 
         AppConfig {
             interval: Duration::from_secs(INTERVAL_SECS),
+            zen: ZEN,
             beep: BEEP,
             err_exit: EXIT_ON_ERROR,
             chg_exit: EXIT_ON_CHANGE,

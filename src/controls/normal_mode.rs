@@ -180,6 +180,9 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
                 info!("Observe mode");
                 app.mode = AppMode::new_observing(&app);
             }
+            Action::ZenToggle => {
+                app.config.zen = !app.config.zen;
+            }
             _ => (),
         }
     }
