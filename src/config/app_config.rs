@@ -5,6 +5,9 @@ use std::time::Duration;
 
 use crokey::KeyCombination;
 use directories::ProjectDirs;
+use figment::{
+    Figment, providers::{Env, Format, Serialized, Toml}
+};
 use serde::{Deserialize, Serialize};
 
 use crate::logging::{debug, info};
@@ -58,62 +61,22 @@ impl fmt::Display for AppConfig {
 }
 
 impl AppConfig {
-    pub fn load() -> Result<Self, config::ConfigError> {
+    pub fn load() -> Result<Self, figment::Error> {
         let app_name_str = app_name();
+        let config_path = AppConfig::get_config_path();
+        let env_prefix = format!("{}_", app_name_str.to_uppercase().replace('-', "_"));
+    
+        Figment::new()
+            // Load defaults first
+            .merge(Serialized::defaults(AppConfig::default()))
+            
+            // Load from config.yaml
+            .merge(Toml::file(config_path))
 
-        let mut builder = config::Config::builder();
-
-        let default_config = AppConfig::default();
-        builder = builder
-            .set_default(
-                "interval",
-                default_config.interval.as_secs().to_string() + "s",
-            )?
-            .set_default(
-                "max_history",
-                default_config.max_history as i64,
-            )?
-            .set_default("log_level", default_config.log_level)?
-            .set_default("logs_dir", default_config.logs_dir.to_str().unwrap_or(""))?
-            .set_default(
-                "sessions_dir",
-                default_config.sessions_dir.to_str().unwrap_or(""),
-            )?
-            .set_default(
-                "snapshot_dir",
-                default_config.snapshot_dir.to_str().unwrap_or(""),
-            )?;
-
-        let config_path = {
-            #[cfg(target_os = "macos")]
-            if let Some(home_dir) = get_home_dir() {
-                home_dir
-                    .join(".config")
-                    .join(app_name())
-                    .join("config.toml")
-            } else {
-                let proj_dirs = ProjectDirs::from("io", app_name(), app_name());
-                proj_dirs
-                    .map(|p| p.config_dir().join("config.toml"))
-                    .unwrap_or_default()
-            }
-            #[cfg(not(target_os = "macos"))]
-            {
-                let proj_dirs = ProjectDirs::from("io", app_name(), app_name());
-                proj_dirs
-                    .map(|p| p.config_dir().join("config.toml"))
-                    .unwrap_or_default()
-            }
-        };
-
-        builder = builder.add_source(config::File::from(config_path).required(false));
-
-        builder = builder.add_source(
-            config::Environment::with_prefix(&app_name_str.to_uppercase().replace('-', "__"))
-                .separator("__"),
-        );
-
-        builder.build()?.try_deserialize()
+            // Load from Environment Variables
+            .merge(Env::prefixed(&env_prefix).split("__"))
+            
+            .extract()
     }
 
     pub fn merge_cli(&mut self, cli: &crate::cli::Cli) {
@@ -145,5 +108,31 @@ impl AppConfig {
             let level = cli.verbose.log_level_filter().to_string();
             self.log_level = Some(level.to_lowercase());
         }
+    }
+
+    fn get_config_path() -> PathBuf {
+        let config_path = {
+            #[cfg(target_os = "macos")]
+            if let Some(home_dir) = get_home_dir() {
+                home_dir
+                    .join(".config")
+                    .join(app_name())
+                    .join("config.toml")
+            } else {
+                let proj_dirs = ProjectDirs::from("io", app_name(), app_name());
+                proj_dirs
+                    .map(|p| p.config_dir().join("config.toml"))
+                    .unwrap_or_default()
+            }
+            #[cfg(not(target_os = "macos"))]
+            {
+                let proj_dirs = ProjectDirs::from("io", app_name(), app_name());
+                proj_dirs
+                    .map(|p| p.config_dir().join("config.toml"))
+                    .unwrap_or_default()
+            }
+        };
+
+        config_path
     }
 }
