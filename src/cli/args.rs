@@ -19,11 +19,11 @@ pub struct Cli {
     pub command: Vec<String>,
 
     /// exit if command completes a non-zero status code
-    #[arg(short = 'e', long = "errexit")]
+    #[arg(short = 'e', long = "err-exit")]
     pub err_exit: bool,
 
     /// exit if output changes
-    #[arg(short = 'g', long = "chgexit")]
+    #[arg(short = 'g', long = "chg-exit")]
     pub chg_exit: bool,
 
     /// max history to keep
