@@ -1,5 +1,6 @@
 use ratatui::layout::{Constraint, Layout};
 use ratatui::prelude::Frame;
+use ratatui::widgets::{Clear, Widget};
 
 use crate::mode::AppMode;
 use crate::ui::cmd_input::draw_input_popup;
@@ -18,6 +19,8 @@ pub fn draw_ui(app: &mut App, frame: &mut Frame) {
         Constraint::Length(1),
     ])
     .areas(frame.area());
+
+    Clear.render(main_area, frame.buffer_mut());
 
     // Main modes
     match &mut app.mode {

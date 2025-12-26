@@ -57,6 +57,7 @@ pub fn default_keybindings() -> HashMap<KeyMode, HashMap<KeyCombination, Action>
         (key!(s), Action::SaveSession),
         (key!(h), Action::SplitHorizontal),
         (key!(v), Action::SplitVertical),
+        (key!(w), Action::WrapToggle),
         (key!(z), Action::ZenToggle),
     ]));
 

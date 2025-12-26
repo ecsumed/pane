@@ -30,5 +30,6 @@ pub enum Action {
     SplitHorizontal,
     SplitVertical,
     TabComplete,
+    WrapToggle,
     ZenToggle,
 }
