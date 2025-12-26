@@ -23,16 +23,18 @@ pub enum CommandControl {
 
 #[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum CommandState {
-    Running,
+    Idle,
     Paused,
-    Stopped,
+    Executing,
+    Stopped
 }
 
 impl fmt::Display for CommandState {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            CommandState::Running => write!(f, "RUNNING"),
+            CommandState::Idle => write!(f, "IDLE"),
             CommandState::Paused => write!(f, "PAUSED"),
+            CommandState::Executing => write!(f, "EXECUTING"),
             CommandState::Stopped => write!(f, "STOPPED"),
         }
     }
@@ -63,7 +65,13 @@ pub struct CommandOutput {
     pub output: String,
     #[serde(with = "naivedatetime_format")]
     pub time: NaiveDateTime,
-    pub exit_status: Option<i32>
+    pub exit_status: Option<i32>,
+    pub duration: Duration,
+}
+
+pub enum CommandEvent {
+    Started,
+    Output(CommandOutput),
 }
 
 impl Command {

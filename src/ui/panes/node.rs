@@ -37,8 +37,11 @@ pub fn draw_recursive(
                 let state_str = cmd.state.to_string();
                 let display_str = format!("{:?}", cmd.display_type);
                 let last_exec_time = cmd.last_output()
-                .map(|c| c.time.format("%Y-%m-%d %H:%M:%S").to_string())
-                .unwrap_or_else(|| "N/A".to_string());
+                    .map(|c| c.time.format("%Y-%m-%d %H:%M:%S").to_string())
+                    .unwrap_or_else(|| "N/A".to_string());
+                let duration = cmd.last_output()
+                    .map(|c| format!("{}.{}", c.duration.as_secs(), c.duration.subsec_millis()))
+                    .unwrap_or_else(|| "N/A".to_string());
 
                 let block = create_pane_block(
                     config,
@@ -46,6 +49,7 @@ pub fn draw_recursive(
                     &cmd.exec,
                     &interval_str,
                     &last_exec_time,
+                    &duration,
                     &state_str,
                     &display_str,
                 );
@@ -54,7 +58,16 @@ pub fn draw_recursive(
             } else {
                 let display_str_na = format!("{:?}", DisplayType::RawText);
 
-                let block = create_pane_block(config, is_active, "N/A", "N/A", "N/A", "N/A", &display_str_na);
+                let block = create_pane_block(
+                    config,
+                    is_active, 
+                    "N/A", 
+                    "N/A",
+                    "N/A",
+                    "N/A",
+                    "N/A",
+                    &display_str_na
+                );
 
                 frame.render_widget(block.clone(), area);
                 frame.render_widget(Paragraph::new("N/A"), block.inner(area));

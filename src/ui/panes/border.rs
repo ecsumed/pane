@@ -19,6 +19,7 @@ pub fn create_pane_block<'a>(
     exec_str: &'a str,
     interval_secs_str: &'a str,
     last_exec_time: &'a str,
+    duration: &'a str,
     state_str: &'a str,
     display_type_str: &'a str,
 ) -> Block<'a> {
@@ -45,12 +46,13 @@ pub fn create_pane_block<'a>(
         ]);
 
         let title_top_right = Line::from(vec![
-            Span::styled(" State ", p.meta_label),
             Span::styled(state_str, p.meta_value),
         ]).right_aligned();
     
         let title_bottom_left = Line::from(vec![
+            Span::styled("Updated: ", p.meta_label),
             Span::styled(last_exec_time, p.meta_value),
+            Span::styled(format!(" ({duration})"), p.meta_value),
         ]);
         let title_bottom_right = Line::from(
             Span::styled(display_type_str, p.meta_value),

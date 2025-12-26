@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use tokio::sync::mpsc;
 
-use crate::command::{Command, CommandControl, CommandOutput, CommandSerializableState, CommandState};
+use crate::command::{Command, CommandControl, CommandEvent, CommandOutput, CommandSerializableState, CommandState};
 use crate::logging::{info, warn};
 use crate::pane::PaneKey;
 use crate::ui::DisplayType;
@@ -14,7 +14,7 @@ impl Command {
         exec: String,
         display: DisplayType,
         interval: Duration,
-        output_tx: mpsc::Sender<(PaneKey, CommandOutput)>,
+        output_tx: mpsc::Sender<(PaneKey, CommandEvent)>,
     ) -> Self {
         let (control_tx, control_rx) = mpsc::channel(1);
 
@@ -24,7 +24,7 @@ impl Command {
                 id,
                 cmd,
                 interval,
-                CommandState::Running,
+                CommandState::Idle,
                 control_rx,
                 output_tx,
             )
@@ -36,7 +36,7 @@ impl Command {
             exec,
             interval,
             output_history: VecDeque::new(),
-            state: CommandState::Running,
+            state: CommandState::Idle,
             display_type: display,
             task_handle: Some(task_handle),
             control_tx,
@@ -45,7 +45,7 @@ impl Command {
 
     pub fn restore_tasks(
         tasks_state: HashMap<PaneKey, CommandSerializableState>,
-        output_tx: mpsc::Sender<(PaneKey, CommandOutput)>,
+        output_tx: mpsc::Sender<(PaneKey, CommandEvent)>,
     ) -> HashMap<PaneKey, Command> {
         let mut running_tasks = HashMap::new();
 
@@ -62,7 +62,7 @@ impl Command {
     pub fn spawn_from_state(
         id: PaneKey,
         state: CommandSerializableState,
-        output_tx: mpsc::Sender<(PaneKey, CommandOutput)>,
+        output_tx: mpsc::Sender<(PaneKey, CommandEvent)>,
     ) -> Command {
         let (control_tx, control_rx) = mpsc::channel(1);
 
@@ -110,7 +110,7 @@ impl Command {
 
         match &worker_instruction {
             CommandControl::Pause => self.state = CommandState::Paused,
-            CommandControl::Resume => self.state = CommandState::Running,
+            CommandControl::Resume => self.state = CommandState::Idle,
             CommandControl::Stop => self.state = CommandState::Stopped,
             _ => {}
         }

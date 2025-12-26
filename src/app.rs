@@ -11,7 +11,7 @@ use ratatui::Terminal;
 use tokio::sync::mpsc::{self};
 use tokio::time::interval;
 
-use crate::command::{Command, CommandControl, CommandOutput, CommandSerializableState};
+use crate::command::{Command, CommandControl, CommandEvent, CommandOutput, CommandSerializableState};
 use crate::config::AppConfig;
 use crate::controls;
 use crate::mode::AppMode;
@@ -34,8 +34,8 @@ pub struct App {
     pub tasks: HashMap<PaneKey, Command>,
     pub mode: AppMode,
     pub exit: bool,
-    pub output_rx: mpsc::Receiver<(PaneKey, CommandOutput)>,
-    pub output_tx: mpsc::Sender<(PaneKey, CommandOutput)>,
+    pub output_rx: mpsc::Receiver<(PaneKey, CommandEvent)>,
+    pub output_tx: mpsc::Sender<(PaneKey, CommandEvent)>,
     pub app_control_tx: mpsc::Sender<AppControl>,
     pub app_control_rx: mpsc::Receiver<AppControl>,
     pub config: AppConfig,
@@ -82,22 +82,31 @@ impl App {
             })?;
 
             tokio::select! {
-                Some((id, output)) = self.output_rx.recv() => {
-                    if let Some(code) = output.exit_status {
-                        if code != 0 && self.config.beep {
-                            App::beep()
+                Some((id, event)) = self.output_rx.recv() => {
+                    match event {
+                        CommandEvent::Started => {
+                            if let Some(command) = self.tasks.get_mut(&id) {
+                                command.state = crate::command::CommandState::Executing;
+                            }
                         }
-                        if code != 0 && self.config.err_exit {
-                            info!("Exiting because err_exit was set.");
-                            self.exit();
+                        CommandEvent::Output(out) => {
+                            if let Some(code) = out.exit_status {
+                                if code != 0 && self.config.beep {
+                                    App::beep()
+                                }
+                                if code != 0 && self.config.err_exit {
+                                    info!("Exiting because err_exit was set.");
+                                    self.exit();
+                                }
+                            }
+        
+                            if let Some(command) = self.tasks.get_mut(&id) {
+                                command.state = crate::command::CommandState::Idle;
+                                command.record_output(out, self.config.max_history);
+                            }
                         }
-                    }
-
-                    if let Some(command) = self.tasks.get_mut(&id) {
-                        command.record_output(output, self.config.max_history);
                     }
                 },
-
                 Some(Ok(event)) = events.next().fuse() => {
                     controls::handle_event(self, event).await?;
                 },
