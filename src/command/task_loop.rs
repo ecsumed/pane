@@ -63,6 +63,10 @@ impl Command {
                         warn!("Pane {:?} task failed to run command: {}", id, e);
                     }
                 }
+                else => {
+                    // Necessary to prevent panics if Paused
+                    tokio::task::yield_now().await; 
+                }
             }
         }
     }
