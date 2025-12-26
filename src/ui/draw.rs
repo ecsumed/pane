@@ -24,7 +24,7 @@ pub fn draw_ui(app: &mut App, frame: &mut Frame) {
 
     // Main modes
     match &mut app.mode {
-        AppMode::Observe { .. } => draw_observe_mode(frame, main_area, &app.tasks,  &mut app.mode),
+        AppMode::Observe { .. } => draw_observe_mode(frame, main_area, &app.config, &app.tasks,  &mut app.mode),
         _ => panes::draw(frame, main_area, &app.config, &app.pane_manager, &app.tasks),
     }
 

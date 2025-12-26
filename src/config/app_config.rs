@@ -10,7 +10,7 @@ use figment::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{logging::{debug, info}, ui::DisplayType};
+use crate::{config::theme::Theme, logging::{debug, info}, ui::DisplayType};
 use super::utils::{app_name, deserialize_duration, get_home_dir};
 use crate::controls::{KeyMode, actions::Action};
 
@@ -31,6 +31,7 @@ pub struct AppConfig {
     pub logs_dir: PathBuf,
     pub log_level: Option<String>,
     pub keybindings: HashMap<KeyMode, HashMap<KeyCombination, Action>>,
+    pub theme: Theme,
 }
 
 impl fmt::Display for AppConfig {
@@ -52,6 +53,9 @@ impl fmt::Display for AppConfig {
         writeln!(f, "  Logs Directory: {:?}", self.logs_dir)?;
         writeln!(f, "  Sessions Directory: {:?}", self.sessions_dir)?;
         writeln!(f, "  Snapshot Directory: {:?}", self.snapshot_dir)?;
+
+        writeln!(f, "  Theme")?;
+        writeln!(f, "    Collapse borders: {}", self.theme.collapse_borders)?;
 
         for (keymode, bindings) in self.keybindings.iter() {
             writeln!(f, "  Keys {}:", keymode)?;

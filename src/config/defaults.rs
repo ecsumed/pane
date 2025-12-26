@@ -5,11 +5,13 @@ use crokey::{key, KeyCombination};
 
 use super::utils::{app_name, default_sessions_dir_path, default_snapshot_dir_path};
 use super::AppConfig;
+use crate::config::theme::Theme;
 use crate::config::utils::default_logging_dir_path;
 use crate::controls::KeyMode;
 use crate::controls::actions::Action;
 use crate::ui::DisplayType;
 
+// GENERAL SETTINGS
 const BEEP: bool = false;
 const DEFAULT_DISPLAY: DisplayType = DisplayType::RawText;
 const EXIT_ON_CHANGE: bool = false;
@@ -19,6 +21,9 @@ const LOG_LEVEL: Option<String> = None;
 const MAX_HISTORY: usize = 10;
 const WRAP: bool = true;
 const ZEN: bool = false;
+
+// THEME
+const COLLAPSE_BORDERS: bool = false;
 
 pub fn default_keybindings() -> HashMap<KeyMode, HashMap<KeyCombination, Action>> {
     let mut map = HashMap::new();
@@ -84,6 +89,14 @@ pub fn default_keybindings() -> HashMap<KeyMode, HashMap<KeyCombination, Action>
     map
 }
 
+impl Default for Theme {
+    fn default() -> Self {
+        Theme {
+            collapse_borders: COLLAPSE_BORDERS,
+        }
+    }
+}
+
 impl Default for AppConfig {
     fn default() -> Self {
         use directories::ProjectDirs;
@@ -104,6 +117,7 @@ impl Default for AppConfig {
             sessions_dir: default_sessions_dir_path(&proj_dirs),
             snapshot_dir: default_snapshot_dir_path(&proj_dirs),
             keybindings: default_keybindings(),
+            theme: Theme::default(),
         }
     }
 }

@@ -7,12 +7,14 @@ use ratatui::text::Line;
 use ratatui::widgets::{Block, Borders, Padding, Paragraph};
 
 use crate::command::Command;
+use crate::config::AppConfig;
 use crate::pane::{PaneKey, PaneManager, PaneNodeData};
 use crate::ui::display_modes::render_command_output;
 use crate::ui::DisplayType;
+use crate::ui::utils::BlockExt;
 
 pub fn create_pane_block<'a>(
-    zen: bool,
+    config: &AppConfig,
     is_active: bool,
     exec_str: &'a str,
     interval_secs_str: &'a str,
@@ -23,9 +25,10 @@ pub fn create_pane_block<'a>(
     let mut block = Block::default()
         .borders(Borders::ALL)
         .border_style(if is_active { Style::default().fg(Color::Green).bold() } else { Style::default() })
-        .padding(Padding::uniform(1));
+        .padding(Padding::uniform(1))
+        .merge_if(config.theme.collapse_borders && config.zen);
 
-    if !zen {
+    if !config.zen {
         let title_top_left = Line::from(vec![
             "Every ".into(),
             interval_secs_str.dark_gray().bold(),

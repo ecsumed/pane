@@ -12,6 +12,7 @@ use crate::pane::{PaneKey, PaneManager, PaneNodeData};
 use crate::ui::display_modes::render_command_output;
 use crate::ui::DisplayType;
 use crate::ui::panes::border::create_pane_block;
+use crate::ui::utils::LayoutExt;
 
 pub fn draw_recursive(
     frame: &mut Frame,
@@ -40,7 +41,7 @@ pub fn draw_recursive(
                 .unwrap_or_else(|| "N/A".to_string());
 
                 let block = create_pane_block(
-                    config.zen,
+                    config,
                     is_active,
                     &cmd.exec,
                     &interval_str,
@@ -53,7 +54,7 @@ pub fn draw_recursive(
             } else {
                 let display_str_na = format!("{:?}", DisplayType::RawText);
 
-                let block = create_pane_block(config.zen, is_active, "N/A", "N/A", "N/A", "N/A", &display_str_na);
+                let block = create_pane_block(config, is_active, "N/A", "N/A", "N/A", "N/A", &display_str_na);
 
                 frame.render_widget(block.clone(), area);
                 frame.render_widget(Paragraph::new("N/A"), block.inner(area));
@@ -80,6 +81,7 @@ pub fn draw_recursive(
             let chunks = Layout::default()
                 .direction(*direction)
                 .constraints(constraints)
+                .collapse_if(config.theme.collapse_borders && config.zen)
                 .split(area);
 
             for (chunk, child_key) in chunks.iter().zip(children.iter()) {

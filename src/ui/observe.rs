@@ -1,32 +1,40 @@
 use std::collections::HashMap;
 
-use ratatui::layout::{Constraint, Layout, Rect};
+use ratatui::layout::{Constraint, Layout, Rect, Spacing};
 use ratatui::style::{Color, Modifier, Style};
+use ratatui::symbols::merge::MergeStrategy;
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Widget};
 use ratatui::Frame;
 
 use crate::command::Command;
+use crate::config::AppConfig;
 use crate::mode::{AppMode, DiffMode};
 use crate::pane::PaneKey;
 use crate::logging::debug;
 use crate::ui::diffs;
+use crate::ui::utils::{BlockExt, LayoutExt};
 
 pub fn draw_observe_mode(
     frame: &mut Frame,
     area: Rect,
+    config: &AppConfig,
     commands: &HashMap<PaneKey, Command>,
     mode_state: &mut AppMode,
 ) {
     let [main_area, history_area] = Layout::horizontal([
         Constraint::Percentage(80),
         Constraint::Percentage(20),
-    ]).areas(area);
+    ])
+    .collapse_if(config.theme.collapse_borders)
+    .areas(area);
 
     let [search_area, content_area ] = Layout::vertical([
         Constraint::Length(3),
         Constraint::Min(0),
-    ]).areas(main_area);
+    ])
+    .collapse_if(config.theme.collapse_borders)
+    .areas(main_area);
 
     Clear.render(area, frame.buffer_mut());
 
@@ -84,7 +92,12 @@ pub fn draw_observe_mode(
         // debug!("UI Selected: {}, Vector Current: {}, Vector Prev: {:?}", selected_history_idx, data_idx, prev_data_idx);
 
         let list = List::new(items)
-            .block(Block::default().borders(Borders::ALL).title("History"))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .merge_if(config.theme.collapse_borders)
+                    .title("History")
+                )
             .highlight_style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD));
 
         history_list_state.select(Some(*selected_history_idx));
@@ -97,8 +110,8 @@ pub fn draw_observe_mode(
         let previous_text = previous_output.as_ref().map_or("", |c| &c.output);
 
         let display_text = diffs::render_diff(
-            &current_text, 
-            &previous_text, 
+            &current_text,
+            &previous_text,
             *diff_mode, 
             search_input.value()
         );
@@ -115,7 +128,8 @@ pub fn draw_observe_mode(
         
         let search_block = Block::default()
             .borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::DarkGray)) // Subtle border
+            .merge_if(config.theme.collapse_borders)
+            .border_style(Style::default().fg(Color::DarkGray))
             .title_alignment(ratatui::layout::Alignment::Right)
             .title(Span::styled(" SEARCH ", Style::default().fg(Color::Yellow).bg(Color::Black)));
         
