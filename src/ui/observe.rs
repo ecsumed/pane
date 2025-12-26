@@ -46,6 +46,7 @@ pub fn draw_observe_mode(
         search_input, 
         history_list_state,
     } = mode_state {
+        let p = &config.theme.palette;
 
         // This is crazy, probably needs to be simplified.
 
@@ -110,13 +111,18 @@ pub fn draw_observe_mode(
         let previous_text = previous_output.as_ref().map_or("", |c| &c.output);
 
         let display_text = diffs::render_diff(
+            &config.theme,
             &current_text,
             &previous_text,
             *diff_mode, 
             search_input.value()
         );
 
-        frame.render_widget(Paragraph::new(display_text).block(Block::default().borders(Borders::ALL)), content_area);
+        let content_block = Block::default()
+            .borders(Borders::ALL)
+            .border_style(p.border_active);
+        let widget = Paragraph::new(display_text).block(content_block);
+        frame.render_widget(widget, content_area);
     
         ////////////////////////////////////////
         // SEARCH

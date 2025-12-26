@@ -2,12 +2,12 @@ use similar::{ChangeTag, TextDiff};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 
-pub fn render<'a>(current: &'a str, query: &str) -> Vec<Line<'a>> {
+use crate::config::theme::Theme;
+
+pub fn render<'a>(theme: &Theme, current: &'a str, query: &str) -> Vec<Line<'a>> {
     let query_lower = query.to_lowercase();
-    let highlight_style = Style::default()
-        .fg(Color::Black)
-        .bg(Color::Yellow)
-        .add_modifier(Modifier::BOLD);
+
+    let p = &theme.palette;
 
     current
         .lines()
@@ -26,11 +26,11 @@ pub fn render<'a>(current: &'a str, query: &str) -> Vec<Line<'a>> {
 
                 Line::from(vec![
                     Span::raw(prefix),
-                    Span::styled(matched, highlight_style),
+                    Span::styled(matched, p.search_match),
                     Span::raw(suffix),
                 ])
             } else {
-                Line::from(Span::styled(line_content, Style::default().fg(Color::DarkGray)))
+                Line::from(Span::styled(line_content, p.output))
             }
         })
         .collect()

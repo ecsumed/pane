@@ -2,10 +2,11 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use crokey::{key, KeyCombination};
+use ratatui::style::{Color, Modifier, Style};
 
 use super::utils::{app_name, default_sessions_dir_path, default_snapshot_dir_path};
 use super::AppConfig;
-use crate::config::theme::Theme;
+use crate::config::theme::{Palette, Theme};
 use crate::config::utils::default_logging_dir_path;
 use crate::controls::KeyMode;
 use crate::controls::actions::Action;
@@ -89,10 +90,28 @@ pub fn default_keybindings() -> HashMap<KeyMode, HashMap<KeyCombination, Action>
     map
 }
 
+impl Default for Palette {
+    fn default() -> Self {
+        Self {
+            border_active: Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            border_inactive: Style::default().fg(Color::DarkGray),
+            border_label: Style::default().fg(Color::Reset).bg(Color::Rgb(40, 40, 40)),
+            meta_label: Style::default().fg(Color::DarkGray),
+            meta_value: Style::default().fg(Color::White),
+            meta_highlight: Style::default().fg(Color::Yellow).bold(),
+            meta_secondary: Style::default().fg(Color::Blue),  
+            diff_add: Style::default().fg(Color::Green).bg(Color::Rgb(20, 40, 20)),
+            diff_remove: Style::default().fg(Color::Red).bg(Color::Rgb(40, 20, 20)),
+            search_match: Style::default().fg(Color::Black).bg(Color::Yellow),
+            output: Style::default().fg(Color::Gray),
+        }
+    }
+}
 impl Default for Theme {
     fn default() -> Self {
         Theme {
             collapse_borders: COLLAPSE_BORDERS,
+            palette: Palette::default(),
         }
     }
 }

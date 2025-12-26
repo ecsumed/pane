@@ -17,9 +17,9 @@ pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, command: &Comma
     let query = "";
 
     let lines = match command.display_type {
-        DiffChar => diffs::char::render(current_str, previous_str, query),
-        DiffWord => diffs::word::render(current_str, previous_str, query),
-        DiffLine => diffs::line::render(current_str, previous_str, query),
+        DiffChar => diffs::char::render(&config.theme, current_str, previous_str, query),
+        DiffWord => diffs::word::render(&config.theme, current_str, previous_str, query),
+        DiffLine => diffs::line::render(&config.theme, current_str, previous_str, query),
         _ => Vec::new(),
     };
 

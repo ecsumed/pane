@@ -4,16 +4,20 @@ use ratatui::{
 };
 use similar::{ChangeTag, TextDiff};
 
-pub fn render<'a>(current: &'a str, previous: &'a str, _query: &str) -> Vec<Line<'a>> {
+use crate::config::theme::Theme;
+
+pub fn render<'a>(theme: &Theme, current: &'a str, previous: &'a str, _query: &str) -> Vec<Line<'a>> {
     let diff = TextDiff::from_words(previous, current);
     let mut lines = Vec::new();
     let mut current_line_spans = Vec::new();
 
+    let p = &theme.palette;
+
     for change in diff.iter_all_changes() {
         let style = match change.tag() {
-            ChangeTag::Delete => Style::default().fg(Color::Red).bg(Color::Rgb(50, 0, 0)),
-            ChangeTag::Insert => Style::default().fg(Color::Green).bg(Color::Rgb(0, 50, 0)),
-            _ => Style::default().fg(Color::Gray),
+            ChangeTag::Delete => p.diff_remove,
+            ChangeTag::Insert => p.diff_add,
+            _ => p.output,
         };
 
         let value = change.value();
