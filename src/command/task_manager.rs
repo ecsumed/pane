@@ -12,6 +12,7 @@ impl Command {
     pub fn spawn(
         id: PaneKey,
         exec: String,
+        display: DisplayType,
         interval: Duration,
         output_tx: mpsc::Sender<(PaneKey, CommandOutput)>,
     ) -> Self {
@@ -36,7 +37,7 @@ impl Command {
             interval,
             output_history: VecDeque::new(),
             state: CommandState::Running,
-            display_type: DisplayType::default(),
+            display_type: display,
             task_handle: Some(task_handle),
             control_tx,
         }

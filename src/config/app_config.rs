@@ -10,7 +10,7 @@ use figment::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::logging::{debug, info};
+use crate::{logging::{debug, info}, ui::DisplayType};
 use super::utils::{app_name, deserialize_duration, get_home_dir};
 use crate::controls::{KeyMode, actions::Action};
 
@@ -23,6 +23,7 @@ pub struct AppConfig {
     pub err_exit: bool,
     pub chg_exit: bool,
     pub wrap: bool,
+    pub default_display: DisplayType,
     pub max_history: usize,
     pub zen: bool,
     pub sessions_dir: PathBuf,
@@ -40,6 +41,7 @@ impl fmt::Display for AppConfig {
         writeln!(f, "  Exit on Error: {}", self.err_exit)?;
         writeln!(f, "  Exit on Change: {}", self.chg_exit)?;
         writeln!(f, "  Wrap: {}", self.wrap)?;
+        writeln!(f, "  Default Display: {:?}", self.default_display)?;
         writeln!(f, "  Max History: {}", self.max_history)?;
         writeln!(f, "  Zen: {}", self.zen)?;
         writeln!(
@@ -100,6 +102,10 @@ impl AppConfig {
 
         if cli.no_wrap {
             self.wrap = false;
+        }
+
+        if let Some(display) = cli.display {
+            self.default_display = display;
         }
 
         if let Some(max_history) = cli.max_history {

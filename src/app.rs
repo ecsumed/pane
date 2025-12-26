@@ -150,7 +150,7 @@ impl App {
     pub async fn set_command(&mut self, id: PaneKey, exec: String) {
         if let Some(old) = self.tasks.insert(
             id,
-            Command::spawn(id, exec, self.config.interval, self.output_tx.clone()),
+            Command::spawn(id, exec, self.config.default_display, self.config.interval, self.output_tx.clone()),
         ) {
             if let Some(h) = old.task_handle {
                 h.abort();

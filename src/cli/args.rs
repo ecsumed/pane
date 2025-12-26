@@ -1,12 +1,25 @@
 use clap::{Parser};
 use clap_verbosity_flag::{ErrorLevel, Verbosity};
 
+use crate::ui::DisplayType;
+
 #[derive(Parser, Debug)]
 #[command(author, version, about = "Watch + tmux-resurrect = poor mans grafana")]
 pub struct Cli {
     /// Enable an audible beep if a command completes with a non-zero status code
     #[arg(short, long)]
     pub beep: bool,
+
+    /// Highlight differences
+    #[arg(
+        short = 'd', 
+        long = "display", 
+        value_enum,
+        default_missing_value = "diff-char", 
+        num_args = 0..=1,
+        require_equals = true,
+    )]
+    pub display: Option<DisplayType>,
 
     /// The interval to wait between executions
     #[arg(short = 'n', long, value_name = "SECONDS")]

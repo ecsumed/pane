@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
+use clap::{Parser, ValueEnum};
+
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, EnumIter, Serialize, Deserialize, ValueEnum)]
 pub enum DisplayType {
     #[default]
     RawText,

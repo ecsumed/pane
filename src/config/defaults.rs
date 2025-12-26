@@ -8,8 +8,10 @@ use super::AppConfig;
 use crate::config::utils::default_logging_dir_path;
 use crate::controls::KeyMode;
 use crate::controls::actions::Action;
+use crate::ui::DisplayType;
 
 const BEEP: bool = false;
+const DEFAULT_DISPLAY: DisplayType = DisplayType::RawText;
 const EXIT_ON_CHANGE: bool = false;
 const EXIT_ON_ERROR: bool = false;
 const INTERVAL_SECS: u64 = 5;
@@ -94,6 +96,7 @@ impl Default for AppConfig {
             err_exit: EXIT_ON_ERROR,
             chg_exit: EXIT_ON_CHANGE,
             wrap: WRAP,
+            default_display: DEFAULT_DISPLAY,
             log_level: LOG_LEVEL,
             max_history: MAX_HISTORY,
             logs_dir: default_logging_dir_path(&proj_dirs),
