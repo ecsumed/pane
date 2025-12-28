@@ -4,7 +4,7 @@ use ratatui::layout::{Constraint, Layout, Rect, Spacing};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::symbols::merge::MergeStrategy;
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Widget};
+use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Padding, Paragraph, Widget};
 use ratatui::Frame;
 
 use crate::command::Command;
@@ -120,7 +120,8 @@ pub fn draw_observe_mode(
 
         let content_block = Block::default()
             .borders(Borders::ALL)
-            .border_style(p.border_active);
+            .border_style(p.border_active)
+            .padding(Padding::left(2));
         let widget = Paragraph::new(display_text).block(content_block);
         frame.render_widget(widget, content_area);
     

@@ -103,6 +103,7 @@ impl Default for Palette {
             diff_add: Style::default().fg(Color::Green).bg(Color::Rgb(20, 40, 20)),
             diff_remove: Style::default().fg(Color::Red).bg(Color::Rgb(40, 20, 20)),
             search_match: Style::default().fg(Color::Black).bg(Color::Yellow),
+            multiline_timestamp: Style::default().fg(Color::LightGreen).bold(),
             output: Style::default().fg(Color::Gray),
         }
     }

@@ -20,7 +20,6 @@ pub fn render<'a>(theme: &Theme, current: &'a str, previous: &'a str, _query: &s
             ChangeTag::Equal => p.output,
         };
 
-
         let value = change.value();
 
         if value.contains('\n') {

@@ -1,5 +1,5 @@
 use ratatui::layout::Rect;
-use ratatui::text::{Line, Text};
+use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::{Paragraph, Wrap};
 use ratatui::Frame;
 
@@ -8,20 +8,27 @@ use crate::config::AppConfig;
 use crate::ui::DisplayType;
 
 pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, command: &Command) {
+    let p = &config.theme.palette;
+
     let history_lines: Vec<Line> = command
         .output_history
         .iter()
         .map(|entry| {
-            let content = match command.display_type {
+            let dt_string = match command.display_type {
                 DisplayType::MultiLineDateTime => {
-                    format!("[{}] {}", entry.time.format("%Y-%m-%d %H:%M:%S"), entry.output)
+                    // Use .format() for Chrono types
+                    format!("[{}]", entry.time.format("%Y-%m-%d %H:%M:%S"))
                 }
                 DisplayType::MultiLineTime => {
-                    format!("[{}] {}", entry.time.format("%H:%M:%S"), entry.output)
+                    format!("[{}]", entry.time.format("%H:%M:%S"))
                 }
-                _ => entry.output.clone(),
+                _ => String::new(), 
             };
-            Line::from(content)
+    
+            Line::from(vec![
+                Span::styled(dt_string, p.multiline_timestamp),
+                Span::styled(format!(" {}", entry.output), p.output),
+            ])
         })
         .collect();
 
