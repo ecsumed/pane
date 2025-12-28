@@ -6,8 +6,10 @@ use crate::command::Command;
 use crate::config::AppConfig;
 
 pub mod diff;
-pub mod multiline;
-pub mod raw_text;
+mod counter;
+mod multiline;
+mod line_chart;
+mod raw_text;
 pub mod types;
 mod utils;
 
@@ -27,6 +29,12 @@ pub fn render_command_output(frame: &mut Frame, area: Rect, config: &AppConfig, 
         }
         DisplayType::DiffChar | DisplayType::DiffWord | DisplayType::DiffLine => {
             diff::render(frame, inner_area, config, command);
+        }
+        DisplayType::LineChart => {
+            line_chart::render(frame, inner_area, config, command);
+        }
+        DisplayType::Counter => {
+            counter::render(frame, inner_area, config, command);
         }
     }
 }

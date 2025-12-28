@@ -14,7 +14,6 @@ pub enum DisplayType {
     DiffChar,
     DiffLine,
     DiffWord,
-    // LineChart,
-    // Counter,
-    // PieChart,
+    LineChart,
+    Counter,
 }
