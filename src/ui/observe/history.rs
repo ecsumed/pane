@@ -7,7 +7,10 @@ use crate::ui::utils::BlockExt;
 pub fn widget<'a>(
     config: &'a AppConfig,
     command: &'a Command,
-) -> List<'a> {    
+    is_focused: bool,
+) -> List<'a> {
+    let p = &config.theme.palette;
+
     let items: Vec<ListItem> = command.output_history
         .iter()
         .rev()
@@ -22,10 +25,13 @@ pub fn widget<'a>(
         })
         .collect();
 
+    let border_style = if is_focused { p.border_active } else { p.border_inactive };
+
     List::new(items)
         .block(
             Block::default()
                 .borders(Borders::ALL)
+                .border_style(border_style)
                 .merge_if(config.theme.collapse_borders)
                 .title("History")
         )

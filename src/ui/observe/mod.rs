@@ -13,7 +13,7 @@ use ratatui::Frame;
 
 use crate::command::Command;
 use crate::config::AppConfig;
-use crate::mode::{AppMode, DiffMode};
+use crate::mode::{AppMode, DiffMode, ObserveFocus};
 use crate::pane::PaneKey;
 use crate::logging::debug;
 use crate::ui::diffs;
@@ -49,6 +49,8 @@ pub fn draw(
         diff_mode,
         search_input,
         history_list_state,
+        focus,
+        scroll_offset
     } = mode_state {
         let Some(command) = commands.get(active_id) else { return; };
         
@@ -64,7 +66,11 @@ pub fn draw(
         }
 
         // Render History
-        let history_w = history::widget(config, command);
+        let history_w = history::widget(
+            config,
+            command,
+            *focus == ObserveFocus::History,
+        );
         history_list_state.select(Some(*selected_history_idx));
         frame.render_stateful_widget(history_w, history_area, history_list_state);
 
@@ -74,12 +80,18 @@ pub fn draw(
             command, 
             *selected_history_idx, 
             *diff_mode, 
-            search_input.value()
+            search_input.value(),
+            *scroll_offset,
+            *focus == ObserveFocus::Content,
         );
         frame.render_widget(content_w, content_area);
 
         // Render Search
-        let search_w = search::widget(config, search_input.value());
+        let search_w = search::widget(
+            config, 
+            search_input.value(),
+            *focus == ObserveFocus::Search,
+        );
         frame.render_widget(search_w, search_area);
     }
 }

@@ -27,6 +27,7 @@ pub enum Action {
     Quit,
     Resume,
     SaveSession,
+    Search,
     SplitHorizontal,
     SplitVertical,
     TabComplete,

@@ -1,5 +1,5 @@
 use ratatui::prelude::*;
-use ratatui::widgets::{Block, Borders, Padding, Paragraph};
+use ratatui::widgets::{Block, Borders, Padding, Paragraph, Wrap};
 use crate::command::Command;
 use crate::config::AppConfig;
 use crate::mode::DiffMode;
@@ -11,6 +11,8 @@ pub fn widget<'a>(
     selected_idx: usize,
     diff_mode: DiffMode,
     search_query: &'a str,
+    scroll_offset: u16,
+    is_focused: bool,
 ) -> Paragraph<'a> {
     let p = &config.theme.palette;
     let current_len = command.output_history.len();
@@ -33,10 +35,21 @@ pub fn widget<'a>(
         search_query,
     );
 
+    let border_style = if is_focused { p.border_active } else { p.border_inactive };
+
+
     let content_block = Block::default()
         .borders(Borders::ALL)
-        .border_style(p.border_active)
+        .border_style(border_style)
         .padding(Padding::left(2));
+    
+    let mut p = Paragraph::new(display_text)
+        .block(content_block)
+        .scroll((scroll_offset, 0));
 
-    Paragraph::new(display_text).block(content_block)
+    if config.wrap {
+        p = p.wrap(Wrap { trim: true });
+    }
+
+    p
 }

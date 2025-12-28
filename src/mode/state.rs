@@ -39,8 +39,18 @@ pub enum AppMode {
         last_history_len: usize,
         diff_mode: DiffMode,
         search_input: Input,
-        history_list_state: ListState, 
+        history_list_state: ListState,
+        focus: ObserveFocus,
+        scroll_offset: u16,
     },
+}
+
+#[derive(Debug, Default, PartialEq)]
+pub enum ObserveFocus {
+    Content,
+    #[default]
+    History,
+    Search,
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
@@ -142,6 +152,8 @@ impl AppMode {
             diff_mode: diff_mode,
             search_input: Input::default(),
             history_list_state: ListState::default(),
+            focus: ObserveFocus::default(),
+            scroll_offset: 0,
         }
     }
 }

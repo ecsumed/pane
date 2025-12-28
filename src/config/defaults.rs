@@ -85,7 +85,10 @@ pub fn default_keybindings() -> HashMap<KeyMode, HashMap<KeyCombination, Action>
     map.insert(KeyMode::Help, HashMap::new());
 
     // OBSERVE BINDINGS
-    map.insert(KeyMode::Observe, HashMap::new());
+    map.insert(KeyMode::Observe, HashMap::from([
+        (key!('/'), Action::Search),
+        (key!(w), Action::WrapToggle),
+    ]));
 
     map
 }
