@@ -20,5 +20,8 @@ pub struct Palette {
     pub diff_remove: Style,
     pub search_match: Style,
     pub multiline_timestamp: Style,
+    pub counter_key: Style,
+    pub spark_line: Style,
     pub output: Style,
+    pub error: Style,
 }

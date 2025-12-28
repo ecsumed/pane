@@ -108,6 +108,9 @@ impl Default for Palette {
             search_match: Style::default().fg(Color::Black).bg(Color::Yellow),
             multiline_timestamp: Style::default().fg(Color::LightGreen).bold(),
             output: Style::default().fg(Color::Gray),
+            counter_key: Style::default().fg(Color::LightGreen).bold(),
+            error: Style::default().fg(Color::Red),
+            spark_line: Style::default().fg(Color::LightBlue),
         }
     }
 }

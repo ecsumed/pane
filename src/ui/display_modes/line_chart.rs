@@ -16,7 +16,7 @@ pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, command: &Comma
 
     if numeric_data.iter().all(|val| val.is_none()) {
         let msg = Paragraph::new("No numeric data found in history to graph.")
-            .style(Style::default().fg(Color::Red))
+            .style(p.error)
             .alignment(ratatui::layout::Alignment::Center)
             .block(Block::default().borders(Borders::empty()));
         frame.render_widget(msg, area);
@@ -28,7 +28,7 @@ pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, command: &Comma
     let sparkline = Sparkline::default()
         .block(Block::default().borders(Borders::empty()))
         .data(&data)
-        .style(p.meta_highlight);
+        .style(p.spark_line);
 
     frame.render_widget(sparkline, area);
 }

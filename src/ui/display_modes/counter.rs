@@ -23,7 +23,7 @@ pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, command: &Comma
         .into_iter()
         .map(|(text, count)| {
             ListItem::new(Line::from(vec![
-                Span::styled(format!("{:>4} ", count), p.meta_highlight),
+                Span::styled(format!("{:>4} ", count), p.counter_key),
                 Span::styled(text, p.output),
             ]))
         })
