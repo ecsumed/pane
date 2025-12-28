@@ -1,4 +1,4 @@
-use clap::{Parser};
+use clap::Parser;
 use clap_verbosity_flag::{ErrorLevel, Verbosity};
 
 use crate::ui::DisplayType;
@@ -12,8 +12,8 @@ pub struct Cli {
 
     /// Highlight differences
     #[arg(
-        short = 'd', 
-        long = "display", 
+        short = 'd',
+        long = "display",
         value_enum,
         default_missing_value = "diff-char", 
         num_args = 0..=1,

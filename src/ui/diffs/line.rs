@@ -1,10 +1,14 @@
-use similar::{ChangeTag, TextDiff};
-use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span};
+use similar::{ChangeTag, TextDiff};
 
 use crate::config::theme::Theme;
 
-pub fn render<'a>(theme: &Theme, current: &'a str, previous: &'a str, _query: &str) -> Vec<Line<'a>> {
+pub fn render<'a>(
+    theme: &Theme,
+    current: &'a str,
+    previous: &'a str,
+    _query: &str,
+) -> Vec<Line<'a>> {
     let diff = TextDiff::from_lines(previous, current);
     let mut lines = Vec::new();
 
@@ -16,7 +20,7 @@ pub fn render<'a>(theme: &Theme, current: &'a str, previous: &'a str, _query: &s
             ChangeTag::Insert => ("+", p.diff_add),
             ChangeTag::Equal => (" ", p.output),
         };
-        
+
         lines.push(Line::from(vec![
             Span::styled(sign, style),
             Span::styled(change.value(), style),

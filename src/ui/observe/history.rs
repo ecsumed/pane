@@ -1,17 +1,14 @@
-use ratatui::prelude::*;
-use ratatui::widgets::{Block, Borders, List, ListItem};
 use crate::command::Command;
 use crate::config::AppConfig;
 use crate::ui::utils::BlockExt;
+use ratatui::prelude::*;
+use ratatui::widgets::{Block, Borders, List, ListItem};
 
-pub fn widget<'a>(
-    config: &'a AppConfig,
-    command: &'a Command,
-    is_focused: bool,
-) -> List<'a> {
+pub fn widget<'a>(config: &'a AppConfig, command: &'a Command, is_focused: bool) -> List<'a> {
     let p = &config.theme.palette;
 
-    let items: Vec<ListItem> = command.output_history
+    let items: Vec<ListItem> = command
+        .output_history
         .iter()
         .rev()
         .enumerate()
@@ -25,7 +22,11 @@ pub fn widget<'a>(
         })
         .collect();
 
-    let border_style = if is_focused { p.border_active } else { p.border_inactive };
+    let border_style = if is_focused {
+        p.border_active
+    } else {
+        p.border_inactive
+    };
 
     List::new(items)
         .block(
@@ -33,7 +34,11 @@ pub fn widget<'a>(
                 .borders(Borders::ALL)
                 .border_style(border_style)
                 .merge_if(config.theme.collapse_borders)
-                .title("History")
+                .title("History"),
         )
-        .highlight_style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
+        .highlight_style(
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        )
 }

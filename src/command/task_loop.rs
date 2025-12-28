@@ -4,8 +4,8 @@ use tokio::sync::mpsc;
 use tokio::time::{self, MissedTickBehavior};
 
 use super::{Command, CommandControl, CommandState};
-use crate::command::{CommandEvent, CommandOutput};
-use crate::logging::{info, debug, warn};
+use crate::command::CommandEvent;
+use crate::logging::{debug, info, warn};
 use crate::pane::PaneKey;
 
 impl Command {
@@ -65,7 +65,7 @@ impl Command {
                 }
                 else => {
                     // Necessary to prevent panics if Paused
-                    tokio::task::yield_now().await; 
+                    tokio::task::yield_now().await;
                 }
             }
         }

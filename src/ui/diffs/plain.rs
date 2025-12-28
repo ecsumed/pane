@@ -1,5 +1,3 @@
-use similar::{ChangeTag, TextDiff};
-use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 
 use crate::config::theme::Theme;
@@ -13,7 +11,7 @@ pub fn render<'a>(theme: &Theme, current: &'a str, query: &str) -> Vec<Line<'a>>
         .lines()
         .map(|line_content| {
             if query.is_empty() {
-                return Line::from(Span::styled(line_content, p.output))
+                return Line::from(Span::styled(line_content, p.output));
             }
 
             if let Some(index) = line_content.to_lowercase().find(&query_lower) {

@@ -2,7 +2,6 @@ use ratatui::layout::Rect;
 use ratatui::widgets::{Paragraph, Wrap};
 use ratatui::Frame;
 
-use super::DisplayType;
 use crate::command::Command;
 use crate::config::AppConfig;
 use crate::ui::display_modes::utils;

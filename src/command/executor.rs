@@ -17,10 +17,7 @@ impl super::Command {
         exec: &str,
         output_tx: mpsc::Sender<(PaneKey, CommandEvent)>,
     ) -> Result<(), io::Error> {
-        if let Err(e) = output_tx.send((
-            id,
-            CommandEvent::Started
-        )).await {
+        if let Err(e) = output_tx.send((id, CommandEvent::Started)).await {
             warn!("Failed to send output for pane {:?}: {}", id, e);
         }
 
@@ -59,17 +56,14 @@ impl super::Command {
         };
 
         let now_datetime: NaiveDateTime = Local::now().naive_local();
-        let cmd_output = CommandOutput{
+        let cmd_output = CommandOutput {
             output: output_message,
             time: now_datetime,
             exit_status: status.code(),
             duration: duration,
         };
 
-        if let Err(e) = output_tx.send((
-            id,
-            CommandEvent::Output(cmd_output),
-        )).await {
+        if let Err(e) = output_tx.send((id, CommandEvent::Output(cmd_output))).await {
             warn!("Failed to send output for pane {:?}: {}", id, e);
         }
 

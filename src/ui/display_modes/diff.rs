@@ -1,12 +1,12 @@
 use ratatui::layout::Rect;
-use ratatui::text::{Line, Text};
+use ratatui::text::Text;
 use ratatui::widgets::{Paragraph, Wrap};
 use ratatui::Frame;
 
 use crate::command::Command;
 use crate::config::AppConfig;
 use crate::ui::diffs;
-use crate::ui::DisplayType::{DiffChar, DiffWord, DiffLine};
+use crate::ui::DisplayType::{DiffChar, DiffLine, DiffWord};
 
 pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, command: &Command) {
     let current_output = command.output_history.back();
@@ -22,7 +22,6 @@ pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, command: &Comma
         DiffLine => diffs::line::render(&config.theme, current_str, previous_str, query),
         _ => Vec::new(),
     };
-
 
     let mut paragraph = Paragraph::new(Text::from(lines));
 

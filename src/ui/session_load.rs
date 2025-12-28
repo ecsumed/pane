@@ -23,8 +23,8 @@ pub fn draw_session_list(frame: &mut Frame, app: &mut App) {
             })
             .collect();
 
-            let percent_x = 60;
-            let popup_area = centered_rect(percent_x, area, 6);
+        let percent_x = 60;
+        let popup_area = centered_rect(percent_x, area, 6);
 
         Clear.render(popup_area, frame.buffer_mut());
 

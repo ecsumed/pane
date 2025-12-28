@@ -7,11 +7,11 @@ use tui_input::backend::crossterm::EventHandler;
 use tui_input::Input;
 
 use crate::app::{App, AppControl};
-use crate::controls::KeyMode;
 use crate::controls::actions::Action;
-use crate::shell_history::ShellHistoryManager;
+use crate::controls::KeyMode;
 use crate::logging::{debug, warn};
 use crate::mode::AppMode;
+use crate::shell_history::ShellHistoryManager;
 
 fn update_suggestions(
     input: &mut Input,
@@ -39,8 +39,9 @@ pub async fn handle_editing_mode_keys(app: &mut App, event: Event) -> io::Result
         input,
         state,
         suggestions,
-        history 
-    } = &mut app.mode else {
+        history,
+    } = &mut app.mode
+    else {
         return Ok(());
     };
 
@@ -53,15 +54,17 @@ pub async fn handle_editing_mode_keys(app: &mut App, event: Event) -> io::Result
 
     let key_comb: KeyCombination = KeyCombination::from(key_event);
 
-    let action = app.config.keybindings
+    let action = app
+        .config
+        .keybindings
         .get(&current_context)
         .and_then(|map| map.get(&key_comb))
         .or_else(|| {
-            app.config.keybindings
+            app.config
+                .keybindings
                 .get(&KeyMode::Global)
                 .and_then(|map| map.get(&key_comb))
         });
-
 
     if let Some(act) = action {
         match act {
@@ -118,8 +121,7 @@ pub async fn handle_editing_mode_keys(app: &mut App, event: Event) -> io::Result
             Action::TabComplete => {
                 if let Some(index) = state.selected() {
                     if let Some(suggestion) = suggestions.get(index).cloned() {
-                        let current_input =
-                            mem::replace(input, tui_input::Input::default());
+                        let current_input = mem::replace(input, tui_input::Input::default());
 
                         let updated_input = current_input.with_value(suggestion);
 

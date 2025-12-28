@@ -25,11 +25,14 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
 
     let key_comb: KeyCombination = KeyCombination::from(key_event);
 
-    let action = app.config.keybindings
+    let action = app
+        .config
+        .keybindings
         .get(&current_context)
         .and_then(|map| map.get(&key_comb))
         .or_else(|| {
-            app.config.keybindings
+            app.config
+                .keybindings
                 .get(&KeyMode::Global)
                 .and_then(|map| map.get(&key_comb))
         });

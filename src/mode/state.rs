@@ -6,9 +6,9 @@ use tui_input::Input;
 
 use crate::app::App;
 use crate::controls::KeyMode;
-use crate::shell_history::ShellHistoryManager;
 use crate::pane::PaneKey;
 use crate::session;
+use crate::shell_history::ShellHistoryManager;
 use crate::ui::DisplayType;
 
 #[derive(Debug, Default)]
@@ -82,7 +82,7 @@ impl fmt::Display for AppMode {
             AppMode::SessionSave { .. } => "Save Session",
             AppMode::DisplayTypeSelect { .. } => "Select Display",
             AppMode::Help => "Help",
-            AppMode::Observe { .. } => "Observe"
+            AppMode::Observe { .. } => "Observe",
         };
         write!(f, "{}", name)
     }

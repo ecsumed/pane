@@ -3,7 +3,9 @@ use std::time::Duration;
 
 use tokio::sync::mpsc;
 
-use crate::command::{Command, CommandControl, CommandEvent, CommandOutput, CommandSerializableState, CommandState};
+use crate::command::{
+    Command, CommandControl, CommandEvent, CommandOutput, CommandSerializableState, CommandState,
+};
 use crate::logging::{info, warn};
 use crate::pane::PaneKey;
 use crate::ui::DisplayType;
@@ -20,15 +22,8 @@ impl Command {
 
         let cmd = exec.clone();
         let task_handle = tokio::spawn(async move {
-            Command::run_command_task(
-                id,
-                cmd,
-                interval,
-                CommandState::Idle,
-                control_rx,
-                output_tx,
-            )
-            .await;
+            Command::run_command_task(id, cmd, interval, CommandState::Idle, control_rx, output_tx)
+                .await;
         });
 
         info!("Adding new command: {}", &exec);

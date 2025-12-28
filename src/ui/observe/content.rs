@@ -1,9 +1,8 @@
-use ratatui::prelude::*;
-use ratatui::widgets::{Block, Borders, Padding, Paragraph, Wrap};
 use crate::command::Command;
 use crate::config::AppConfig;
 use crate::mode::DiffMode;
 use crate::ui::diffs;
+use ratatui::widgets::{Block, Borders, Padding, Paragraph, Wrap};
 
 pub fn widget<'a>(
     config: &'a AppConfig,
@@ -16,14 +15,14 @@ pub fn widget<'a>(
 ) -> Paragraph<'a> {
     let p = &config.theme.palette;
     let current_len = command.output_history.len();
-    
+
     // Logic to find which two history entries to compare
     let data_idx = current_len.saturating_sub(1).saturating_sub(selected_idx);
     let prev_data_idx = data_idx.checked_sub(1);
 
     let current_output = command.output_history.get(data_idx);
     let previous_output = prev_data_idx.and_then(|idx| command.output_history.get(idx));
-    
+
     let current_text = current_output.map_or("", |c| &c.output);
     let previous_text = previous_output.map_or("", |c| &c.output);
 
@@ -35,14 +34,17 @@ pub fn widget<'a>(
         search_query,
     );
 
-    let border_style = if is_focused { p.border_active } else { p.border_inactive };
-
+    let border_style = if is_focused {
+        p.border_active
+    } else {
+        p.border_inactive
+    };
 
     let content_block = Block::default()
         .borders(Borders::ALL)
         .border_style(border_style)
         .padding(Padding::left(2));
-    
+
     let mut p = Paragraph::new(display_text)
         .block(content_block)
         .scroll((scroll_offset, 0));

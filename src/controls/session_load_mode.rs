@@ -4,20 +4,16 @@ use crokey::crossterm::event::{self, Event};
 use crokey::KeyCombination;
 
 use crate::app::App;
-use crate::controls::KeyMode;
 use crate::controls::actions::Action;
-use crate::logging::{debug, error, info};
+use crate::controls::KeyMode;
+use crate::logging::{error, info};
 use crate::mode::AppMode;
 use crate::session::load_session_by_name;
 
 pub async fn handle_session_load_keys(app: &mut App, event: Event) -> io::Result<()> {
     let current_context: KeyMode = app.mode.key_mode();
 
-    let AppMode::SessionLoad {
-        items, 
-        state,
-        ..
-    } = &mut app.mode else {
+    let AppMode::SessionLoad { items, state, .. } = &mut app.mode else {
         return Ok(());
     };
 
@@ -30,18 +26,20 @@ pub async fn handle_session_load_keys(app: &mut App, event: Event) -> io::Result
 
     let key_comb: KeyCombination = KeyCombination::from(key_event);
 
-    let action = app.config.keybindings
+    let action = app
+        .config
+        .keybindings
         .get(&current_context)
         .and_then(|map| map.get(&key_comb))
         .or_else(|| {
-            app.config.keybindings
+            app.config
+                .keybindings
                 .get(&KeyMode::Global)
                 .and_then(|map| map.get(&key_comb))
         });
 
-
     if let Some(act) = action {
-        match act { 
+        match act {
             Action::MoveUp => {
                 if let Some(selected) = state.selected() {
                     let next = if selected == 0 {

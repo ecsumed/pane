@@ -22,9 +22,9 @@ pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, command: &Comma
                 DisplayType::MultiLineTime => {
                     format!("[{}]", entry.time.format("%H:%M:%S"))
                 }
-                _ => String::new(), 
+                _ => String::new(),
             };
-    
+
             Line::from(vec![
                 Span::styled(dt_string, p.multiline_timestamp),
                 Span::styled(format!(" {}", entry.output), p.output),

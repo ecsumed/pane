@@ -4,17 +4,15 @@ use humantime::format_duration;
 
 use ratatui::layout::{Constraint, Layout};
 use ratatui::prelude::{Frame, Rect};
-use ratatui::style::{Color, Modifier, Style, Stylize};
-use ratatui::text::Line;
-use ratatui::widgets::{Block, Borders, Padding, Paragraph};
+use ratatui::widgets::Paragraph;
 
 use crate::command::Command;
 use crate::config::AppConfig;
 use crate::pane::{PaneKey, PaneManager, PaneNodeData};
 use crate::ui::display_modes::render_command_output;
-use crate::ui::DisplayType;
 use crate::ui::panes::border::create_pane_block;
 use crate::ui::utils::LayoutExt;
+use crate::ui::DisplayType;
 
 pub fn draw_recursive(
     frame: &mut Frame,
@@ -38,10 +36,12 @@ pub fn draw_recursive(
                 let interval_str = format!("{:?}", cmd.interval);
                 let state_str = cmd.state.to_string();
                 let display_str = format!("{:?}", cmd.display_type);
-                let last_exec_time = cmd.last_output()
+                let last_exec_time = cmd
+                    .last_output()
                     .map(|c| c.time.format("%Y-%m-%d %H:%M:%S").to_string())
                     .unwrap_or_else(|| "N/A".to_string());
-                let duration = cmd.last_output()
+                let duration = cmd
+                    .last_output()
                     .map(|c| format_duration(c.duration).to_string())
                     .unwrap_or_else(|| "N/A".to_string());
 
@@ -62,13 +62,13 @@ pub fn draw_recursive(
 
                 let block = create_pane_block(
                     config,
-                    is_active, 
-                    "N/A", 
+                    is_active,
                     "N/A",
                     "N/A",
                     "N/A",
                     "N/A",
-                    &display_str_na
+                    "N/A",
+                    &display_str_na,
                 );
 
                 frame.render_widget(block.clone(), area);

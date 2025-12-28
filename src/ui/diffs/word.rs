@@ -1,12 +1,14 @@
-use ratatui::{
-    style::{Color, Style},
-    text::{Line, Span},
-};
+use ratatui::text::{Line, Span};
 use similar::{ChangeTag, TextDiff};
 
 use crate::config::theme::Theme;
 
-pub fn render<'a>(theme: &Theme, current: &'a str, previous: &'a str, _query: &str) -> Vec<Line<'a>> {
+pub fn render<'a>(
+    theme: &Theme,
+    current: &'a str,
+    previous: &'a str,
+    _query: &str,
+) -> Vec<Line<'a>> {
     let diff = TextDiff::from_words(previous, current);
     let mut lines = Vec::new();
     let mut current_line_spans = Vec::new();
@@ -24,7 +26,7 @@ pub fn render<'a>(theme: &Theme, current: &'a str, previous: &'a str, _query: &s
 
         if value.contains('\n') {
             let parts: Vec<&str> = value.split('\n').collect();
-            
+
             for (i, part) in parts.iter().enumerate() {
                 if !part.is_empty() {
                     current_line_spans.push(Span::styled(part.to_string(), style));

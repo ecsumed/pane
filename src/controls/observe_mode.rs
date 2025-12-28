@@ -1,4 +1,3 @@
-
 use std::io;
 
 use crokey::KeyCombination;
@@ -6,8 +5,8 @@ use crossterm::event::{self, Event};
 use tui_input::backend::crossterm::EventHandler;
 
 use crate::app::App;
-use crate::controls::KeyMode;
 use crate::controls::actions::Action;
+use crate::controls::KeyMode;
 use crate::logging::debug;
 use crate::mode::{AppMode, DiffMode, ObserveFocus};
 
@@ -15,13 +14,14 @@ pub async fn handle_observe_mode_keys(app: &mut App, event: Event) -> io::Result
     let current_context: KeyMode = app.mode.key_mode();
 
     let AppMode::Observe {
-        selected_history_idx, 
+        selected_history_idx,
         diff_mode,
         search_input,
         focus,
         scroll_offset,
         ..
-    } = &mut app.mode else {
+    } = &mut app.mode
+    else {
         return Ok(());
     };
 
@@ -34,15 +34,17 @@ pub async fn handle_observe_mode_keys(app: &mut App, event: Event) -> io::Result
 
     let key_comb: KeyCombination = KeyCombination::from(key_event);
 
-    let action = app.config.keybindings
+    let action = app
+        .config
+        .keybindings
         .get(&current_context)
         .and_then(|map| map.get(&key_comb))
         .or_else(|| {
-            app.config.keybindings
+            app.config
+                .keybindings
                 .get(&KeyMode::Global)
                 .and_then(|map| map.get(&key_comb))
         });
-
 
     if let Some(act) = action {
         match act {
@@ -89,7 +91,7 @@ pub async fn handle_observe_mode_keys(app: &mut App, event: Event) -> io::Result
                     app.config.wrap = !app.config.wrap;
                 }
                 ObserveFocus::Search => {}
-            }
+            },
 
             Action::Cycle => {
                 *diff_mode = match diff_mode {
@@ -105,7 +107,7 @@ pub async fn handle_observe_mode_keys(app: &mut App, event: Event) -> io::Result
                     search_input.handle_event(&event);
                 }
             }
-        } 
+        }
     } else {
         search_input.handle_event(&event);
     }

@@ -1,5 +1,4 @@
 use std::io::{self, stdout};
-use std::panic::{set_hook, take_hook};
 
 use crokey::crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
@@ -16,11 +15,11 @@ mod cli;
 mod command;
 mod config;
 mod controls;
-mod shell_history;
 mod logging;
 mod mode;
 mod pane;
 mod session;
+mod shell_history;
 mod ui;
 
 pub type DefaultTerminal = Terminal<CrosstermBackend<std::io::Stdout>>;
@@ -53,7 +52,6 @@ async fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
     let cli_args = cli::parse();
-
 
     let mut config = match config::AppConfig::load() {
         Ok(cfg) => cfg,

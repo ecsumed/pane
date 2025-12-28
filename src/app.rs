@@ -1,8 +1,7 @@
 use std::collections::HashMap;
-use std::io::{self, Result};
+use std::io::{self};
 use std::time::Duration;
 
-use crokey::Combiner;
 use crossterm::event::EventStream;
 use futures::{FutureExt, StreamExt};
 use ratatui::backend::CrosstermBackend;
@@ -11,12 +10,12 @@ use ratatui::Terminal;
 use tokio::sync::mpsc::{self};
 use tokio::time::interval;
 
-use crate::command::{Command, CommandControl, CommandEvent, CommandOutput, CommandSerializableState};
+use crate::command::{Command, CommandControl, CommandEvent, CommandSerializableState};
 use crate::config::AppConfig;
 use crate::controls;
+use crate::logging::{error, info, warn};
 use crate::mode::AppMode;
 use crate::pane::{PaneKey, PaneManager};
-use crate::logging::{info, error, warn};
 use crate::ui::draw::draw_ui;
 use crate::ui::DisplayType;
 
@@ -51,7 +50,9 @@ impl App {
 
         if !command.is_empty() {
             let command = command.join(" ");
-            if let Err(e) = app_control_tx.try_send(AppControl::SetCommand(pane_manager.active_pane_id, command)) {
+            if let Err(e) = app_control_tx
+                .try_send(AppControl::SetCommand(pane_manager.active_pane_id, command))
+            {
                 error!("Send failed: {}", e);
             }
         }
@@ -99,7 +100,7 @@ impl App {
                                     self.exit();
                                 }
                             }
-        
+
                             if let Some(command) = self.tasks.get_mut(&id) {
                                 command.state = crate::command::CommandState::Idle;
                                 command.record_output(out, self.config.max_history);
@@ -141,7 +142,8 @@ impl App {
 
     pub fn exit(&mut self) {
         for (pane_key, _cmd) in &self.tasks {
-            if let Err(e) = self.app_control_tx
+            if let Err(e) = self
+                .app_control_tx
                 .try_send(AppControl::SendControl(*pane_key, CommandControl::Stop))
             {
                 warn!("Failed to send AppControl::SendControl: {}", e);
@@ -159,7 +161,13 @@ impl App {
     pub async fn set_command(&mut self, id: PaneKey, exec: String) {
         if let Some(old) = self.tasks.insert(
             id,
-            Command::spawn(id, exec, self.config.default_display, self.config.interval, self.output_tx.clone()),
+            Command::spawn(
+                id,
+                exec,
+                self.config.default_display,
+                self.config.interval,
+                self.output_tx.clone(),
+            ),
         ) {
             if let Some(h) = old.task_handle {
                 h.abort();

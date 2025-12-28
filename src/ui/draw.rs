@@ -14,21 +14,20 @@ use crate::ui::status_line::draw_status_line;
 use crate::App;
 
 pub fn draw_ui(app: &mut App, frame: &mut Frame) {
-    let [main_area, status_area] = Layout::vertical([
-        Constraint::Min(0),
-        Constraint::Length(1),
-    ])
-    .areas(frame.area());
+    let [main_area, status_area] =
+        Layout::vertical([Constraint::Min(0), Constraint::Length(1)]).areas(frame.area());
 
     Clear.render(main_area, frame.buffer_mut());
 
     // Main modes
     match &mut app.mode {
-        AppMode::Observe { .. } => observe::draw(frame, main_area, &app.config, &app.tasks,  &mut app.mode),
+        AppMode::Observe { .. } => {
+            observe::draw(frame, main_area, &app.config, &app.tasks, &mut app.mode)
+        }
         _ => panes::draw(frame, main_area, &app.config, &app.pane_manager, &app.tasks),
     }
 
-    draw_status_line(frame, status_area,  &app);
+    draw_status_line(frame, status_area, &app);
 
     // Popups and overlays
     match &mut app.mode {
@@ -37,6 +36,6 @@ pub fn draw_ui(app: &mut App, frame: &mut Frame) {
         AppMode::SessionSave { .. } => draw_session_save_popup(frame, app),
         AppMode::DisplayTypeSelect { .. } => draw_display_type_select(frame, app),
         AppMode::Help { .. } => draw_help_menu(frame, app),
-        _ => ()
+        _ => (),
     }
 }

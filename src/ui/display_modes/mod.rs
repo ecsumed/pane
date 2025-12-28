@@ -5,17 +5,23 @@ use ratatui::Frame;
 use crate::command::Command;
 use crate::config::AppConfig;
 
-pub mod diff;
 mod counter;
-mod multiline;
+pub mod diff;
 mod line_chart;
+mod multiline;
 mod raw_text;
 pub mod types;
 mod utils;
 
 pub use types::DisplayType;
 
-pub fn render_command_output(frame: &mut Frame, area: Rect, config: &AppConfig, command: &Command, block: Block) {
+pub fn render_command_output(
+    frame: &mut Frame,
+    area: Rect,
+    config: &AppConfig,
+    command: &Command,
+    block: Block,
+) {
     let inner_area = block.inner(area);
 
     frame.render_widget(block.clone(), area);

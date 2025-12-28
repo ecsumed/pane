@@ -38,6 +38,3 @@ codegen-units = 1
 lto = "fat"
 opt-level = "s"
 strip = "symbols"
-
-[lints.rust]
-unused_imports = "allow"

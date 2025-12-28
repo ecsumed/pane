@@ -26,7 +26,7 @@ pub enum CommandState {
     Idle,
     Paused,
     Executing,
-    Stopped
+    Stopped,
 }
 
 impl fmt::Display for CommandState {

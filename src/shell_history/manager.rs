@@ -42,23 +42,23 @@ impl ShellHistoryManager {
             return Ok(Vec::new());
         }
 
-        let bytes = fs::read(path)?; 
+        let bytes = fs::read(path)?;
         let contents = String::from_utf8_lossy(&bytes);
-        
+
         let commands: Vec<String> = contents
-        .lines()
-        .filter(|line| {
-            let trimmed = line.trim();
-            !trimmed.is_empty() && !trimmed.starts_with('#')
-        })
-        .map(|line| {
-            let trimmed = line.trim();
-            match trimmed.split_once(';') {
-                Some((_metadata, command)) => command.trim().to_string(),
-                None => trimmed.to_string(),
-            }
-        })
-        .collect();
+            .lines()
+            .filter(|line| {
+                let trimmed = line.trim();
+                !trimmed.is_empty() && !trimmed.starts_with('#')
+            })
+            .map(|line| {
+                let trimmed = line.trim();
+                match trimmed.split_once(';') {
+                    Some((_metadata, command)) => command.trim().to_string(),
+                    None => trimmed.to_string(),
+                }
+            })
+            .collect();
 
         Ok(commands)
     }

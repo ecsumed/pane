@@ -1,9 +1,11 @@
-use ratatui::{Frame, layout::Rect, style::{Color, Style}, widgets::{Block, Borders, Paragraph, Sparkline}};
-use ratatui::text::{Line, Span, Text};
+use ratatui::{
+    layout::Rect,
+    widgets::{Block, Borders, Paragraph, Sparkline},
+    Frame,
+};
 
 use crate::command::Command;
 use crate::config::AppConfig;
-use crate::ui::DisplayType;
 
 pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, command: &Command) {
     let p = &config.theme.palette;

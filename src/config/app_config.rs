@@ -6,13 +6,14 @@ use std::time::Duration;
 use crokey::KeyCombination;
 use directories::ProjectDirs;
 use figment::{
-    Figment, providers::{Env, Format, Serialized, Toml}
+    providers::{Env, Format, Serialized, Toml},
+    Figment,
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{config::theme::Theme, logging::{debug, info}, ui::DisplayType};
 use super::utils::{app_name, deserialize_duration, get_home_dir};
-use crate::controls::{KeyMode, actions::Action};
+use crate::controls::{actions::Action, KeyMode};
+use crate::{config::theme::Theme, ui::DisplayType};
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(default)]
@@ -73,17 +74,14 @@ impl AppConfig {
         let app_name_str = app_name();
         let config_path = AppConfig::get_config_path();
         let env_prefix = format!("{}_", app_name_str.to_uppercase().replace('-', "_"));
-    
+
         Figment::new()
             // Load defaults first
             .merge(Serialized::defaults(AppConfig::default()))
-            
             // Load from config.yaml
             .merge(Toml::file(config_path))
-
             // Load from Environment Variables
             .merge(Env::prefixed(&env_prefix).split("__"))
-            
             .extract()
     }
 
@@ -115,7 +113,7 @@ impl AppConfig {
         if let Some(max_history) = cli.max_history {
             self.max_history = max_history;
         }
-        
+
         if let Some(interval) = cli.interval {
             self.interval = Duration::from_secs(interval);
         }
