@@ -33,8 +33,6 @@ impl super::Command {
             .stderr(Stdio::piped())
             .spawn()?;
 
-        let duration = start.elapsed();
-
         let mut stdout_output = String::new();
         let mut stderr_output = String::new();
 
@@ -48,6 +46,8 @@ impl super::Command {
         }
 
         let status = command.wait().await?;
+
+        let duration = start.elapsed();
 
         let output_message = if status.success() {
             stdout_output

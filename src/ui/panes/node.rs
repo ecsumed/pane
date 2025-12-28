@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use humantime::format_duration;
+
 use ratatui::layout::{Constraint, Layout};
 use ratatui::prelude::{Frame, Rect};
 use ratatui::style::{Color, Modifier, Style, Stylize};
@@ -40,7 +42,7 @@ pub fn draw_recursive(
                     .map(|c| c.time.format("%Y-%m-%d %H:%M:%S").to_string())
                     .unwrap_or_else(|| "N/A".to_string());
                 let duration = cmd.last_output()
-                    .map(|c| format!("{}.{}", c.duration.as_secs(), c.duration.subsec_millis()))
+                    .map(|c| format_duration(c.duration).to_string())
                     .unwrap_or_else(|| "N/A".to_string());
 
                 let block = create_pane_block(
