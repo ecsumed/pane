@@ -2,6 +2,7 @@
 name = "pane"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/ecsumed/pane"
 
 [dependencies]
 chrono = { version = "0.4.42", features = ["serde"]}
@@ -38,3 +39,6 @@ codegen-units = 1
 lto = "fat"
 opt-level = "s"
 strip = "symbols"
+
+[profile.dist]
+inherits = "release"
