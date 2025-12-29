@@ -293,7 +293,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_app_control_pause_resume_stop() {
+    async fn test_app_control_pause() {
         let (mut app, root_pane) = mock_app();
 
         app.set_command(root_pane, "sleep 1".to_string()).await;

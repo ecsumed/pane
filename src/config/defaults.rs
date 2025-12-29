@@ -54,6 +54,7 @@ pub fn default_keybindings() -> HashMap<KeyMode, HashMap<KeyCombination, Action>
             (key!(o), Action::EnterObserveMode),
             (key!(shift - l), Action::EnterSessionLoadMode),
             (key!(shift - s), Action::EnterSessionSaveMode),
+            (key!(space), Action::Execute),
             (key!(d), Action::IntervalDecrease),
             (key!(i), Action::IntervalIncrease),
             (key!(x), Action::KillPane),

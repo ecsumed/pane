@@ -11,6 +11,7 @@ pub enum Action {
     EnterSessionLoadMode,
     EnterSessionSaveMode,
     Escape,
+    Execute,
     IntervalDecrease,
     IntervalIncrease,
     KillPane,

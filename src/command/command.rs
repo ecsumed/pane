@@ -69,6 +69,7 @@ pub struct CommandOutput {
     pub duration: Duration,
 }
 
+#[derive(Debug)]
 pub enum CommandEvent {
     Started,
     Output(CommandOutput),

@@ -189,6 +189,16 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
             Action::ZenToggle => {
                 app.config.zen = !app.config.zen;
             }
+            Action::Execute => {
+                let id = app.pane_manager.active_pane_id;
+                if let Err(e) = app
+                    .app_control_tx
+                    .send(AppControl::SendControl(id, CommandControl::Execute))
+                    .await
+                {
+                    warn!("Failed to send AppControl::Execute: {}", e);
+                }
+            }
             _ => (),
         }
     }
