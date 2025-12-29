@@ -196,8 +196,13 @@ mod tests {
     use super::*;
     use crate::command::{CommandControl, CommandState};
     use crate::config::AppConfig;
+    use crate::pane::CardinalDirection;
     use crate::ui;
+    use insta::assert_snapshot;
     use ratatui::backend::TestBackend;
+    use ratatui::layout::Direction;
+    use tokio::time::timeout;
+    use tracing_subscriber::field::display;
 
     fn mock_config() -> AppConfig {
         AppConfig::load().expect("")
@@ -313,5 +318,96 @@ mod tests {
         assert_eq!(app.tasks.get(&root_pane).unwrap().state, CommandState::Paused);
 
         cleanup(app, root_pane);
+    }
+
+    #[tokio::test]
+    async fn test_render_app() {
+        let (mut app, root_pane) = mock_app();
+        app.config.interval = Duration::from_millis(100);
+
+        let backend = TestBackend::new(140, 40);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        // 1. Set command "ls"
+        _ = app.set_command(root_pane, "ls".to_string()).await;
+        println!("{:?}", app.tasks);
+
+        // 2. Set counter display
+        _ = app.app_control_tx.send(AppControl::SetDisplay(root_pane, DisplayType::Counter)).await;
+        println!("{:?}", app.tasks);
+
+        // 3. Split vertically
+        app.pane_manager.split_pane(Direction::Vertical);
+
+        // 4. Set command echo "test"
+        _ = app.set_command(app.pane_manager.active_pane_id, "echo test".to_string()).await;
+        println!("{:?}", app.tasks);
+
+        // 5. Split horizontally and increase size
+        app.pane_manager.split_pane(Direction::Horizontal);
+        app.pane_manager.resize_pane(&CardinalDirection::Up, 2);
+
+        // 6. Set command "ls"
+        _ = app.set_command(app.pane_manager.active_pane_id, "ls".to_string()).await;
+
+        // 7. Enter zen mode so that the dynamic part (the date) is not visible
+        app.config.zen = true;
+
+        while let Ok(control) = app.app_control_rx.try_recv() {
+            println!("Processing: {:?}", control);
+            match control {
+                // Use => instead of ->
+                AppControl::SendControl(id, cmd_ctrl) => {
+                    if let Some(command) = app.tasks.get_mut(&id) {
+                        command.handle_control_signal(root_pane, cmd_ctrl).await;
+                    }
+                }
+                AppControl::SetDisplay(id, display) => {
+                    if let Some(command) = app.tasks.get_mut(&id) {
+                        // Ensure this method name matches your definition (usually camelCase in Rust)
+                        command.update_display(display);
+                    }
+                }
+                _ => ()
+            }
+        }
+
+        let mut output_count = 0;
+        let target_outputs = 3;
+        
+        let result = timeout(Duration::from_secs(3), async {
+            while output_count < target_outputs {
+                if let Some((id, event)) = app.output_rx.recv().await {
+                    match event {
+                        CommandEvent::Started => {
+                            if let Some(command) = app.tasks.get_mut(&id) {
+                                command.state = crate::command::CommandState::Executing;
+                            }
+                        }
+                        CommandEvent::Output(out) => {
+                            if let Some(command) = app.tasks.get_mut(&id) {
+                                command.state = crate::command::CommandState::Idle;
+                                command.record_output(out, app.config.max_history);
+                                output_count += 1;
+                            }
+                        }
+                    }
+                } else {
+                    break;
+                }
+            }
+        }).await;
+
+        assert!(result.is_ok(), "Timed out waiting for CommandEvents");
+
+        terminal
+            .draw(|frame| ui::draw::draw_ui(&mut app, frame))
+            .unwrap();
+
+        insta::with_settings!({
+            snapshot_path => "../tests/snapshots"
+        }, {
+            assert_snapshot!(terminal.backend());
+        });
     }
 }
