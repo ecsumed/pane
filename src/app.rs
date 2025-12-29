@@ -4,9 +4,9 @@ use std::time::Duration;
 
 use crossterm::event::EventStream;
 use futures::{FutureExt, StreamExt};
-use ratatui::backend::CrosstermBackend;
 use ratatui::layout::Rect;
 use ratatui::Terminal;
+use ratatui::prelude::Backend;
 use tokio::sync::mpsc::{self};
 use tokio::time::interval;
 
@@ -18,8 +18,6 @@ use crate::mode::AppMode;
 use crate::pane::{PaneKey, PaneManager};
 use crate::ui::draw::draw_ui;
 use crate::ui::DisplayType;
-
-type DefaultTerminal = Terminal<CrosstermBackend<std::io::Stdout>>;
 
 #[derive(Debug)]
 pub enum AppControl {
@@ -71,7 +69,11 @@ impl App {
         }
     }
 
-    pub async fn run(&mut self, terminal: &mut DefaultTerminal) -> color_eyre::Result<()> {
+    pub async fn run<B: Backend>(&mut self, terminal: &mut Terminal<B>) -> color_eyre::Result<()> 
+        where 
+            B: Backend,
+            B::Error: std::error::Error + Send + Sync + 'static
+        {
         let mut tick_interval = interval(Duration::from_millis(250));
         let mut events = EventStream::new();
 
@@ -189,126 +191,127 @@ impl App {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use crate::command::{CommandControl, CommandState};
-//     use crate::config::AppConfig;
-//     use ratatui::backend::TestBackend;
-//     use std::time::Duration;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::command::{CommandControl, CommandState};
+    use crate::config::AppConfig;
+    use crate::ui;
+    use ratatui::backend::TestBackend;
 
-//     fn mock_config() -> AppConfig {
-//         AppConfig::load().expect("")
-//     }
+    fn mock_config() -> AppConfig {
+        AppConfig::load().expect("")
+    }
 
-//     #[test]
-//     fn test_app_new_initializes_correctly() {
-//         let config = mock_config();
-//         let app = App::new(config);
+    fn mock_app() -> (App, PaneKey) {
+        let config = mock_config();
+        let command = ["echo", "test"].map(String::from).to_vec();
+        let app = App::new(config, command);
 
-//         assert!(!app.exit);
-//         assert!(app.tasks.is_empty());
-//         // assert_eq!(app.pane_manager.active_pane_id, 1);
-//     }
+        let pane_key = app.pane_manager.get_all_pane_keys()[0];
 
-//     #[test]
-//     fn test_app_exit_sets_flag() {
-//         let config = mock_config();
-//         let mut app = App::new(config);
+        (app, pane_key)
+    }
 
-//         app.exit();
-//         assert!(app.exit);
-//     }
+    fn _mock_terminal() -> Terminal<TestBackend> {
+        let backend = TestBackend::new(50, 10);
+        Terminal::new(backend).unwrap()
+    }
 
-//     #[tokio::test]
-//     async fn test_set_command_adds_new_task() {
-//         let config = mock_config();
-//         let mut app = App::new(config);
+    fn cleanup(app: App, root_pane: PaneKey) {
+        app.tasks
+        .get(&root_pane)
+        .unwrap()
+        .task_handle
+        .as_ref()
+        .unwrap()
+        .abort();
+    }
 
-//         // Get the key for the initial root pane
-//         let pane_key = app.pane_manager.get_all_pane_keys()[0];
+    #[test]
+    fn test_app_new_initializes_correctly() {
+        let (app, _root_pane) = mock_app();
 
-//         let exec = "echo hello";
+        assert!(!app.exit);
+        assert!(app.tasks.is_empty());
+    }
 
-//         app.set_command(pane_key, exec.to_string()).await;
+    #[test]
+    fn test_app_exit_sets_flag() {
+        let (mut app, _root_pane) = mock_app();
 
-//         assert_eq!(app.tasks.len(), 1);
-//         let command = app.tasks.get(&pane_key).unwrap();
-//         assert_eq!(command.exec, exec);
-//         assert_eq!(command.state, CommandState::Running);
-//         assert!(command.task_handle.is_some());
+        app.exit();
+        assert!(app.exit);
+    }
 
-//         if let Some(handle) = command.task_handle.as_ref() {
-//             handle.abort();
-//         }
-//     }
+    #[tokio::test]
+    async fn test_set_command_adds_new_task() {
+        let (mut app, root_pane) = mock_app();
 
-//     #[tokio::test]
-//     async fn test_set_command_replaces_existing_task() {
-//         let config = mock_config();
-//         let mut app = App::new(config);
-//         let id = 1;
-//         let initial_exec = "sleep 5";
-//         let new_exec = "echo replaced";
+        let exec = "echo hello";
 
-//         app.set_command(id, initial_exec.to_string()).await;
+        app.set_command(root_pane, exec.to_string()).await;
 
-//         app.set_command(id, new_exec.to_string()).await;
+        assert_eq!(app.tasks.len(), 1);
+        let command = app.tasks.get(&root_pane).unwrap();
+        assert_eq!(command.exec, exec);
+        assert!(matches!(command.state, CommandState::Executing | CommandState::Idle));
+        assert!(command.task_handle.is_some());
 
-//         assert_eq!(app.tasks.len(), 1);
-//         assert_eq!(app.tasks.get(&id).unwrap().exec, new_exec);
+        if let Some(handle) = command.task_handle.as_ref() {
+            handle.abort();
+        }
+    }
 
-//         app.tasks
-//             .get(&id)
-//             .unwrap()
-//             .task_handle
-//             .as_ref()
-//             .unwrap()
-//             .abort();
-//     }
+    #[tokio::test]
+    async fn test_set_command_replaces_existing_task() {
+        let (mut app, root_pane) = mock_app();
 
-//     #[test]
-//     fn test_draw_calls_ui_functions() {
-//         let config = mock_config();
-//         let app = App::new(config);
-//         let backend = TestBackend::new(50, 10);
-//         let mut terminal = Terminal::new(backend).unwrap();
+        let initial_exec = "sleep 5";
+        let new_exec = "echo replaced";
 
-//         terminal
-//             .draw(|frame| app.draw(frame))
-//             .expect("draw should complete without panicking");
-//     }
+        app.set_command(root_pane, initial_exec.to_string()).await;
 
-//     #[tokio::test]
-//     async fn test_app_control_pause_resume_stop() {
-//         let config = mock_config();
-//         let mut app = App::new(config);
-//         let id = 1;
+        app.set_command(root_pane, new_exec.to_string()).await;
 
-//         app.set_command(id, "sleep 1".to_string()).await;
+        assert_eq!(app.tasks.len(), 1);
+        assert_eq!(app.tasks.get(&root_pane).unwrap().exec, new_exec);
 
-//         let control_msg = AppControl::SendControl(id, CommandControl::Pause);
-//         app.app_control_tx.send(control_msg).await.unwrap();
+        cleanup(app, root_pane);
+    }
 
-//         if let Some(control) = app.app_control_rx.recv().await {
-//             if let AppControl::SendControl(id, cmd_ctrl) = control {
-//                 if let Some(command) = app.tasks.get_mut(&id) {
-//                     match cmd_ctrl {
-//                         CommandControl::Pause => command.state = CommandState::Paused,
-//                         _ => {}
-//                     }
-//                 }
-//             }
-//         }
+    #[test]
+    fn test_draw_calls_ui_functions() {
+        let (mut app, _root_pane) = mock_app();
 
-//         assert_eq!(app.tasks.get(&id).unwrap().state, CommandState::Paused);
+        let backend = TestBackend::new(50, 10);
+        let mut terminal = Terminal::new(backend).unwrap();
 
-//         app.tasks
-//             .get(&id)
-//             .unwrap()
-//             .task_handle
-//             .as_ref()
-//             .unwrap()
-//             .abort();
-//     }
-// }
+        terminal
+            .draw(|frame| ui::draw::draw_ui(&mut app, frame))
+            .expect("draw should complete without panicking");
+    }
+
+    #[tokio::test]
+    async fn test_app_control_pause_resume_stop() {
+        let (mut app, root_pane) = mock_app();
+
+        app.set_command(root_pane, "sleep 1".to_string()).await;
+
+        app.app_control_tx.send(AppControl::SendControl(root_pane, CommandControl::Pause)).await.unwrap();
+
+        while let Ok(control) = app.app_control_rx.try_recv() {
+            println!("Processing: {:?}", control);
+            if let AppControl::SendControl(id, cmd_ctrl) = control {
+                if let Some(command) = app.tasks.get_mut(&id) {
+                    command.handle_control_signal(root_pane, cmd_ctrl).await;
+                    println!("Processed SendControl for ID: {:?}", id);
+                }
+            }
+        }
+
+        assert_eq!(app.tasks.get(&root_pane).unwrap().state, CommandState::Paused);
+
+        cleanup(app, root_pane);
+    }
+}
