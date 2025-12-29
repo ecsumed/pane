@@ -1,7 +1,12 @@
-pane
+pane [![Release](https://github.com/ecsumed/pane/actions/workflows/release.yml/badge.svg)](https://github.com/ecsumed/pane/actions/workflows/release.yml)
 ======
 
-`watch` plus `tmux-resurrect`. Heavily inspired by [hwatch](https://github.com/blacknon/hwatch/tree/masterA).
+`watch` plus `tmux-resurrect`. Heavily inspired by [hwatch](https://github.com/blacknon/hwatch/tree/master).
+
+## Install
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ecsumed/pane/releases/download/v0.1.0/pane-installer.sh | sh
+```
 
 ## Features
 * Multiple panes (via Tokio Async)
