@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use directories::ProjectDirs;
-use serde::{de, Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serializer, de};
 
 pub fn app_name() -> &'static str {
     env!("CARGO_PKG_NAME")
@@ -55,14 +55,13 @@ pub fn deserialize_duration<'de, D>(deserializer: D) -> Result<Duration, D::Erro
 where
     D: Deserializer<'de>,
 {
-    let s = String::deserialize(deserializer)?;
-    if s.ends_with('s') {
-        let seconds_str = s.trim_end_matches('s');
-        seconds_str
-            .parse::<u64>()
-            .map(Duration::from_secs)
-            .map_err(de::Error::custom)
-    } else {
-        Err(de::Error::custom("expected duration string like \"5s\""))
-    }
+    let secs = u64::deserialize(deserializer)?;
+    Ok(Duration::from_secs(secs))
+}
+
+pub fn serialize_duration<S>(duration: &Duration, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serializer.serialize_u64(duration.as_secs())
 }

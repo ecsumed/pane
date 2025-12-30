@@ -11,14 +11,17 @@ use figment::{
 };
 use serde::{Deserialize, Serialize};
 
-use super::utils::{app_name, deserialize_duration, get_home_dir};
+use super::utils::{app_name, deserialize_duration, get_home_dir, serialize_duration};
 use crate::controls::{actions::Action, KeyMode};
 use crate::{config::theme::Theme, ui::DisplayType};
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct AppConfig {
-    #[serde(deserialize_with = "deserialize_duration")]
+    #[serde(
+            deserialize_with = "deserialize_duration",
+            serialize_with = "serialize_duration"
+    )]
     pub interval: Duration,
     pub beep: bool,
     pub err_exit: bool,
