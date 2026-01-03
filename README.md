@@ -16,8 +16,13 @@ curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ecsumed/pane/releases/d
 * Display as raw text, multiline, counter, sparkline, diff, etc.
 
 ## TODO
-* Fix management of `pane_key_to_friendly_id`
+* Remove `pane_key_to_friendly_id`
 * Fix infinte scroll
+* Fix help menu with scrol
+* Fix move into Search in observe mode
+* Hide Search for non-plain modes?
+* Conver chrono to jiff?
+* Fix interval hang on inc/dec
 * Improve resize functionality
 * Improve move functionality
-* Tests
+* More tests

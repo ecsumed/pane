@@ -4,6 +4,10 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Theme {
     pub collapse_borders: bool,
+    pub show_state: bool,
+    pub show_last_updated: bool,
+    pub show_display_type: bool,
+    pub show_status_bar: bool,
     pub palette: Palette,
 }
 

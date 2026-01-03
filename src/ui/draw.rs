@@ -14,8 +14,19 @@ use crate::ui::status_line::draw_status_line;
 use crate::App;
 
 pub fn draw_ui(app: &mut App, frame: &mut Frame) {
-    let [main_area, status_area] =
-        Layout::vertical([Constraint::Min(0), Constraint::Length(1)]).areas(frame.area());
+    let mut constraints = vec![Constraint::Min(0)];
+
+    if app.config.theme.show_status_bar {
+        constraints.push(Constraint::Length(1));
+    }
+
+    let areas = Layout::vertical(constraints).split(frame.area());
+    let main_area = areas[0];
+
+    if app.config.theme.show_status_bar {
+        let status_area = areas[1];
+        draw_status_line(frame, status_area, &app);
+    }
 
     Clear.render(main_area, frame.buffer_mut());
 
@@ -26,8 +37,6 @@ pub fn draw_ui(app: &mut App, frame: &mut Frame) {
         }
         _ => panes::draw(frame, main_area, &app.config, &app.pane_manager, &app.tasks),
     }
-
-    draw_status_line(frame, status_area, &app);
 
     // Popups and overlays
     match &mut app.mode {

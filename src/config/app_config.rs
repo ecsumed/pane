@@ -19,8 +19,8 @@ use crate::{config::theme::Theme, ui::DisplayType};
 #[serde(default)]
 pub struct AppConfig {
     #[serde(
-            deserialize_with = "deserialize_duration",
-            serialize_with = "serialize_duration"
+        deserialize_with = "deserialize_duration",
+        serialize_with = "serialize_duration"
     )]
     pub interval: Duration,
     pub beep: bool,
@@ -75,7 +75,7 @@ impl fmt::Display for AppConfig {
 impl AppConfig {
     pub fn load() -> Result<Self, figment::Error> {
         let app_name_str = app_name();
-        let config_path = AppConfig::get_config_path();
+        let config_path = AppConfig::get_config_path(app_name_str);
         let env_prefix = format!("{}_", app_name_str.to_uppercase().replace('-', "_"));
 
         Figment::new()
@@ -127,29 +127,21 @@ impl AppConfig {
         }
     }
 
-    fn get_config_path() -> PathBuf {
-        let config_path = {
-            #[cfg(target_os = "macos")]
-            if let Some(home_dir) = get_home_dir() {
-                home_dir
-                    .join(".config")
-                    .join(app_name())
-                    .join("config.toml")
-            } else {
-                let proj_dirs = ProjectDirs::from("io", app_name(), app_name());
-                proj_dirs
-                    .map(|p| p.config_dir().join("config.toml"))
-                    .unwrap_or_default()
-            }
-            #[cfg(not(target_os = "macos"))]
-            {
-                let proj_dirs = ProjectDirs::from("io", app_name(), app_name());
-                proj_dirs
-                    .map(|p| p.config_dir().join("config.toml"))
-                    .unwrap_or_default()
-            }
-        };
+    fn get_config_path(app_name: &str) -> PathBuf {
+        let env_key = format!("{}__CONFIG_PATH", app_name.to_uppercase().replace('-', "_"));
 
-        config_path
+        if let Some(override_path) = std::env::var_os(env_key) {
+            return PathBuf::from(override_path);
+        }
+
+        #[cfg(target_os = "macos")]
+        if let Some(home_dir) = get_home_dir() {
+            return home_dir.join(".config").join(app_name).join("config.toml");
+        }
+
+        let proj_dirs = ProjectDirs::from("io", &app_name, app_name);
+        proj_dirs
+            .map(|p| p.config_dir().join("config.toml"))
+            .unwrap_or_default()
     }
 }

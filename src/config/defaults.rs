@@ -25,6 +25,10 @@ const ZEN: bool = false;
 
 // THEME
 const COLLAPSE_BORDERS: bool = false;
+const SHOW_STATE: bool = true;
+const SHOW_LAST_UPDATED: bool = true;
+const SHOW_DISPLAY_TYPE: bool = true;
+const SHOW_STATUS_BAR: bool = true;
 
 pub fn default_keybindings() -> HashMap<KeyMode, HashMap<KeyCombination, Action>> {
     let mut map = HashMap::new();
@@ -126,6 +130,10 @@ impl Default for Theme {
     fn default() -> Self {
         Theme {
             collapse_borders: COLLAPSE_BORDERS,
+            show_state: SHOW_STATE,
+            show_last_updated: SHOW_LAST_UPDATED,
+            show_display_type: SHOW_DISPLAY_TYPE,
+            show_status_bar: SHOW_STATUS_BAR,
             palette: Palette::default(),
         }
     }

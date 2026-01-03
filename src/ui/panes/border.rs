@@ -33,23 +33,27 @@ pub fn create_pane_block<'a>(
             Span::styled(": ", p.meta_label),
             Span::styled(exec_str, p.meta_highlight),
         ]);
+        block = block.title(title_top_left);
 
-        let title_top_right =
-            Line::from(vec![Span::styled(state_str, p.meta_value)]).right_aligned();
+        if config.theme.show_state {
+            let title_top_right = Line::from(Span::styled(state_str, p.meta_value)).right_aligned();
+            block = block.title(title_top_right);
+        }
 
-        let title_bottom_left = Line::from(vec![
-            Span::styled("Updated: ", p.meta_label),
-            Span::styled(last_exec_time, p.meta_value),
-            Span::styled(format!(" ({duration})"), p.meta_value),
-        ]);
-        let title_bottom_right =
-            Line::from(Span::styled(display_type_str, p.meta_value)).right_aligned();
+        if config.theme.show_last_updated {
+            let title_bottom_left = Line::from(vec![
+                Span::styled("Updated: ", p.meta_label),
+                Span::styled(last_exec_time, p.meta_value),
+                Span::styled(format!(" ({duration})"), p.meta_value),
+            ]);
+            block = block.title_bottom(title_bottom_left);
+        }
 
-        block = block
-            .title(title_top_left)
-            .title(title_top_right)
-            .title_bottom(title_bottom_left)
-            .title_bottom(title_bottom_right)
+        if config.theme.show_display_type {
+            let title_bottom_right =
+                Line::from(Span::styled(display_type_str, p.meta_value)).right_aligned();
+            block = block.title_bottom(title_bottom_right);
+        }
     }
     block
 }
