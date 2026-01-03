@@ -53,6 +53,8 @@ pub fn build_keybinding_list<'a>(
 }
 
 pub fn draw_help_menu(frame: &mut Frame, app: &mut App) {
+    let _p = &app.config.theme.palette;
+
     let area = frame.area();
 
     let total_keybindings_count = app
@@ -85,15 +87,20 @@ pub fn draw_help_menu(frame: &mut Frame, app: &mut App) {
     ])
     .areas(inner_area);
 
-    let config = &app.config;
+    let c = &app.config;
     let settings: Vec<ListItem> = vec![
-        format!("Interval:    {:?}", config.interval),
-        format!("Max History: {}", config.max_history),
-        format!(
-            "Log Level:   {}",
-            config.log_level.as_deref().unwrap_or("None")
-        ),
-        format!("Logs Dir:    {}", config.logs_dir.display()),
+        format!("Beep: {}", c.beep),
+        format!("Default Display: {:?}", c.default_display),
+        format!("Exit on Change: {}", c.chg_exit),
+        format!("Exit on Error: {}", c.err_exit),
+        format!("Interval: {:?}", c.interval),
+        format!("Log Level: {}", c.log_level.as_deref().unwrap_or("None")),
+        format!("Logs Dir: {}", c.logs_dir.display()),
+        format!("Max History: {}", c.max_history),
+        format!("Sessions Dir: {}", c.sessions_dir.display()),
+        format!("Snapshot Dir: {}", c.snapshot_dir.display()),
+        format!("Wrap: {}", c.wrap),
+        format!("Zen: {}", c.zen),
     ]
     .into_iter()
     .map(|s| ListItem::new(s).cyan())
@@ -109,7 +116,7 @@ pub fn draw_help_menu(frame: &mut Frame, app: &mut App) {
         .border_style(Style::default().fg(Color::DarkGray));
     frame.render_widget(separator_widget, sep_area);
 
-    let mut bindings_ref_vec: Vec<_> = config.keybindings.iter().collect();
+    let mut bindings_ref_vec: Vec<_> = c.keybindings.iter().collect();
     bindings_ref_vec.sort_by_key(|(mode, _map)| format!("{:?}", mode));
     let key_items: Vec<ListItem> = build_keybinding_list(&bindings_ref_vec);
 
