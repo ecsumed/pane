@@ -1,6 +1,6 @@
 use std::fmt;
 
-use ratatui::widgets::ListState;
+use ratatui::widgets::{ListState, ScrollbarState};
 use strum::IntoEnumIterator;
 use tui_input::Input;
 
@@ -32,7 +32,11 @@ pub enum AppMode {
         state: ListState,
         items: Vec<DisplayType>,
     },
-    Help,
+    Help {
+        scroll_offset: u16,
+        max_scroll: u16,
+        scrollbar_state: ScrollbarState,
+    },
     Observe {
         active_id: PaneKey,
         selected_history_idx: usize,
@@ -81,7 +85,7 @@ impl fmt::Display for AppMode {
             AppMode::SessionLoad { .. } => "Load Session",
             AppMode::SessionSave { .. } => "Save Session",
             AppMode::DisplayTypeSelect { .. } => "Select Display",
-            AppMode::Help => "Help",
+            AppMode::Help { .. } => "Help",
             AppMode::Observe { .. } => "Observe",
         };
         write!(f, "{}", name)
@@ -97,7 +101,7 @@ impl AppMode {
             AppMode::SessionSave { .. } => KeyMode::SessionSave,
             AppMode::DisplayTypeSelect { .. } => KeyMode::DisplayTypeSelect,
             AppMode::Observe { .. } => KeyMode::Observe,
-            AppMode::Help => KeyMode::Help,
+            AppMode::Help { .. } => KeyMode::Help,
         }
     }
 
@@ -139,6 +143,25 @@ impl AppMode {
         }
 
         AppMode::DisplayTypeSelect { items, state }
+    }
+
+    pub fn new_help() -> Self {
+        AppMode::Help {
+            scroll_offset: 0,
+            max_scroll: 0,
+            scrollbar_state: ScrollbarState::default(),
+        }
+    }
+
+    pub fn _scroll_bottom(&mut self) {
+        if let AppMode::Help {
+            scroll_offset,
+            max_scroll,
+            ..
+        } = self
+        {
+            *scroll_offset = *max_scroll;
+        }
     }
 
     pub fn new_observing(app: &App) -> Self {

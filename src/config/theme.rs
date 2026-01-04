@@ -28,4 +28,8 @@ pub struct Palette {
     pub spark_line: Style,
     pub output: Style,
     pub error: Style,
+    pub h1: Style,
+    pub h2: Style,
+    pub scroll_track: Style,
+    pub scroll_bar: Style,
 }

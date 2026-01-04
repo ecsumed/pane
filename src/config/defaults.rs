@@ -123,6 +123,10 @@ impl Default for Palette {
             counter_key: Style::default().fg(Color::LightGreen).bold(),
             error: Style::default().fg(Color::Red),
             spark_line: Style::default().fg(Color::LightBlue),
+            h1: Style::default().fg(Color::Red).bold(),
+            h2: Style::default().fg(Color::LightRed).bold(),
+            scroll_bar: Style::default().fg(Color::LightRed),
+            scroll_track: Style::default().fg(Color::Blue),
         }
     }
 }

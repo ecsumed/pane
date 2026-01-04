@@ -440,7 +440,20 @@ mod tests {
         app.config.theme.show_status_bar = false;
         render_terminal(&mut terminal, &mut app);
         assert_ui_snapshot("normal_mode_no_status_bar", terminal.backend().to_string());
+    }
 
-        cleanup(app, root_pane);
+    #[test]
+    fn test_render_help_menu() {
+        let (mut app, _) = mock_app();
+        let mut terminal = mock_terminal();
+
+        app.mode = AppMode::new_help();
+
+        render_terminal(&mut terminal, &mut app);
+        assert_ui_snapshot("help_mode_top", terminal.backend().to_string());
+
+        app.mode._scroll_bottom();
+        render_terminal(&mut terminal, &mut app);
+        assert_ui_snapshot("help_mode_bottom", terminal.backend().to_string());
     }
 }

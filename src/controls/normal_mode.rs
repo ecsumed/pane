@@ -177,7 +177,7 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
             }
             Action::EnterHelpMode => {
                 info!("Help mode");
-                app.mode = AppMode::Help;
+                app.mode = AppMode::new_help();
             }
             Action::EnterObserveMode => {
                 info!("Observe mode");

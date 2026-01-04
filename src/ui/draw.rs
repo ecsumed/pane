@@ -44,7 +44,7 @@ pub fn draw_ui(app: &mut App, frame: &mut Frame) {
         AppMode::SessionLoad { .. } => draw_session_list(frame, app),
         AppMode::SessionSave { .. } => draw_session_save_popup(frame, app),
         AppMode::DisplayTypeSelect { .. } => draw_display_type_select(frame, app),
-        AppMode::Help { .. } => draw_help_menu(frame, app),
+        AppMode::Help { .. } => draw_help_menu(frame, &app.config, &mut app.mode),
         _ => (),
     }
 }

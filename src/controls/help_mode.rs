@@ -9,6 +9,17 @@ use crate::controls::KeyMode;
 use crate::mode::AppMode;
 
 pub async fn handle_help_keys(app: &mut App, event: Event) -> io::Result<()> {
+    let current_context = app.mode.key_mode();
+
+    let AppMode::Help {
+        scroll_offset,
+        max_scroll,
+        ..
+    } = &mut app.mode
+    else {
+        return Ok(());
+    };
+
     let Event::Key(key_event) = event else {
         return Ok(());
     };
@@ -17,8 +28,6 @@ pub async fn handle_help_keys(app: &mut App, event: Event) -> io::Result<()> {
     }
 
     let key_comb: KeyCombination = KeyCombination::from(key_event);
-
-    let current_context = app.mode.key_mode();
 
     let action = app
         .config
@@ -36,6 +45,14 @@ pub async fn handle_help_keys(app: &mut App, event: Event) -> io::Result<()> {
         match act {
             Action::EnterHelpMode | Action::Escape | Action::Quit => {
                 app.mode = AppMode::Normal;
+            }
+
+            Action::MoveUp => {
+                *scroll_offset = scroll_offset.saturating_sub(1);
+            }
+
+            Action::MoveDown => {
+                *scroll_offset = (*scroll_offset).saturating_add(1).min(*max_scroll);
             }
             _ => (),
         }

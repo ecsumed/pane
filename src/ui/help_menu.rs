@@ -1,127 +1,151 @@
 use std::collections::HashMap;
 
 use crokey::KeyCombination;
-use ratatui::layout::{Constraint, Layout};
-use ratatui::style::{Color, Modifier, Style, Stylize};
-use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Widget};
+use ratatui::layout::{Constraint, Layout, Margin, Rect};
+use ratatui::text::{Line, Span, Text};
+use ratatui::widgets::{
+    Block, Borders, Clear, Padding, Paragraph, Scrollbar, ScrollbarOrientation, Widget,
+};
 use ratatui::Frame;
 
-use crate::app::App;
+use crate::config::theme::Palette;
+use crate::config::AppConfig;
 use crate::controls::actions::Action;
 use crate::controls::KeyMode;
-use crate::ui::utils::centered_rect;
+use crate::mode::AppMode;
+use crate::settings_line;
+use crate::ui::utils::centered_rect2;
+use crate::ui::utils::formatting::ToSettingsString;
 
 pub fn build_keybinding_list<'a>(
-    bindings_by_mode: &'a [(&'a KeyMode, &'a HashMap<KeyCombination, Action>)],
-) -> Vec<ListItem<'a>> {
-    let mut items: Vec<ListItem<'static>> = Vec::new();
+    keybindings: &'a HashMap<KeyMode, HashMap<KeyCombination, Action>>,
+    p: &Palette,
+    area: Rect,
+) -> Vec<Line<'a>> {
+    let mut items = Vec::new();
+
+    let mut bindings_by_mode: Vec<_> = keybindings.iter().collect();
+    bindings_by_mode.sort_by_key(|(mode, _map)| format!("{:?}", mode));
 
     for (mode, bindings) in bindings_by_mode.into_iter() {
         if bindings.is_empty() {
             continue;
         }
-        items.push(ListItem::new(Line::from(vec![Span::styled(
-            format!("--- {:?} Mode ---", mode),
-            Style::default()
-                .fg(Color::Cyan)
-                .add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
-        )])));
+
+        items.extend(vec![
+            Line::from(""),
+            Line::from(Span::styled(format!(" KEYBINDINGS ({:?})", mode), p.h1)),
+            Line::from(Span::raw("─".repeat(area.width as usize))),
+        ]);
 
         let mut sorted_actions: Vec<_> = bindings.iter().collect();
         sorted_actions.sort_by(|a, b| format!("{:?}", a.1).cmp(&format!("{:?}", b.1)));
 
-        let mode_items: Vec<ListItem> = bindings
-            .into_iter()
-            .map(|(key, action)| {
-                ListItem::new(Line::from(vec![
-                    Span::styled(format!("{: <12}", key.to_string()), Color::Yellow),
-                    Span::raw(" → "),
-                    Span::styled(
-                        format!("{:?}", action),
-                        Style::default().italic().fg(Color::Gray),
-                    ),
-                ]))
-            })
-            .collect();
-
-        items.extend(mode_items);
-        items.push(ListItem::new(Line::from(vec![])));
+        items.extend(settings_line!(p, 20, @list sorted_actions));
     }
 
     items
 }
 
-pub fn draw_help_menu(frame: &mut Frame, app: &mut App) {
-    let _p = &app.config.theme.palette;
+pub fn draw_help_menu(frame: &mut Frame, c: &AppConfig, mode: &mut AppMode) {
+    let p = &c.theme.palette;
 
     let area = frame.area();
 
-    let total_keybindings_count = app
-        .config
-        .keybindings
-        .values()
-        .map(|inner_map| inner_map.len())
-        .sum::<usize>();
-    let mode_header_count: usize = app.config.keybindings.len();
-    let total_height = (total_keybindings_count + mode_header_count) as u16;
-
-    let popup_area = centered_rect(75, area, total_height);
+    let popup_area = centered_rect2(75, 80, area);
 
     Clear.render(popup_area, frame.buffer_mut());
 
-    let main_block = Block::default()
-        .borders(Borders::ALL)
-        .title(" Help & Settings ")
-        .border_style(Style::default().fg(Color::DarkGray));
+    if let AppMode::Help {
+        scroll_offset,
+        max_scroll,
+        scrollbar_state,
+    } = mode
+    {
+        let [_, centered_area, _] = Layout::horizontal([
+            Constraint::Percentage(20),
+            Constraint::Percentage(60),
+            Constraint::Percentage(20),
+        ])
+        .areas(popup_area);
 
-    let inner_area = main_block.inner(popup_area);
-    frame.render_widget(main_block, popup_area);
+        let mut settings = vec![
+            Line::from(Span::styled(" CONFIGURATION ", p.h1)),
+            Line::from(Span::raw("─".repeat(area.width as usize))),
+        ];
 
-    let [_, left_area, sep_area, _, right_area] = Layout::horizontal([
-        Constraint::Length(2),
-        Constraint::Percentage(45),
-        Constraint::Length(1),
-        Constraint::Length(2),
-        Constraint::Percentage(54),
-    ])
-    .areas(inner_area);
+        settings.extend(settings_line!(
+            p,
+            20,
+            "Beep" => c.beep,
+            "Default Display" => format!("{:?}", c.default_display),
+            "Exit on Change" => c.chg_exit,
+            "Exit on Error" => c.err_exit,
+            "Interval" => format!("{:?}", c.interval),
+            "Log Level" => c.log_level.as_deref().unwrap_or("None"),
+            "Logs Dir" => c.logs_dir.display(),
+            "Max History" => c.max_history,
+            "Sessions Dir" => c.sessions_dir.display(),
+            "Snapshot Dir" => c.snapshot_dir.display(),
+            "Wrap" => c.wrap,
+            "Zen" => c.zen,
+        ));
 
-    let c = &app.config;
-    let settings: Vec<ListItem> = vec![
-        format!("Beep: {}", c.beep),
-        format!("Default Display: {:?}", c.default_display),
-        format!("Exit on Change: {}", c.chg_exit),
-        format!("Exit on Error: {}", c.err_exit),
-        format!("Interval: {:?}", c.interval),
-        format!("Log Level: {}", c.log_level.as_deref().unwrap_or("None")),
-        format!("Logs Dir: {}", c.logs_dir.display()),
-        format!("Max History: {}", c.max_history),
-        format!("Sessions Dir: {}", c.sessions_dir.display()),
-        format!("Snapshot Dir: {}", c.snapshot_dir.display()),
-        format!("Wrap: {}", c.wrap),
-        format!("Zen: {}", c.zen),
-    ]
-    .into_iter()
-    .map(|s| ListItem::new(s).cyan())
-    .collect();
+        settings.extend(vec![
+            Line::from(""),
+            Line::from(Span::styled(" THEME ", p.h1)),
+            Line::from(Span::raw("─".repeat(area.width as usize))),
+        ]);
 
-    frame.render_widget(
-        List::new(settings).block(Block::default().title(" Settings ")),
-        left_area,
-    );
+        settings.extend(settings_line!(
+            p,
+            20,
+            "Collapse Borders" => c.theme.collapse_borders,
+            "Show State" => c.theme.show_state,
+            "Show Last Update" => c.theme.show_last_updated,
+            "Show Display Type" => c.theme.show_display_type,
+            "Show Status Bar" => c.theme.show_status_bar,
+        ));
 
-    let separator_widget = Block::default()
-        .borders(Borders::LEFT)
-        .border_style(Style::default().fg(Color::DarkGray));
-    frame.render_widget(separator_widget, sep_area);
+        settings.extend(build_keybinding_list(&c.keybindings, p, centered_area));
 
-    let mut bindings_ref_vec: Vec<_> = c.keybindings.iter().collect();
-    bindings_ref_vec.sort_by_key(|(mode, _map)| format!("{:?}", mode));
-    let key_items: Vec<ListItem> = build_keybinding_list(&bindings_ref_vec);
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .padding(Padding::horizontal(2));
 
-    frame.render_widget(
-        List::new(key_items).block(Block::default().title(" Keybindings ")),
-        right_area,
-    );
+        let inner_area = block.inner(centered_area);
+
+        let content_length = settings.len();
+
+        let logical_max_scroll = (content_length as u16).saturating_sub(inner_area.height);
+        *max_scroll = logical_max_scroll;
+
+        let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+            .begin_symbol(Some("▴"))
+            .end_symbol(Some("▾"))
+            .track_symbol(Some("░"))
+            .thumb_symbol("█")
+            .track_style(p.scroll_track)
+            .thumb_style(p.scroll_bar);
+
+        *scrollbar_state = scrollbar_state
+            .content_length(logical_max_scroll as usize)
+            .viewport_content_length(0)
+            .position((*scroll_offset) as usize);
+
+        let widget = Paragraph::new(Text::from(settings))
+            .block(block)
+            .scroll((*scroll_offset, 0));
+
+        frame.render_widget(widget, centered_area);
+
+        frame.render_stateful_widget(
+            scrollbar,
+            centered_area.inner(Margin {
+                vertical: 1,
+                horizontal: 0,
+            }),
+            scrollbar_state,
+        );
+    }
 }
