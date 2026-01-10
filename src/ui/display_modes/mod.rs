@@ -7,7 +7,7 @@ use crate::config::AppConfig;
 
 mod counter;
 pub mod diff;
-mod line_chart;
+mod sparkline;
 mod multiline;
 mod raw_text;
 pub mod types;
@@ -36,8 +36,8 @@ pub fn render_command_output(
         DisplayType::DiffChar | DisplayType::DiffWord | DisplayType::DiffLine => {
             diff::render(frame, inner_area, config, command);
         }
-        DisplayType::LineChart => {
-            line_chart::render(frame, inner_area, config, command);
+        DisplayType::Sparkline => {
+            sparkline::render(frame, inner_area, config, command);
         }
         DisplayType::Counter => {
             counter::render(frame, inner_area, config, command);
