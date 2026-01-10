@@ -27,9 +27,17 @@ pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, command: &Comma
 
     let data: Vec<u64> = numeric_data.into_iter().flatten().collect();
 
+    let max_data_points = area.width as usize;
+
+    let display_data = if data.len() > max_data_points {
+        &data[data.len() - max_data_points..]
+    } else {
+        &data[..]
+    };
+
     let sparkline = Sparkline::default()
         .block(Block::default().borders(Borders::empty()))
-        .data(&data)
+        .data(display_data)
         .style(p.spark_line);
 
     frame.render_widget(sparkline, area);

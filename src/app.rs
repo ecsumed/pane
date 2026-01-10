@@ -440,7 +440,7 @@ mod tests {
         app.config.theme.show_status_bar = false;
         render_terminal(&mut terminal, &mut app);
         assert_ui_snapshot("normal_mode_no_status_bar", terminal.backend().to_string());
-    
+
         cleanup(app, root_pane);
     }
 
@@ -465,9 +465,7 @@ mod tests {
         app.config.interval = Duration::from_secs(60);
         app.mode = AppMode::new_observing(&app);
 
-        _ = app
-            .set_command(root_pane, "ls".to_string())
-            .await;
+        _ = app.set_command(root_pane, "ls".to_string()).await;
 
         let mut terminal = mock_terminal();
 
@@ -476,7 +474,7 @@ mod tests {
 
         render_terminal(&mut terminal, &mut app);
         assert_ui_snapshot("observe_mode", terminal.backend().to_string());
-    
+
         cleanup(app, root_pane);
     }
 }
