@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use humantime::format_duration;
-
 use ratatui::layout::{Constraint, Layout};
 use ratatui::prelude::{Frame, Rect};
 use ratatui::widgets::Paragraph;
@@ -11,8 +9,8 @@ use crate::config::AppConfig;
 use crate::pane::{PaneKey, PaneManager, PaneNodeData};
 use crate::ui::display_modes::render_command_output;
 use crate::ui::panes::border::create_pane_block;
+use crate::ui::panes::node_info::NodeInfo;
 use crate::ui::utils::LayoutExt;
-use crate::ui::DisplayType;
 
 pub fn draw_recursive(
     frame: &mut Frame,
@@ -33,43 +31,13 @@ pub fn draw_recursive(
             let command = commands.get(&node_key);
 
             if let Some(cmd) = command {
-                let interval_str = format!("{:?}", cmd.interval);
-                let state_str = cmd.state.to_string();
-                let display_str = format!("{:?}", cmd.display_type);
-                let last_exec_time = cmd
-                    .last_output()
-                    .map(|c| c.time.format("%Y-%m-%d %H:%M:%S").to_string())
-                    .unwrap_or_else(|| "N/A".to_string());
-                let duration = cmd
-                    .last_output()
-                    .map(|c| format_duration(c.duration).to_string())
-                    .unwrap_or_else(|| "N/A".to_string());
+                let node_info = NodeInfo::with_command(config, is_active, &cmd);
 
-                let block = create_pane_block(
-                    config,
-                    is_active,
-                    &cmd.exec,
-                    &interval_str,
-                    &last_exec_time,
-                    &duration,
-                    &state_str,
-                    &display_str,
-                );
+                let block = create_pane_block(config, node_info);
 
                 render_command_output(frame, area, config, cmd, block);
             } else {
-                let display_str_na = format!("{:?}", DisplayType::RawText);
-
-                let block = create_pane_block(
-                    config,
-                    is_active,
-                    "N/A",
-                    "N/A",
-                    "N/A",
-                    "N/A",
-                    "N/A",
-                    &display_str_na,
-                );
+                let block = create_pane_block(config, NodeInfo::no_command(is_active));
 
                 frame.render_widget(block.clone(), area);
                 frame.render_widget(Paragraph::new("N/A"), block.inner(area));

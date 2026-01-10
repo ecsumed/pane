@@ -441,6 +441,13 @@ mod tests {
         render_terminal(&mut terminal, &mut app);
         assert_ui_snapshot("normal_mode_no_status_bar", terminal.backend().to_string());
 
+        app.config.theme.show_history_meter = false;
+        render_terminal(&mut terminal, &mut app);
+        assert_ui_snapshot(
+            "normal_mode_no_history_meter",
+            terminal.backend().to_string(),
+        );
+
         cleanup(app, root_pane);
     }
 

@@ -60,6 +60,15 @@ impl fmt::Display for AppConfig {
 
         writeln!(f, "  Theme")?;
         writeln!(f, "    Collapse borders: {}", self.theme.collapse_borders)?;
+        writeln!(f, "    Show display type: {}", self.theme.show_display_type)?;
+        writeln!(
+            f,
+            "    Show history meter: {}",
+            self.theme.show_history_meter
+        )?;
+        writeln!(f, "    Show last updated: {}", self.theme.show_last_updated)?;
+        writeln!(f, "    Show state: {}", self.theme.show_state)?;
+        writeln!(f, "    Show status bar: {}", self.theme.show_status_bar)?;
 
         for (keymode, bindings) in self.keybindings.iter() {
             writeln!(f, "  Keys {}:", keymode)?;

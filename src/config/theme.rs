@@ -4,11 +4,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Theme {
     pub collapse_borders: bool,
-    pub show_state: bool,
-    pub show_last_updated: bool,
-    pub show_display_type: bool,
-    pub show_status_bar: bool,
     pub palette: Palette,
+    pub show_display_type: bool,
+    pub show_history_meter: bool,
+    pub show_last_updated: bool,
+    pub show_state: bool,
+    pub show_status_bar: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -27,6 +28,7 @@ pub struct Palette {
     pub h2: Style,
     pub meta_highlight: Style,
     pub meta_label: Style,
+    pub meta_meter: Style,
     pub meta_secondary: Style,
     pub meta_value: Style,
     pub multiline_timestamp: Style,

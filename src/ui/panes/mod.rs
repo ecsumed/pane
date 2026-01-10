@@ -7,7 +7,9 @@ use crate::config::AppConfig;
 use crate::pane::{PaneKey, PaneManager};
 
 mod border;
+mod history_meter;
 mod node;
+mod node_info;
 
 pub fn draw(
     frame: &mut Frame,

@@ -28,6 +28,7 @@ const COLLAPSE_BORDERS: bool = false;
 const SHOW_STATE: bool = true;
 const SHOW_LAST_UPDATED: bool = true;
 const SHOW_DISPLAY_TYPE: bool = true;
+const SHOW_HISTORY_METER: bool = true;
 const SHOW_STATUS_BAR: bool = true;
 
 pub fn default_keybindings() -> HashMap<KeyMode, HashMap<KeyCombination, Action>> {
@@ -133,6 +134,7 @@ impl Default for Palette {
             h2: Style::default().fg(Color::LightRed).bold(),
             meta_highlight: Style::default().fg(Color::Yellow).bold(),
             meta_label: Style::default().fg(Color::DarkGray),
+            meta_meter: Style::default().fg(Color::LightRed),
             meta_secondary: Style::default().fg(Color::Blue),
             meta_value: Style::default().fg(Color::White),
             multiline_timestamp: Style::default().fg(Color::LightGreen).bold(),
@@ -151,6 +153,7 @@ impl Default for Theme {
             show_state: SHOW_STATE,
             show_last_updated: SHOW_LAST_UPDATED,
             show_display_type: SHOW_DISPLAY_TYPE,
+            show_history_meter: SHOW_HISTORY_METER,
             show_status_bar: SHOW_STATUS_BAR,
             palette: Palette::default(),
         }
