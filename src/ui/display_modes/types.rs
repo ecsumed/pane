@@ -16,5 +16,8 @@ pub enum DisplayType {
     DiffLine,
     DiffWord,
     Sparkline,
+    LineChart,
+    BarChart,
+    ScatterChart,
     Counter,
 }

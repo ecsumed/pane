@@ -5,11 +5,12 @@ use ratatui::Frame;
 use crate::command::Command;
 use crate::config::AppConfig;
 
+mod chart;
 mod counter;
 pub mod diff;
-mod sparkline;
 mod multiline;
 mod raw_text;
+mod sparkline;
 pub mod types;
 mod utils;
 
@@ -41,6 +42,9 @@ pub fn render_command_output(
         }
         DisplayType::Counter => {
             counter::render(frame, inner_area, config, command);
+        }
+        DisplayType::LineChart | DisplayType::BarChart | DisplayType::ScatterChart => {
+            chart::render(frame, inner_area, config, command);
         }
     }
 }

@@ -16,7 +16,6 @@ pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, command: &Comma
         .map(|entry| {
             let dt_string = match command.display_type {
                 DisplayType::MultiLineDateTime => {
-                    // Use .format() for Chrono types
                     format!("[{}]", entry.time.format("%Y-%m-%d %H:%M:%S"))
                 }
                 DisplayType::MultiLineTime => {

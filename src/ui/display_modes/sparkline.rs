@@ -36,7 +36,7 @@ pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, command: &Comma
     };
 
     let sparkline = Sparkline::default()
-        .block(Block::default().borders(Borders::empty()))
+        // .bar_set(symbols::bar::NINE_LEVELS)
         .data(display_data)
         .style(p.spark_line);
 
