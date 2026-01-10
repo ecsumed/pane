@@ -1,11 +1,9 @@
 use std::collections::HashMap;
 
 use crokey::KeyCombination;
-use ratatui::layout::{Constraint, Layout, Margin, Rect};
+use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::text::{Line, Span, Text};
-use ratatui::widgets::{
-    Block, Borders, Clear, Padding, Paragraph, Scrollbar, ScrollbarOrientation, Widget,
-};
+use ratatui::widgets::{Block, Borders, Clear, Padding, Paragraph, Widget};
 use ratatui::Frame;
 
 use crate::config::theme::Palette;
@@ -16,6 +14,7 @@ use crate::mode::AppMode;
 use crate::settings_line;
 use crate::ui::utils::centered_rect2;
 use crate::ui::utils::formatting::ToSettingsString;
+use crate::ui::utils::scrollbar;
 
 pub fn build_keybinding_list<'a>(
     keybindings: &'a HashMap<KeyMode, HashMap<KeyCombination, Action>>,
@@ -54,8 +53,6 @@ pub fn draw_help_menu(frame: &mut Frame, c: &AppConfig, mode: &mut AppMode) {
 
     let popup_area = centered_rect2(75, 80, area);
 
-    Clear.render(popup_area, frame.buffer_mut());
-
     if let AppMode::Help {
         scroll_offset,
         max_scroll,
@@ -68,6 +65,8 @@ pub fn draw_help_menu(frame: &mut Frame, c: &AppConfig, mode: &mut AppMode) {
             Constraint::Percentage(20),
         ])
         .areas(popup_area);
+
+        Clear.render(centered_area, frame.buffer_mut());
 
         let mut settings = vec![
             Line::from(Span::styled(" CONFIGURATION ", p.h1)),
@@ -114,38 +113,21 @@ pub fn draw_help_menu(frame: &mut Frame, c: &AppConfig, mode: &mut AppMode) {
             .padding(Padding::horizontal(2));
 
         let inner_area = block.inner(centered_area);
-
         let content_length = settings.len();
-
-        let logical_max_scroll = (content_length as u16).saturating_sub(inner_area.height);
-        *max_scroll = logical_max_scroll;
-
-        let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
-            .begin_symbol(Some("▴"))
-            .end_symbol(Some("▾"))
-            .track_symbol(Some("░"))
-            .thumb_symbol("█")
-            .track_style(p.scroll_track)
-            .thumb_style(p.scroll_bar);
-
-        *scrollbar_state = scrollbar_state
-            .content_length(logical_max_scroll as usize)
-            .viewport_content_length(0)
-            .position((*scroll_offset) as usize);
 
         let widget = Paragraph::new(Text::from(settings))
             .block(block)
             .scroll((*scroll_offset, 0));
 
         frame.render_widget(widget, centered_area);
-
-        frame.render_stateful_widget(
-            scrollbar,
-            centered_area.inner(Margin {
-                vertical: 1,
-                horizontal: 0,
-            }),
+        scrollbar::widget(
+            frame,
+            inner_area,
+            p,
+            content_length as u16,
+            max_scroll,
             scrollbar_state,
+            scroll_offset,
         );
     }
 }

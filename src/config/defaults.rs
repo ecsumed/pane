@@ -94,12 +94,23 @@ pub fn default_keybindings() -> HashMap<KeyMode, HashMap<KeyCombination, Action>
     map.insert(KeyMode::DisplayTypeSelect, HashMap::new());
 
     // HELP BINDINGS
-    map.insert(KeyMode::Help, HashMap::new());
+    map.insert(
+        KeyMode::Help,
+        HashMap::from([
+            (key!(g), Action::ScrollBottom),
+            (key!(shift - g), Action::ScrollTop),
+        ]),
+    );
 
     // OBSERVE BINDINGS
     map.insert(
         KeyMode::Observe,
-        HashMap::from([(key!('/'), Action::Search), (key!(w), Action::WrapToggle)]),
+        HashMap::from([
+            (key!('/'), Action::Search),
+            (key!(w), Action::WrapToggle),
+            (key!(g), Action::ScrollBottom),
+            (key!(shift - g), Action::ScrollTop),
+        ]),
     );
 
     map

@@ -54,6 +54,14 @@ pub async fn handle_help_keys(app: &mut App, event: Event) -> io::Result<()> {
             Action::MoveDown => {
                 *scroll_offset = (*scroll_offset).saturating_add(1).min(*max_scroll);
             }
+
+            Action::ScrollTop => {
+                *scroll_offset = 0;
+            }
+
+            Action::ScrollBottom => {
+                *scroll_offset = *max_scroll;
+            }
             _ => (),
         }
     }

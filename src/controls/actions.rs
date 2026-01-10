@@ -29,6 +29,8 @@ pub enum Action {
     Resume,
     SaveSession,
     Search,
+    ScrollTop,
+    ScrollBottom,
     SplitHorizontal,
     SplitVertical,
     TabComplete,

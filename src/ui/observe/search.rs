@@ -25,7 +25,6 @@ pub fn widget<'a>(config: &'a AppConfig, value: &'a str, is_focused: bool) -> Pa
         .borders(Borders::ALL)
         .border_style(border_style)
         .merge_if(config.theme.collapse_borders)
-        .border_style(Style::default().fg(Color::DarkGray))
         .title_alignment(Alignment::Right)
         .title(Span::styled(
             " SEARCH ",

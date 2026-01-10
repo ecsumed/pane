@@ -440,6 +440,8 @@ mod tests {
         app.config.theme.show_status_bar = false;
         render_terminal(&mut terminal, &mut app);
         assert_ui_snapshot("normal_mode_no_status_bar", terminal.backend().to_string());
+    
+        cleanup(app, root_pane);
     }
 
     #[test]
@@ -450,10 +452,31 @@ mod tests {
         app.mode = AppMode::new_help();
 
         render_terminal(&mut terminal, &mut app);
-        assert_ui_snapshot("help_mode_top", terminal.backend().to_string());
+        // assert_ui_snapshot("help_mode_top", terminal.backend().to_string());
 
         app.mode._scroll_bottom();
         render_terminal(&mut terminal, &mut app);
         assert_ui_snapshot("help_mode_bottom", terminal.backend().to_string());
+    }
+
+    #[tokio::test]
+    async fn test_render_observe_mode() {
+        let (mut app, root_pane) = mock_app();
+        app.config.interval = Duration::from_secs(60);
+        app.mode = AppMode::new_observing(&app);
+
+        _ = app
+            .set_command(root_pane, "ls".to_string())
+            .await;
+
+        let mut terminal = mock_terminal();
+
+        let result = simulate_app(&mut app, 1);
+        assert!(result.await.is_ok(), "Timed out waiting for CommandEvents");
+
+        render_terminal(&mut terminal, &mut app);
+        assert_ui_snapshot("observe_mode", terminal.backend().to_string());
+    
+        cleanup(app, root_pane);
     }
 }

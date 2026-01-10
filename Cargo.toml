@@ -17,7 +17,7 @@ dirs = "5.0"
 figment = { version = "0.10", features = ["toml", "env"] }
 futures = "0.3"
 humantime = "2.3.0"
-ratatui = { version = "0.30.0", features = ["serde"] }
+ratatui = { version = "0.30.0", features = ["unstable-rendered-line-info", "serde"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_with = { version = "3.0"}
 similar = "2.7.0"

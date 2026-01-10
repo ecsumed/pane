@@ -41,6 +41,8 @@ pub fn draw(
         history_list_state,
         focus,
         scroll_offset,
+        max_scroll,
+        scrollbar_state,
     } = mode_state
     {
         let Some(command) = commands.get(active_id) else {
@@ -64,16 +66,19 @@ pub fn draw(
         frame.render_stateful_widget(history_w, history_area, history_list_state);
 
         // Render Content
-        let content_w = content::widget(
+        content::render(
+            frame,
+            content_area,
             config,
             command,
             *selected_history_idx,
             *diff_mode,
             search_input.value(),
             *scroll_offset,
+            max_scroll,
+            scrollbar_state,
             *focus == ObserveFocus::Content,
         );
-        frame.render_widget(content_w, content_area);
 
         // Render Search
         let search_w = search::widget(config, search_input.value(), *focus == ObserveFocus::Search);

@@ -19,6 +19,7 @@ pub async fn handle_observe_mode_keys(app: &mut App, event: Event) -> io::Result
         search_input,
         focus,
         scroll_offset,
+        max_scroll,
         ..
     } = &mut app.mode
     else {
@@ -80,7 +81,7 @@ pub async fn handle_observe_mode_keys(app: &mut App, event: Event) -> io::Result
                     }
                 }
                 ObserveFocus::Content => {
-                    *scroll_offset = scroll_offset.saturating_add(1);
+                    *scroll_offset = (*scroll_offset).saturating_add(1).min(*max_scroll);
                 }
                 ObserveFocus::Search => {}
             },
@@ -102,6 +103,27 @@ pub async fn handle_observe_mode_keys(app: &mut App, event: Event) -> io::Result
                 };
                 debug!("Cycling diff to {}", diff_mode);
             }
+
+            Action::ScrollTop => match focus {
+                ObserveFocus::History => {}
+                ObserveFocus::Content => {
+                    *scroll_offset = 0;
+                }
+                ObserveFocus::Search => {
+                    search_input.handle_event(&event);
+                }
+            },
+
+            Action::ScrollBottom => match focus {
+                ObserveFocus::History => {}
+                ObserveFocus::Content => {
+                    *scroll_offset = *max_scroll;
+                }
+                ObserveFocus::Search => {
+                    search_input.handle_event(&event);
+                }
+            },
+
             _ => {
                 if matches!(focus, ObserveFocus::Search) {
                     search_input.handle_event(&event);
