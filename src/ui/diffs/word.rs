@@ -1,13 +1,13 @@
-use ratatui::text::{Line, Span};
+use ratatui::text::Line;
 use similar::{ChangeTag, TextDiff};
 
-use crate::config::theme::Theme;
+use crate::{config::theme::Theme, ui::utils::highlight_query};
 
 pub fn render<'a>(
     theme: &Theme,
     current: &'a str,
     previous: &'a str,
-    _query: &str,
+    query: &str,
 ) -> Vec<Line<'a>> {
     let diff = TextDiff::from_words(previous, current);
     let mut lines = Vec::new();
@@ -29,7 +29,8 @@ pub fn render<'a>(
 
             for (i, part) in parts.iter().enumerate() {
                 if !part.is_empty() {
-                    current_line_spans.push(Span::styled(part.to_string(), style));
+                    let highlighted_parts = highlight_query(part, &query, style, p.search_match);
+                    current_line_spans.extend(highlighted_parts);
                 }
 
                 if i < parts.len() - 1 {
@@ -38,7 +39,8 @@ pub fn render<'a>(
                 }
             }
         } else {
-            current_line_spans.push(Span::styled(value.to_string(), style));
+            let highlighted_parts = highlight_query(value, &query, style, p.search_match);
+            current_line_spans.extend(highlighted_parts);
         }
     }
 

@@ -1,35 +1,15 @@
-use ratatui::text::{Line, Span};
+use ratatui::text::Line;
 
-use crate::config::theme::Theme;
+use crate::{config::theme::Theme, ui::utils::highlight_query};
 
 pub fn render<'a>(theme: &Theme, current: &'a str, query: &str) -> Vec<Line<'a>> {
-    let query_lower = query.to_lowercase();
-
     let p = &theme.palette;
 
     current
         .lines()
         .map(|line_content| {
-            if query.is_empty() {
-                return Line::from(Span::styled(line_content, p.output));
-            }
-
-            if let Some(index) = line_content.to_lowercase().find(&query_lower) {
-                let start = index;
-                let end = index + query.len();
-
-                let prefix = &line_content[..start];
-                let matched = &line_content[start..end];
-                let suffix = &line_content[end..];
-
-                Line::from(vec![
-                    Span::raw(prefix),
-                    Span::styled(matched, p.search_match),
-                    Span::raw(suffix),
-                ])
-            } else {
-                Line::from(Span::styled(line_content, p.output))
-            }
+            let spans = highlight_query(line_content, &query, p.output, p.search_match);
+            Line::from(spans)
         })
         .collect()
 }
