@@ -1381,7 +1381,7 @@ checksum = "9c6901729fa79e91a0913333229e9ca5dc725089d1c363b2f4b4760709dc4a52"
 
 [[package]]
 name = "pane"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "clap",
