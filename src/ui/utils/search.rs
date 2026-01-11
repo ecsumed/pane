@@ -80,7 +80,7 @@ mod tests {
     fn test_highlight_query_case_insensitive() {
         let base_style = Style::default().fg(Color::White);
         let match_style = Style::default().fg(Color::Yellow);
-        
+
         // Query is lowercase 'hello', content is 'HELLO'
         let result = highlight_query("HELLO", "hello", base_style, match_style);
 
@@ -89,4 +89,3 @@ mod tests {
         assert_eq!(result[0].style, match_style);
     }
 }
-

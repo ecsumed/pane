@@ -28,6 +28,7 @@ const COLLAPSE_BORDERS: bool = false;
 const SHOW_STATE: bool = true;
 const SHOW_LAST_UPDATED: bool = true;
 const SHOW_DISPLAY_TYPE: bool = true;
+const SHOW_INLINE_DELETIONS: bool = false;
 const SHOW_HISTORY_METER: bool = true;
 const SHOW_STATUS_BAR: bool = true;
 
@@ -154,6 +155,7 @@ impl Default for Theme {
             show_last_updated: SHOW_LAST_UPDATED,
             show_display_type: SHOW_DISPLAY_TYPE,
             show_history_meter: SHOW_HISTORY_METER,
+            show_inline_deletions: SHOW_INLINE_DELETIONS,
             show_status_bar: SHOW_STATUS_BAR,
             palette: Palette::default(),
         }

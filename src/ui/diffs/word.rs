@@ -17,7 +17,12 @@ pub fn render<'a>(
 
     for change in diff.iter_all_changes() {
         let style = match change.tag() {
-            ChangeTag::Delete => p.diff_remove,
+            ChangeTag::Delete => {
+                if !theme.show_inline_deletions {
+                    continue;
+                }
+                p.diff_remove
+            }
             ChangeTag::Insert => p.diff_add,
             _ => p.output,
         };

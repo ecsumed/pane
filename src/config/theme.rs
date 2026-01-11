@@ -7,6 +7,7 @@ pub struct Theme {
     pub palette: Palette,
     pub show_display_type: bool,
     pub show_history_meter: bool,
+    pub show_inline_deletions: bool,
     pub show_last_updated: bool,
     pub show_state: bool,
     pub show_status_bar: bool,
