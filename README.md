@@ -5,7 +5,7 @@ pane [![Release](https://github.com/ecsumed/pane/actions/workflows/release.yml/b
 
 ## Install
 ```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ecsumed/pane/releases/download/v0.1.0/pane-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ecsumed/pane/releases/latest/download/pane-installer.sh | sh
 ```
 
 ## Features
