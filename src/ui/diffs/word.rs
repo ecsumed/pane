@@ -34,7 +34,7 @@ pub fn render<'a>(
 
             for (i, part) in parts.iter().enumerate() {
                 if !part.is_empty() {
-                    let highlighted_parts = highlight_query(part, &query, style, p.search_match);
+                    let highlighted_parts = highlight_query(part, query, style, p.search_match);
                     current_line_spans.extend(highlighted_parts);
                 }
 
@@ -44,7 +44,7 @@ pub fn render<'a>(
                 }
             }
         } else {
-            let highlighted_parts = highlight_query(value, &query, style, p.search_match);
+            let highlighted_parts = highlight_query(value, query, style, p.search_match);
             current_line_spans.extend(highlighted_parts);
         }
     }

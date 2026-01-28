@@ -148,7 +148,7 @@ impl AppConfig {
             return home_dir.join(".config").join(app_name).join("config.toml");
         }
 
-        let proj_dirs = ProjectDirs::from("io", &app_name, app_name);
+        let proj_dirs = ProjectDirs::from("io", app_name, app_name);
         proj_dirs
             .map(|p| p.config_dir().join("config.toml"))
             .unwrap_or_default()

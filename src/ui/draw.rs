@@ -25,7 +25,7 @@ pub fn draw_ui(app: &mut App, frame: &mut Frame) {
 
     if app.config.theme.show_status_bar {
         let status_area = areas[1];
-        draw_status_line(frame, status_area, &app);
+        draw_status_line(frame, status_area, app);
     }
 
     Clear.render(main_area, frame.buffer_mut());

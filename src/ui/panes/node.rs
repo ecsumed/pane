@@ -25,13 +25,13 @@ pub fn draw_recursive(
     };
 
     match &node.data {
-        PaneNodeData::Single {} => {
+        PaneNodeData::Single => {
             let is_active = node_key == manager.active_pane_id;
 
             let command = commands.get(&node_key);
 
             if let Some(cmd) = command {
-                let node_info = NodeInfo::with_command(config, is_active, &cmd);
+                let node_info = NodeInfo::with_command(config, is_active, cmd);
 
                 let block = create_pane_block(config, node_info);
 

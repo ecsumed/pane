@@ -56,7 +56,7 @@ impl App {
         }
 
         Self {
-            pane_manager: pane_manager,
+            pane_manager,
             tasks: HashMap::new(),
             mode: AppMode::default(),
             exit: false,
@@ -143,7 +143,7 @@ impl App {
     }
 
     pub fn exit(&mut self) {
-        for (pane_key, _cmd) in &self.tasks {
+        for pane_key in self.tasks.keys() {
             if let Err(e) = self
                 .app_control_tx
                 .try_send(AppControl::SendControl(*pane_key, CommandControl::Stop))

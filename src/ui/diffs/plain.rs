@@ -8,7 +8,7 @@ pub fn render<'a>(theme: &Theme, current: &'a str, query: &str) -> Vec<Line<'a>>
     current
         .lines()
         .map(|line_content| {
-            let spans = highlight_query(line_content, &query, p.output, p.search_match);
+            let spans = highlight_query(line_content, query, p.output, p.search_match);
             Line::from(spans)
         })
         .collect()

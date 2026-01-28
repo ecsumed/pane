@@ -45,7 +45,7 @@ impl<'a> NodeInfo<'a> {
 
     pub fn no_command(is_active: bool) -> Self {
         Self {
-            is_active: is_active,
+            is_active,
             exec_str: Cow::Borrowed("N/A"),
             interval_secs_str: Cow::Borrowed("0s"),
             last_exec_time: Cow::Borrowed("N/A"),

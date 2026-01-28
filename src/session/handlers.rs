@@ -16,7 +16,7 @@ pub fn save_session_by_name(app: &App, session_filename: &str) -> io::Result<()>
     };
 
     let toml_string = toml::to_string(&session_state)
-        .map_err(|e| io::Error::new(ErrorKind::Other, format!("Serialization error: {}", e)))?;
+        .map_err(|e| io::Error::other(format!("Serialization error: {}", e)))?;
 
     let sessions_dir = &app.config.sessions_dir;
     fs::create_dir_all(sessions_dir)?;
@@ -24,7 +24,7 @@ pub fn save_session_by_name(app: &App, session_filename: &str) -> io::Result<()>
     use std::path::Path;
     let path = Path::new(session_filename);
 
-    let final_filename = if path.extension().map_or(false, |ext| ext == "toml") {
+    let final_filename = if path.extension().is_some_and(|ext| ext == "toml") {
         session_filename.to_string()
     } else {
         format!("{}.toml", session_filename)

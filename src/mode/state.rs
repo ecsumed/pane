@@ -171,10 +171,10 @@ impl AppMode {
         let active_id = app.pane_manager.active_pane_id;
 
         AppMode::Observe {
-            active_id: active_id,
+            active_id,
             selected_history_idx: 0,
             last_history_len: 0,
-            diff_mode: diff_mode,
+            diff_mode,
             search_input: Input::default(),
             history_list_state: ListState::default(),
             focus: ObserveFocus::default(),

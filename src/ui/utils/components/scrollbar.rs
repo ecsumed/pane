@@ -16,7 +16,7 @@ pub fn widget(
     scrollbar_state: &mut ScrollbarState,
     scroll_offset: &u16,
 ) {
-    let logical_max_scroll = (content_length as u16).saturating_sub(area.height);
+    let logical_max_scroll = content_length.saturating_sub(area.height);
     *max_scroll = logical_max_scroll;
 
     debug!("max scroll: {}", max_scroll);

@@ -81,12 +81,12 @@ impl PaneManager {
                 .unwrap_or("None".to_string());
 
             let node_type_label = match node.data {
-                PaneNodeData::Single { .. } => "Single",
+                PaneNodeData::Single => "Single",
                 PaneNodeData::Split { .. } => "Split",
             };
 
             match &node.data {
-                PaneNodeData::Single { .. } => {
+                PaneNodeData::Single => {
                     let pane_id = self.pane_key_to_friendly_id(&node_key).unwrap_or(0);
 
                     writeln!(
@@ -310,7 +310,7 @@ impl PaneManager {
 
     fn find_next_active(&self) -> PaneKey {
         let keys = self.get_all_pane_keys();
-        return keys[keys.len() - 1];
+        keys[keys.len() - 1]
     }
 
     pub fn resize_pane(

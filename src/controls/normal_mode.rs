@@ -137,7 +137,7 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
             }
             Action::SaveSession => {
                 info!("Saving session...");
-                if let Err(e) = save_session(&app) {
+                if let Err(e) = save_session(app) {
                     error!("Error saving session: {}", e);
                 } else {
                     info!("Session saved successfully!");
@@ -181,7 +181,7 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
             }
             Action::EnterObserveMode => {
                 info!("Observe mode");
-                app.mode = AppMode::new_observing(&app);
+                app.mode = AppMode::new_observing(app);
             }
             Action::WrapToggle => {
                 app.config.wrap = !app.config.wrap;

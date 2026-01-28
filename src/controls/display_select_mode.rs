@@ -57,7 +57,7 @@ pub async fn handle_display_type_select_keys(app: &mut App, event: Event) -> io:
             }
             Action::Confirm => {
                 if let Some(selected) = state.selected() {
-                    let display_type = items[selected].clone();
+                    let display_type = items[selected];
                     let id = app.pane_manager.active_pane_id;
 
                     info!("Changing to display: {:?}", display_type);

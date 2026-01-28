@@ -22,7 +22,7 @@ pub fn render<'a>(
         };
 
         let mut spans = vec![Span::styled(sign, style)];
-        let highlighted_parts = highlight_query(change.value(), &query, style, p.search_match);
+        let highlighted_parts = highlight_query(change.value(), query, style, p.search_match);
 
         spans.extend(highlighted_parts);
         lines.push(Line::from(spans));

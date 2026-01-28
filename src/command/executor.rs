@@ -60,7 +60,7 @@ impl super::Command {
             output: output_message,
             time: now_datetime,
             exit_status: status.code(),
-            duration: duration,
+            duration,
         };
 
         if let Err(e) = output_tx.send((id, CommandEvent::Output(cmd_output))).await {

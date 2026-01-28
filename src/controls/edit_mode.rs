@@ -121,7 +121,7 @@ pub async fn handle_editing_mode_keys(app: &mut App, event: Event) -> io::Result
             Action::TabComplete => {
                 if let Some(index) = state.selected() {
                     if let Some(suggestion) = suggestions.get(index).cloned() {
-                        let current_input = mem::replace(input, tui_input::Input::default());
+                        let current_input = std::mem::take(input);
 
                         let updated_input = current_input.with_value(suggestion);
 
