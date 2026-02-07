@@ -107,9 +107,14 @@ impl AppMode {
         }
     }
 
-    pub fn new_cmd_edit() -> Self {
+    pub fn new_cmd_edit(old_input: Option<String>) -> Self {
+        let input = match old_input {
+            Some(val) => Input::default().with_value(val),
+            None => Input::default(),
+        };
+
         AppMode::CmdEdit {
-            input: Input::default(),
+            input,
             state: ListState::default(),
             suggestions: Vec::new(),
             history: ShellHistoryManager::new(),

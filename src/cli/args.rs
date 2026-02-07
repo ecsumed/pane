@@ -4,7 +4,11 @@ use clap_verbosity_flag::{ErrorLevel, Verbosity};
 use crate::ui::DisplayType;
 
 #[derive(Parser, Debug)]
-#[command(author, version, about = "Watch + tmux-resurrect = poor mans dashboard")]
+#[command(
+    author,
+    version,
+    about = "Watch + tmux-resurrect = poor mans dashboard"
+)]
 pub struct Cli {
     /// Enable an audible beep if a command completes with a non-zero status code
     #[arg(short, long)]

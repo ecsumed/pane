@@ -49,7 +49,8 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
                 app.pane_manager.split_pane(Direction::Vertical);
             }
             Action::EnterCmdMode => {
-                app.mode = AppMode::new_cmd_edit();
+                let id = app.pane_manager.active_pane_id;
+                app.mode = AppMode::new_cmd_edit(app.tasks.get(&id).map(|c| c.exec.clone()));
             }
             Action::Cycle => app.pane_manager.cycle_panes(),
             Action::MoveUp => {
