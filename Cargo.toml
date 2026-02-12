@@ -11,6 +11,7 @@ clap-verbosity-flag = "3.0"
 color-eyre = "0.6.3"
 crokey = { git = "https://github.com/Canop/crokey", rev = "fe682ca1d5f5f3b324380511983c395f7a18836a"}
 crossterm = { version = "0.28.1", features = ["event-stream"] }
+dark-light = "2.0.0"
 derive_deref = "1.1.1"
 directories = "5.0"
 dirs = "5.0"

@@ -6,7 +6,7 @@ use ratatui::style::{Color, Modifier, Style};
 
 use super::utils::{app_name, default_sessions_dir_path, default_snapshot_dir_path};
 use super::AppConfig;
-use crate::config::theme::{Palette, Theme};
+use crate::config::theme::{Palette, Theme, ThemeMode};
 use crate::config::utils::default_logging_dir_path;
 use crate::controls::actions::Action;
 use crate::controls::KeyMode;
@@ -25,6 +25,7 @@ const ZEN: bool = false;
 
 // THEME
 const COLLAPSE_BORDERS: bool = false;
+const MODE: ThemeMode = ThemeMode::System;
 const SHOW_STATE: bool = true;
 const SHOW_LAST_UPDATED: bool = true;
 const SHOW_DISPLAY_TYPE: bool = true;
@@ -118,8 +119,8 @@ pub fn default_keybindings() -> HashMap<KeyMode, HashMap<KeyCombination, Action>
     map
 }
 
-impl Default for Palette {
-    fn default() -> Self {
+impl Palette {
+    pub fn dark_preset() -> Self {
         Self {
             border_active: Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
             border_inactive: Style::default().fg(Color::DarkGray),
@@ -146,18 +147,56 @@ impl Default for Palette {
             spark_line: Style::default().fg(Color::LightBlue),
         }
     }
+
+    pub fn light_preset() -> Self {
+        Self {
+            border_active: Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            border_inactive: Style::default().fg(Color::Gray),
+            border_label: Style::default()
+                .fg(Color::Black)
+                .bg(Color::Rgb(230, 230, 230)),
+            chart_bar: Style::default().fg(Color::Blue),
+            chart_line: Style::default().fg(Color::Magenta),
+            chart_scatter: Style::default().fg(Color::Green),
+            counter_key: Style::default().fg(Color::DarkGray).bold(),
+            diff_add: Style::default()
+                .fg(Color::DarkGray)
+                .bg(Color::Rgb(220, 255, 220)),
+            diff_remove: Style::default()
+                .fg(Color::Red)
+                .bg(Color::Rgb(255, 220, 220)),
+            error: Style::default().fg(Color::Red),
+            h1: Style::default().fg(Color::Red).bold(),
+            h2: Style::default().fg(Color::Rgb(150, 0, 0)).bold(),
+            meta_highlight: Style::default().fg(Color::Rgb(100, 100, 0)).bold(),
+            meta_label: Style::default().fg(Color::Gray),
+            meta_meter: Style::default().fg(Color::Red),
+            meta_secondary: Style::default().fg(Color::Blue),
+            meta_value: Style::default().fg(Color::Black),
+            multiline_timestamp: Style::default().fg(Color::DarkGray).bold(),
+            output: Style::default().fg(Color::Black),
+            scroll_bar: Style::default().fg(Color::Red),
+            scroll_track: Style::default().fg(Color::LightBlue),
+            search_match: Style::default().fg(Color::Black).bg(Color::Yellow),
+            spark_line: Style::default().fg(Color::Blue),
+        }
+    }
 }
+
 impl Default for Theme {
     fn default() -> Self {
         Theme {
             collapse_borders: COLLAPSE_BORDERS,
+            dark_palette: Palette::dark_preset(),
+            light_palette: Palette::light_preset(),
+            palette: Palette::dark_preset(),
+            mode: MODE,
             show_state: SHOW_STATE,
             show_last_updated: SHOW_LAST_UPDATED,
             show_display_type: SHOW_DISPLAY_TYPE,
             show_history_meter: SHOW_HISTORY_METER,
             show_inline_deletions: SHOW_INLINE_DELETIONS,
             show_status_bar: SHOW_STATUS_BAR,
-            palette: Palette::default(),
         }
     }
 }

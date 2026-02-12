@@ -63,6 +63,21 @@ async fn main() -> color_eyre::Result<()> {
 
     config.merge_cli(&cli_args);
 
+    if cli_args.print_default_config {
+        match toml::to_string_pretty(&config) {
+            Ok(toml_str) => {
+                println!("{}", toml_str);
+                std::process::exit(0);
+            }
+            Err(e) => {
+                eprintln!("Error serializing config to TOML: {}", e);
+                std::process::exit(1);
+            }
+        }
+    }
+
+    config.theme.refresh_palette();
+
     let log_level_filter = logging::get_log_level_filter(config.log_level.as_deref());
     let _guard = logging::init_tracing(log_level_filter, &config.logs_dir);
 

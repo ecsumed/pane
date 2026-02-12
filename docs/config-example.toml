@@ -1,17 +1,129 @@
-interval = "5s"
+beep = false
+chg_exit = false
+default_display = "RawText"
+err_exit = false
+interval = 2
+log_level = "info"
+max_history = 10
+wrap = true
+zen = false
 
-[keys]
-quit = 'q'
-enter_cmd_mode = 'c'
-split_horizontal = 'h'
-split_vertical = 'v'
-kill_pane = 'x'
-pause = 'p'
-resume = 'r'
-increase_interval = 'i'
-decrease_interval = 'd'
-save_session = 's'
-load_latest_session = 'l'
-enter_session_load_mode = 'L'
-enter_session_save_mode = 'S'
-enter_display_select_mode = 'D'
+[keybindings.CmdEdit]
+Tab = "TabComplete"
+
+[keybindings.DisplayTypeSelect]
+
+[keybindings.Global]
+Down = "MoveDown"
+Enter = "Confirm"
+Esc = "Escape"
+Left = "MoveLeft"
+Right = "MoveRight"
+Tab = "Cycle"
+Up = "MoveUp"
+q = "Quit"
+
+[keybindings.Help]
+Shift-g = "ScrollTop"
+g = "ScrollBottom"
+
+[keybindings.Normal]
+"+" = "PaneIncreaseVertical"
+"<" = "PaneDecreaseHorizontal"
+">" = "PaneIncreaseHorizontal"
+"?" = "EnterHelpMode"
+Hyphen = "PaneDecreaseVertical"
+Shift-d = "EnterDisplaySelectMode"
+Shift-l = "EnterSessionLoadMode"
+Shift-s = "EnterSessionSaveMode"
+Space = "Execute"
+Tab = "Cycle"
+c = "EnterCmdMode"
+d = "IntervalDecrease"
+h = "SplitHorizontal"
+i = "IntervalIncrease"
+l = "LoadLatestSession"
+o = "EnterObserveMode"
+p = "Pause"
+r = "Resume"
+s = "SaveSession"
+v = "SplitVertical"
+w = "WrapToggle"
+x = "KillPane"
+z = "ZenToggle"
+
+[keybindings.Observe]
+"/" = "Search"
+Shift-g = "ScrollTop"
+g = "ScrollBottom"
+w = "WrapToggle"
+
+[keybindings.SessionLoad]
+
+[keybindings.SessionSave]
+
+[theme]
+collapse_borders = false
+mode = "light"
+show_display_type = false
+show_history_meter = true
+show_inline_deletions = false
+show_last_updated = true
+show_state = true
+show_status_bar = true
+
+[theme.dark_palette]
+border_active= { add_modifier = "BOLD", fg = "Red" }
+h1= { add_modifier = "BOLD", fg = "Red" }
+h2= { add_modifier = "BOLD", fg = "LightRed" }
+meta_highlight= { add_modifier = "BOLD", fg = "Yellow" }
+multiline_timestamp= { add_modifier = "BOLD", fg = "LightGreen" }
+border_label= { bg = "#282828", fg = "Reset" }
+counter_key= { add_modifier = "BOLD", fg = "LightGreen" }
+diff_add= { bg = "#142814", fg = "Green" }
+diff_remove= { bg = "#281414", fg = "Red" }
+search_match= { bg = "Yellow", fg = "Black" }
+error = { fg = "Red" }
+border_inactive = { fg = "DarkGray" }
+chart_bar = { fg = "LightBlue" }
+chart_line = { fg = "LightMagenta" }
+chart_scatter = { fg = "LightGreen" }
+meta_label = { fg = "DarkGray" }
+meta_meter = { fg = "LightRed" }
+meta_secondary = { fg = "Blue" }
+meta_value = { fg = "White" }
+output = { fg = "Gray" }
+scroll_bar = { fg = "LightRed" }
+scroll_track = { fg = "Blue" }
+spark_line = { fg = "LightBlue" }
+
+[theme.light_palette]
+output = { fg = "Black" }
+meta_value = { fg = "Black" }
+meta_label = { fg = "#4D4D4D" }
+meta_secondary = { fg = "Blue" }
+counter_key = { add_modifier = "BOLD", fg = "#4D4D4D" }
+multiline_timestamp = { add_modifier = "BOLD", fg = "#666666" }
+
+# Borders and Headers (Reddish Tones)
+border_active = { add_modifier = "BOLD", fg = "#D70000" }
+border_inactive = { fg = "#B3B3B3" }
+border_label = { bg = "#F2F2F2", fg = "Black" }
+h1 = { add_modifier = "BOLD", fg = "#D70000" }
+h2 = { add_modifier = "BOLD", fg = "#960000" }
+
+# Diff and Highlights
+diff_add = { bg = "#E6FFEA", fg = "#1B5E20" }
+diff_remove = { bg = "#FFE6E6", fg = "#B71C1C" }
+search_match = { bg = "#FDE68A", fg = "Black" }
+meta_highlight = { add_modifier = "BOLD", fg = "#5D5D00" }
+
+# Graphics and Meters
+meta_meter = { fg = "Red" }
+scroll_bar = { fg = "#D70000" }
+scroll_track = { fg = "#E0E0E0" }
+chart_bar = { fg = "Blue" }
+chart_line = { fg = "Magenta" }
+chart_scatter = { fg = "#2E7D32" }
+spark_line = { fg = "Blue" }
+error = { fg = "Red" }

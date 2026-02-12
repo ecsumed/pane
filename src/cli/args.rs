@@ -54,4 +54,8 @@ pub struct Cli {
     /// Zen (focus) mode: hides extra info
     #[arg(short = 'z', long = "zen")]
     pub zen: bool,
+
+    /// Print the default configuration as TOML and exit
+    #[arg(long)]
+    pub print_default_config: bool,
 }
