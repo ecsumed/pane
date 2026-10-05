@@ -18,7 +18,7 @@ impl Command {
         interval: Duration,
         output_tx: mpsc::Sender<(PaneKey, CommandEvent)>,
     ) -> Self {
-        let (control_tx, control_rx) = mpsc::channel(1);
+        let (control_tx, control_rx) = mpsc::unbounded_channel();
 
         let cmd = exec.clone();
         let task_handle = tokio::spawn(async move {
@@ -59,7 +59,7 @@ impl Command {
         state: CommandSerializableState,
         output_tx: mpsc::Sender<(PaneKey, CommandEvent)>,
     ) -> Command {
-        let (control_tx, control_rx) = mpsc::channel(1);
+        let (control_tx, control_rx) = mpsc::unbounded_channel();
 
         let interval = state.interval;
         let exec = state.exec.clone();
@@ -80,7 +80,7 @@ impl Command {
         }
     }
 
-    pub async fn handle_control_signal(&mut self, id: PaneKey, cmd_ctrl: CommandControl) {
+    pub fn handle_control_signal(&mut self, id: PaneKey, cmd_ctrl: CommandControl) {
         let worker_instruction = match cmd_ctrl {
             CommandControl::IntervalIncrease => {
                 if self.interval < Duration::from_secs(1) {
@@ -110,7 +110,7 @@ impl Command {
             _ => {}
         }
 
-        if let Err(e) = self.control_tx.send(worker_instruction).await {
+        if let Err(e) = self.control_tx.send(worker_instruction) {
             warn!(
                 "Task {:?} is no longer running. Cannot send {:?}: {e}",
                 id, worker_instruction

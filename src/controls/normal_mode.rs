@@ -74,7 +74,6 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
                 if let Err(e) = app
                     .app_control_tx
                     .send(AppControl::SendControl(id, CommandControl::Stop))
-                    .await
                 {
                     warn!("Failed to send AppControl::SendControl: {}", e);
                 }
@@ -85,7 +84,6 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
                 if let Err(e) = app
                     .app_control_tx
                     .send(AppControl::SendControl(id, CommandControl::Execute))
-                    .await
                 {
                     warn!("Failed to send AppControl::SendControl: {}", e);
                 }
@@ -95,7 +93,6 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
                 if let Err(e) = app
                     .app_control_tx
                     .send(AppControl::SendControl(id, CommandControl::Pause))
-                    .await
                 {
                     warn!("Failed to send AppControl::SendControl: {}", e);
                 }
@@ -105,34 +102,25 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
                 if let Err(e) = app
                     .app_control_tx
                     .send(AppControl::SendControl(id, CommandControl::Resume))
-                    .await
                 {
                     warn!("Failed to send AppControl::SendControl: {}", e);
                 }
             }
             Action::IntervalIncrease => {
                 let id = app.pane_manager.active_pane_id;
-                if let Err(e) = app
-                    .app_control_tx
-                    .send(AppControl::SendControl(
-                        id,
-                        CommandControl::IntervalIncrease,
-                    ))
-                    .await
-                {
+                if let Err(e) = app.app_control_tx.send(AppControl::SendControl(
+                    id,
+                    CommandControl::IntervalIncrease,
+                )) {
                     warn!("Failed to send AppControl::SendControl: {}", e);
                 }
             }
             Action::IntervalDecrease => {
                 let id = app.pane_manager.active_pane_id;
-                if let Err(e) = app
-                    .app_control_tx
-                    .send(AppControl::SendControl(
-                        id,
-                        CommandControl::IntervalDecrease,
-                    ))
-                    .await
-                {
+                if let Err(e) = app.app_control_tx.send(AppControl::SendControl(
+                    id,
+                    CommandControl::IntervalDecrease,
+                )) {
                     warn!("Failed to send AppControl::SendControl: {}", e);
                 }
             }
@@ -195,7 +183,6 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
                 if let Err(e) = app
                     .app_control_tx
                     .send(AppControl::SendControl(id, CommandControl::Execute))
-                    .await
                 {
                     warn!("Failed to send AppControl::Execute: {}", e);
                 }
