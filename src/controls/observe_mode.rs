@@ -14,6 +14,7 @@ pub async fn handle_observe_mode_keys(app: &mut App, event: Event) -> io::Result
     let current_context: KeyMode = app.mode.key_mode();
 
     let AppMode::Observe {
+        active_id,
         selected_history_idx,
         diff_mode,
         search_input,
@@ -82,10 +83,12 @@ pub async fn handle_observe_mode_keys(app: &mut App, event: Event) -> io::Result
 
             Action::MoveDown => match focus {
                 ObserveFocus::History => {
-                    let active_id = app.pane_manager.active_pane_id;
-                    let cmd = app.tasks.get(&active_id).unwrap();
+                    let history_len = app
+                        .tasks
+                        .get(active_id)
+                        .map_or(0, |cmd| cmd.output_history.len());
 
-                    if *selected_history_idx < cmd.output_history.len().saturating_sub(1) {
+                    if *selected_history_idx < history_len.saturating_sub(1) {
                         *selected_history_idx += 1;
                         *scroll_offset = 0;
                     }
@@ -183,6 +186,16 @@ mod tests {
 
         press(&mut app, KeyCode::Esc).await;
         assert!(matches!(app.mode, AppMode::Normal));
+    }
+
+    #[tokio::test]
+    async fn test_history_down_on_pane_without_command() {
+        let mut app = App::new(AppConfig::default(), Vec::new());
+        app.mode = AppMode::new_observing(&app);
+
+        press(&mut app, KeyCode::Down).await;
+
+        assert!(matches!(app.mode, AppMode::Observe { .. }));
     }
 
     #[tokio::test]
