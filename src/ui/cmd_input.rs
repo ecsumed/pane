@@ -20,7 +20,8 @@ pub fn draw_input_popup(frame: &mut Frame, app: &mut App) {
         let input_area_x = (frame_area.width.saturating_sub(input_area_width)) / 2;
         let input_area_y = (frame_area.height.saturating_sub(3)) / 2;
 
-        let input_area = Rect::new(input_area_x, input_area_y, input_area_width, 3);
+        let input_area =
+            Rect::new(input_area_x, input_area_y, input_area_width, 3).intersection(frame_area);
 
         Clear.render(input_area, frame.buffer_mut());
 
@@ -29,10 +30,11 @@ pub fn draw_input_popup(frame: &mut Frame, app: &mut App) {
 
         let suggestions_area = Rect::new(
             input_area.x,
-            input_area.y + input_area.height,
+            input_area.bottom(),
             input_area.width,
             suggestions_height,
-        );
+        )
+        .intersection(frame_area);
 
         Clear.render(suggestions_area, frame.buffer_mut());
 
@@ -58,6 +60,36 @@ pub fn draw_input_popup(frame: &mut Frame, app: &mut App) {
                 .highlight_style(Style::default().add_modifier(Modifier::REVERSED));
 
             frame.render_stateful_widget(suggestions_list, suggestions_area, state);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use ratatui::backend::TestBackend;
+    use ratatui::widgets::ListState;
+    use ratatui::Terminal;
+    use tui_input::Input;
+
+    use super::*;
+    use crate::config::AppConfig;
+    use crate::shell_history::ShellHistoryManager;
+
+    #[test]
+    fn test_suggestions_fit_short_terminal() {
+        let mut app = App::new(AppConfig::default(), Vec::new());
+        app.mode = AppMode::CmdEdit {
+            input: Input::default().with_value("kubectl".to_string()),
+            state: ListState::default(),
+            suggestions: (0..10).map(|i| format!("kubectl get pods {i}")).collect(),
+            history: ShellHistoryManager::from_commands(Vec::new()),
+        };
+
+        for height in [1, 3, 10, 15] {
+            let mut terminal = Terminal::new(TestBackend::new(80, height)).unwrap();
+            terminal
+                .draw(|frame| draw_input_popup(frame, &mut app))
+                .unwrap();
         }
     }
 }
