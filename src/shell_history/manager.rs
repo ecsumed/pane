@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::path::PathBuf;
 use std::{env, fs, io};
 
@@ -50,34 +51,84 @@ impl ShellHistoryManager {
         let bytes = fs::read(path)?;
         let contents = String::from_utf8_lossy(&bytes);
 
-        let commands: Vec<String> = contents
-            .lines()
-            .filter(|line| {
-                let trimmed = line.trim();
-                !trimmed.is_empty() && !trimmed.starts_with('#')
-            })
-            .map(|line| {
-                let trimmed = line.trim();
-                match trimmed.split_once(';') {
-                    Some((_metadata, command)) => command.trim().to_string(),
-                    None => trimmed.to_string(),
-                }
-            })
-            .collect();
+        Ok(Self::parse_history(&contents))
+    }
 
-        Ok(commands)
+    fn parse_history(contents: &str) -> Vec<String> {
+        contents
+            .lines()
+            .map(|line| Self::strip_zsh_metadata(line.trim()).trim())
+            .filter(|line| !line.is_empty() && !line.starts_with('#'))
+            .map(String::from)
+            .collect()
+    }
+
+    fn strip_zsh_metadata(line: &str) -> &str {
+        let Some((meta, command)) = line
+            .strip_prefix(": ")
+            .and_then(|rest| rest.split_once(';'))
+        else {
+            return line;
+        };
+
+        let is_metadata = meta
+            .split(':')
+            .all(|part| !part.is_empty() && part.chars().all(|c| c.is_ascii_digit()));
+
+        if is_metadata {
+            command
+        } else {
+            line
+        }
     }
 
     pub fn filter(&self, input: &str) -> Vec<String> {
         if input.is_empty() {
             return Vec::new();
         }
+        let mut seen = HashSet::new();
         self.commands
             .iter()
             .rev()
-            .filter(|cmd| cmd.starts_with(input))
+            .filter(|cmd| cmd.starts_with(input) && seen.insert(cmd.as_str()))
             .take(10)
             .cloned()
             .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_zsh_extended_history() {
+        let contents = ": 1700000000:0;kubectl get pods\n: 1700000001:12;echo a; echo b\n";
+        assert_eq!(
+            ShellHistoryManager::parse_history(contents),
+            vec!["kubectl get pods", "echo a; echo b"]
+        );
+    }
+
+    #[test]
+    fn test_parse_bash_history_keeps_semicolons() {
+        let contents = "#1700000000\nfor i in 1 2; do echo $i; done\nls -la\n";
+        assert_eq!(
+            ShellHistoryManager::parse_history(contents),
+            vec!["for i in 1 2; do echo $i; done", "ls -la"]
+        );
+    }
+
+    #[test]
+    fn test_filter_dedupes_most_recent_first() {
+        let history = ShellHistoryManager::from_commands(
+            ["kubectl get pods", "kubectl top pod", "kubectl get pods"]
+                .map(String::from)
+                .to_vec(),
+        );
+        assert_eq!(
+            history.filter("kubectl"),
+            vec!["kubectl get pods", "kubectl top pod"]
+        );
     }
 }
