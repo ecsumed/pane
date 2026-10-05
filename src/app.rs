@@ -182,6 +182,12 @@ impl App {
         pane_manager: PaneManager,
         tasks_state: HashMap<PaneKey, CommandSerializableState>,
     ) -> io::Result<()> {
+        for (_, old) in self.tasks.drain() {
+            if let Some(h) = old.task_handle {
+                h.abort();
+            }
+        }
+
         let running_tasks = Command::restore_tasks(tasks_state, self.output_tx.clone());
 
         self.pane_manager = pane_manager;
@@ -491,6 +497,28 @@ mod tests {
         assert!(
             stopped.is_ok(),
             "Task did not stop while command was running"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_load_session_stops_previous_tasks() {
+        let (mut app, root_pane) = mock_app();
+
+        app.set_command(root_pane, "sleep 5".to_string()).await;
+        let old_task = app.tasks[&root_pane]
+            .task_handle
+            .as_ref()
+            .unwrap()
+            .abort_handle();
+
+        app.load_session(PaneManager::new(), HashMap::new())
+            .unwrap();
+        tokio::task::yield_now().await;
+
+        assert!(app.tasks.is_empty());
+        assert!(
+            old_task.is_finished(),
+            "Previous session task still running"
         );
     }
 
