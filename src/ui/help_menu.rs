@@ -86,6 +86,7 @@ pub fn draw_help_menu(frame: &mut Frame, c: &AppConfig, mode: &mut AppMode) {
             "Max History" => c.max_history,
             "Sessions Dir" => c.sessions_dir.display(),
             "Snapshot Dir" => c.snapshot_dir.display(),
+            "Timeout" => format!("{:?}", c.timeout),
             "Wrap" => c.wrap,
             "Zen" => c.zen,
         ));

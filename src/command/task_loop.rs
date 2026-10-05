@@ -61,6 +61,7 @@ impl Command {
         id: PaneKey,
         exec: String,
         interval: Duration,
+        timeout: Duration,
         state: CommandState,
         mut control_rx: mpsc::UnboundedReceiver<CommandControl>,
         output_tx: mpsc::Sender<(PaneKey, CommandEvent)>,
@@ -83,7 +84,7 @@ impl Command {
             };
 
             debug!("Pane {:?} task running command: {}", id, exec);
-            let run = Self::run_and_send_output(id, &exec, output_tx.clone());
+            let run = Self::run_and_send_output(id, &exec, output_tx.clone(), timeout);
             tokio::pin!(run);
 
             loop {

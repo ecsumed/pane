@@ -18,6 +18,7 @@ const DEFAULT_DISPLAY: DisplayType = DisplayType::RawText;
 const EXIT_ON_CHANGE: bool = false;
 const EXIT_ON_ERROR: bool = false;
 const INTERVAL_SECS: u64 = 5;
+const TIMEOUT_SECS: u64 = 60;
 const LOG_LEVEL: Option<String> = None;
 const MAX_HISTORY: usize = 10;
 const WRAP: bool = true;
@@ -209,6 +210,7 @@ impl Default for AppConfig {
 
         AppConfig {
             interval: Duration::from_secs(INTERVAL_SECS),
+            timeout: Duration::from_secs(TIMEOUT_SECS),
             zen: ZEN,
             beep: BEEP,
             err_exit: EXIT_ON_ERROR,

@@ -16,14 +16,23 @@ impl Command {
         exec: String,
         display: DisplayType,
         interval: Duration,
+        timeout: Duration,
         output_tx: mpsc::Sender<(PaneKey, CommandEvent)>,
     ) -> Self {
         let (control_tx, control_rx) = mpsc::unbounded_channel();
 
         let cmd = exec.clone();
         let task_handle = tokio::spawn(async move {
-            Command::run_command_task(id, cmd, interval, CommandState::Idle, control_rx, output_tx)
-                .await;
+            Command::run_command_task(
+                id,
+                cmd,
+                interval,
+                timeout,
+                CommandState::Idle,
+                control_rx,
+                output_tx,
+            )
+            .await;
         });
 
         info!("Adding new command: {}", &exec);
@@ -40,12 +49,13 @@ impl Command {
 
     pub fn restore_tasks(
         tasks_state: HashMap<PaneKey, CommandSerializableState>,
+        timeout: Duration,
         output_tx: mpsc::Sender<(PaneKey, CommandEvent)>,
     ) -> HashMap<PaneKey, Command> {
         let mut running_tasks = HashMap::new();
 
         for (id, state) in tasks_state {
-            let new_cmd = Self::spawn_from_state(id, state, output_tx.clone());
+            let new_cmd = Self::spawn_from_state(id, state, timeout, output_tx.clone());
 
             info!("Restarting command for id: {:?}", id);
             running_tasks.insert(id, new_cmd);
@@ -57,6 +67,7 @@ impl Command {
     pub fn spawn_from_state(
         id: PaneKey,
         state: CommandSerializableState,
+        timeout: Duration,
         output_tx: mpsc::Sender<(PaneKey, CommandEvent)>,
     ) -> Command {
         let (control_tx, control_rx) = mpsc::unbounded_channel();
@@ -66,7 +77,10 @@ impl Command {
         let cmd_state = state.state;
 
         let task_handle = tokio::spawn(async move {
-            Self::run_command_task(id, exec, interval, cmd_state, control_rx, output_tx).await;
+            Self::run_command_task(
+                id, exec, interval, timeout, cmd_state, control_rx, output_tx,
+            )
+            .await;
         });
 
         Command {
