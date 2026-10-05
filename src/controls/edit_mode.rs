@@ -22,14 +22,8 @@ fn update_suggestions(
     let input_value = input.value().to_string();
 
     *suggestions = history.filter(&input_value);
-
-    if !suggestions.is_empty() {
-        state.select(Some(0));
-        debug!("Suggestions found: {}", suggestions.len());
-    } else {
-        state.select(None);
-        debug!("Suggestions are empty...");
-    }
+    state.select(None);
+    debug!("Suggestions found: {}", suggestions.len());
 }
 
 pub async fn handle_editing_mode_keys(app: &mut App, event: Event) -> io::Result<()> {
@@ -115,14 +109,14 @@ pub async fn handle_editing_mode_keys(app: &mut App, event: Event) -> io::Result
                 }
             }
             Action::TabComplete => {
-                if let Some(index) = state.selected() {
-                    if let Some(suggestion) = suggestions.get(index).cloned() {
-                        let current_input = std::mem::take(input);
+                let index = state.selected().unwrap_or(0);
+                if let Some(suggestion) = suggestions.get(index).cloned() {
+                    let current_input = std::mem::take(input);
 
-                        let updated_input = current_input.with_value(suggestion);
+                    let updated_input = current_input.with_value(suggestion);
 
-                        let _ = mem::replace(input, updated_input);
-                    }
+                    let _ = mem::replace(input, updated_input);
+                    update_suggestions(input, history, state, suggestions);
                 }
             }
             _ => {
@@ -135,4 +129,79 @@ pub async fn handle_editing_mode_keys(app: &mut App, event: Event) -> io::Result
         update_suggestions(input, history, state, suggestions);
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+    use super::*;
+    use crate::config::AppConfig;
+
+    fn app_with_history(commands: &[&str]) -> App {
+        let mut app = App::new(AppConfig::default(), Vec::new());
+        app.mode = AppMode::CmdEdit {
+            input: Input::default(),
+            state: ListState::default(),
+            suggestions: Vec::new(),
+            history: ShellHistoryManager::from_commands(
+                commands.iter().map(|c| c.to_string()).collect(),
+            ),
+        };
+        app
+    }
+
+    async fn press(app: &mut App, code: KeyCode) {
+        let event = Event::Key(KeyEvent::new(code, KeyModifiers::NONE));
+        handle_editing_mode_keys(app, event).await.unwrap();
+    }
+
+    async fn type_text(app: &mut App, text: &str) {
+        for c in text.chars() {
+            press(app, KeyCode::Char(c)).await;
+        }
+    }
+
+    fn submitted(app: &mut App) -> Option<String> {
+        match app.app_control_rx.try_recv() {
+            Ok(AppControl::SetCommand(_, exec)) => Some(exec),
+            _ => None,
+        }
+    }
+
+    #[tokio::test]
+    async fn test_enter_runs_typed_command_over_history_match() {
+        let mut app = app_with_history(&["kubectl get pods -A"]);
+
+        type_text(&mut app, "kubectl get pods").await;
+        press(&mut app, KeyCode::Enter).await;
+
+        assert_eq!(submitted(&mut app).as_deref(), Some("kubectl get pods"));
+    }
+
+    #[tokio::test]
+    async fn test_enter_runs_suggestion_after_selecting_it() {
+        let mut app = app_with_history(&["kubectl get pods -A"]);
+
+        type_text(&mut app, "kubectl").await;
+        press(&mut app, KeyCode::Down).await;
+        press(&mut app, KeyCode::Enter).await;
+
+        assert_eq!(submitted(&mut app).as_deref(), Some("kubectl get pods -A"));
+    }
+
+    #[tokio::test]
+    async fn test_tab_completes_then_typing_continues() {
+        let mut app = app_with_history(&["kubectl get pods"]);
+
+        type_text(&mut app, "kub").await;
+        press(&mut app, KeyCode::Tab).await;
+        type_text(&mut app, " -n logging").await;
+        press(&mut app, KeyCode::Enter).await;
+
+        assert_eq!(
+            submitted(&mut app).as_deref(),
+            Some("kubectl get pods -n logging")
+        );
+    }
 }
