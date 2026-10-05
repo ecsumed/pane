@@ -23,6 +23,11 @@ pub struct AppConfig {
         serialize_with = "serialize_duration"
     )]
     pub interval: Duration,
+    #[serde(
+        deserialize_with = "deserialize_duration",
+        serialize_with = "serialize_duration"
+    )]
+    pub timeout: Duration,
     pub beep: bool,
     pub err_exit: bool,
     pub chg_exit: bool,
@@ -42,6 +47,7 @@ impl fmt::Display for AppConfig {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "Configuration loaded successfully:")?;
         writeln!(f, "  Interval: {:?}", self.interval)?;
+        writeln!(f, "  Timeout: {:?}", self.timeout)?;
         writeln!(f, "  Beep: {}", self.beep)?;
         writeln!(f, "  Exit on Error: {}", self.err_exit)?;
         writeln!(f, "  Exit on Change: {}", self.chg_exit)?;
@@ -128,6 +134,10 @@ impl AppConfig {
 
         if let Some(interval) = cli.interval {
             self.interval = Duration::from_secs(interval);
+        }
+
+        if let Some(timeout) = cli.timeout {
+            self.timeout = Duration::from_secs(timeout);
         }
 
         if cli.verbose.is_present() {

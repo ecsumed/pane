@@ -29,6 +29,10 @@ pub struct Cli {
     #[arg(short = 'n', long, value_name = "SECONDS")]
     pub interval: Option<u64>,
 
+    /// Kill a command if it runs longer than this
+    #[arg(short = 't', long, value_name = "SECONDS")]
+    pub timeout: Option<u64>,
+
     #[command(flatten)]
     pub verbose: Verbosity<ErrorLevel>,
 

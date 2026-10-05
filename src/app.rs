@@ -168,6 +168,7 @@ impl App {
                 exec,
                 self.config.default_display,
                 self.config.interval,
+                self.config.timeout,
                 self.output_tx.clone(),
             ),
         ) {
@@ -188,7 +189,8 @@ impl App {
             }
         }
 
-        let running_tasks = Command::restore_tasks(tasks_state, self.output_tx.clone());
+        let running_tasks =
+            Command::restore_tasks(tasks_state, self.config.timeout, self.output_tx.clone());
 
         self.pane_manager = pane_manager;
         self.tasks = running_tasks;
