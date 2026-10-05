@@ -23,6 +23,11 @@ impl ShellHistoryManager {
         Self { commands }
     }
 
+    #[cfg(test)]
+    pub fn from_commands(commands: Vec<String>) -> Self {
+        Self { commands }
+    }
+
     fn load_history_file() -> io::Result<Vec<String>> {
         let shell = env::var("SHELL").unwrap_or_else(|_| String::from("/bin/bash"));
         let home_dir = env::var("HOME").expect("$HOME environment variable not set");
