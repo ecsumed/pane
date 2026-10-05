@@ -4,7 +4,6 @@ use std::time::{Duration, Instant};
 
 use chrono::{Local, NaiveDateTime};
 use humantime::format_duration;
-use tokio::io::{AsyncReadExt, BufReader};
 use tokio::process::Command as SysCommand;
 use tokio::sync::mpsc;
 use tokio::time;
@@ -26,7 +25,7 @@ impl super::Command {
 
         let start = Instant::now();
 
-        let mut command = SysCommand::new("sh")
+        let command = SysCommand::new("sh")
             .arg("-c")
             .arg(exec)
             .stdin(Stdio::null())
@@ -35,38 +34,23 @@ impl super::Command {
             .kill_on_drop(true)
             .spawn()?;
 
-        let collected = time::timeout(timeout, async {
-            let mut stdout_output = String::new();
-            let mut stderr_output = String::new();
-
-            if let Some(stdout) = command.stdout.take() {
-                let mut reader = BufReader::new(stdout);
-                reader.read_to_string(&mut stdout_output).await?;
-            }
-            if let Some(stderr) = command.stderr.take() {
-                let mut reader = BufReader::new(stderr);
-                reader.read_to_string(&mut stderr_output).await?;
-            }
-
-            let status = command.wait().await?;
-            Ok::<_, io::Error>((status, stdout_output, stderr_output))
-        })
-        .await;
+        let collected = time::timeout(timeout, command.wait_with_output()).await;
 
         let duration = start.elapsed();
 
         let (output_message, exit_status) = match collected {
             Ok(result) => {
-                let (status, stdout_output, stderr_output) = result?;
-                let message = if status.success() {
-                    stdout_output
+                let output = result?;
+                let message = if output.status.success() {
+                    String::from_utf8_lossy(&output.stdout).into_owned()
                 } else {
                     format!(
                         "Command failed with status: {}. Error: {}",
-                        status, stderr_output
+                        output.status,
+                        String::from_utf8_lossy(&output.stderr)
                     )
                 };
-                (message, status.code())
+                (message, output.status.code())
             }
             Err(_) => (
                 format!("Command timed out after {}", format_duration(timeout)),
@@ -117,6 +101,13 @@ mod tests {
         let out = run("cat; echo done", Duration::from_secs(5)).await;
         assert_eq!(out.output, "done\n");
         assert_eq!(out.exit_status, Some(0));
+    }
+
+    #[tokio::test]
+    async fn test_large_stderr_does_not_deadlock() {
+        let exec = "head -c 200000 /dev/zero | tr '\\0' x >&2; echo done";
+        let out = run(exec, Duration::from_secs(3)).await;
+        assert_eq!(out.output, "done\n");
     }
 
     #[tokio::test]
