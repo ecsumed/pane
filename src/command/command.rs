@@ -57,7 +57,7 @@ pub struct Command {
     pub state: CommandState,
     pub display_type: DisplayType,
     pub task_handle: Option<JoinHandle<()>>,
-    pub control_tx: mpsc::Sender<CommandControl>,
+    pub control_tx: mpsc::UnboundedSender<CommandControl>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

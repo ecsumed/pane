@@ -64,7 +64,6 @@ pub async fn handle_display_type_select_keys(app: &mut App, event: Event) -> io:
                     if let Err(e) = app
                         .app_control_tx
                         .send(AppControl::SetDisplay(id, display_type))
-                        .await
                     {
                         warn!("Failed to send AppControl::SetDisplay: {}", e);
                     }

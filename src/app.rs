@@ -33,8 +33,8 @@ pub struct App {
     pub exit: bool,
     pub output_rx: mpsc::Receiver<(PaneKey, CommandEvent)>,
     pub output_tx: mpsc::Sender<(PaneKey, CommandEvent)>,
-    pub app_control_tx: mpsc::Sender<AppControl>,
-    pub app_control_rx: mpsc::Receiver<AppControl>,
+    pub app_control_tx: mpsc::UnboundedSender<AppControl>,
+    pub app_control_rx: mpsc::UnboundedReceiver<AppControl>,
     pub config: AppConfig,
     pub pane_area: Rect,
 }
@@ -42,14 +42,14 @@ pub struct App {
 impl App {
     pub fn new(config: AppConfig, command: Vec<String>) -> Self {
         let (output_tx, output_rx) = mpsc::channel(100);
-        let (app_control_tx, app_control_rx) = mpsc::channel(10);
+        let (app_control_tx, app_control_rx) = mpsc::unbounded_channel();
 
         let pane_manager = PaneManager::new();
 
         if !command.is_empty() {
             let command = command.join(" ");
-            if let Err(e) = app_control_tx
-                .try_send(AppControl::SetCommand(pane_manager.active_pane_id, command))
+            if let Err(e) =
+                app_control_tx.send(AppControl::SetCommand(pane_manager.active_pane_id, command))
             {
                 error!("Send failed: {}", e);
             }
@@ -121,7 +121,7 @@ impl App {
                         },
                         AppControl::SendControl(id, cmd_ctrl) => {
                             if let Some(command) = self.tasks.get_mut(&id) {
-                                command.handle_control_signal(id, cmd_ctrl).await;
+                                command.handle_control_signal(id, cmd_ctrl);
                             }
                         }
                         AppControl::SetDisplay(id, display) => {
@@ -146,7 +146,7 @@ impl App {
         for pane_key in self.tasks.keys() {
             if let Err(e) = self
                 .app_control_tx
-                .try_send(AppControl::SendControl(*pane_key, CommandControl::Stop))
+                .send(AppControl::SendControl(*pane_key, CommandControl::Stop))
             {
                 warn!("Failed to send AppControl::SendControl: {}", e);
             }
@@ -300,14 +300,13 @@ mod tests {
 
         app.app_control_tx
             .send(AppControl::SendControl(root_pane, CommandControl::Pause))
-            .await
             .unwrap();
 
         while let Ok(control) = app.app_control_rx.try_recv() {
             println!("Processing: {:?}", control);
             if let AppControl::SendControl(id, cmd_ctrl) = control {
                 if let Some(command) = app.tasks.get_mut(&id) {
-                    command.handle_control_signal(root_pane, cmd_ctrl).await;
+                    command.handle_control_signal(root_pane, cmd_ctrl);
                     println!("Processed SendControl for ID: {:?}", id);
                 }
             }
@@ -327,7 +326,7 @@ mod tests {
             match control {
                 AppControl::SendControl(id, cmd_ctrl) => {
                     if let Some(command) = app.tasks.get_mut(&id) {
-                        command.handle_control_signal(id, cmd_ctrl).await;
+                        command.handle_control_signal(id, cmd_ctrl);
                     }
                 }
                 AppControl::SetDisplay(id, display) => {
@@ -395,8 +394,7 @@ mod tests {
         // 2. Set counter display
         _ = app
             .app_control_tx
-            .send(AppControl::SetDisplay(root_pane, DisplayType::Counter))
-            .await;
+            .send(AppControl::SetDisplay(root_pane, DisplayType::Counter));
         println!("{:?}", app.tasks);
 
         // 3. Split vertically
@@ -464,6 +462,36 @@ mod tests {
         app.mode._scroll_bottom();
         render_terminal(&mut terminal, &mut app);
         assert_ui_snapshot("help_mode_bottom", terminal.backend().to_string());
+    }
+
+    #[tokio::test]
+    async fn test_controls_do_not_block_during_long_run() {
+        let (mut app, root_pane) = mock_app();
+
+        app.set_command(root_pane, "sleep 5".to_string()).await;
+
+        let started = timeout(Duration::from_secs(2), app.output_rx.recv()).await;
+        assert!(matches!(started, Ok(Some((_, CommandEvent::Started)))));
+
+        let command = app.tasks.get_mut(&root_pane).unwrap();
+        let sent = timeout(Duration::from_millis(100), async {
+            for _ in 0..5 {
+                command.handle_control_signal(root_pane, CommandControl::IntervalIncrease);
+            }
+        })
+        .await;
+        assert!(
+            sent.is_ok(),
+            "Control signals blocked while command was running"
+        );
+
+        command.handle_control_signal(root_pane, CommandControl::Stop);
+        let handle = command.task_handle.take().unwrap();
+        let stopped = timeout(Duration::from_secs(1), handle).await;
+        assert!(
+            stopped.is_ok(),
+            "Task did not stop while command was running"
+        );
     }
 
     #[tokio::test]

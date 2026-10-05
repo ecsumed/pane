@@ -76,11 +76,7 @@ pub async fn handle_editing_mode_keys(app: &mut App, event: Event) -> io::Result
                 };
 
                 let id = app.pane_manager.active_pane_id;
-                if let Err(e) = app
-                    .app_control_tx
-                    .send(AppControl::SetCommand(id, exec))
-                    .await
-                {
+                if let Err(e) = app.app_control_tx.send(AppControl::SetCommand(id, exec)) {
                     warn!("Failed to send AppControl::SetCommand: {}", e);
                 }
                 app.mode = AppMode::Normal;
