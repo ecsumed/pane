@@ -1,4 +1,3 @@
-use ratatui::style::Modifier;
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, ListItem, Padding, Paragraph};
 use ratatui::Frame;
@@ -7,7 +6,7 @@ use crate::app::App;
 use crate::command::Command;
 use crate::mode::AppMode;
 use crate::ui::display_modes::render_command_output;
-use crate::ui::picker;
+use crate::ui::picker::{self, PickerStyle};
 
 fn has_numbers(command: Option<&Command>) -> bool {
     command.is_some_and(|c| {
@@ -21,7 +20,7 @@ pub fn draw_display_type_select(frame: &mut Frame, app: &mut App) {
     let AppMode::DisplayTypeSelect { picker: state } = &app.mode else {
         return;
     };
-    let p = &app.config.theme.palette;
+    let s = PickerStyle::from_palette(&app.config.theme.palette);
     let command = app.tasks.get(&app.pane_manager.active_pane_id);
     let current = command.map(|c| c.display_type);
     let numeric = has_numbers(command);
@@ -34,12 +33,9 @@ pub fn draw_display_type_select(frame: &mut Frame, app: &mut App) {
     for (index, dt) in state.visible() {
         if last_group != Some(dt.group()) {
             last_group = Some(dt.group());
-            let mut header = vec![Span::styled(
-                dt.group().to_uppercase(),
-                p.meta_secondary.add_modifier(Modifier::BOLD),
-            )];
+            let mut header = vec![Span::styled(dt.group().to_uppercase(), s.accent)];
             if dt.needs_numbers() && !numeric {
-                header.push(Span::styled("  no numbers in output", p.meta_label));
+                header.push(Span::styled("  no numbers in output", s.disabled));
             }
             rows.push(ListItem::new(Line::from(header)));
         }
@@ -47,10 +43,10 @@ pub fn draw_display_type_select(frame: &mut Frame, app: &mut App) {
         let dimmed = dt.needs_numbers() && !numeric;
         let mut spans = vec![Span::styled(
             format!("  {}", dt.label()),
-            if dimmed { p.meta_label } else { p.meta_value },
+            if dimmed { s.disabled } else { s.text },
         )];
         if Some(*dt) == current {
-            spans.push(Span::styled(" ●", p.meta_meter));
+            spans.push(Span::styled(" ●", s.marker));
         }
 
         if Some(index) == selected {
@@ -60,11 +56,11 @@ pub fn draw_display_type_select(frame: &mut Frame, app: &mut App) {
     }
 
     let area = picker::popup_area(frame.area(), 120, (state.items().len() + 4).max(20) as u16);
-    let areas = picker::draw_frame(frame, area, p, "Display", &state.filter, Some(34));
+    let areas = picker::draw_frame(frame, area, &s, "Display", &state.filter, Some(34));
     picker::draw_list(
         frame,
         areas.list,
-        p,
+        &s,
         rows,
         selected_row,
         "No matching display types",
@@ -72,12 +68,9 @@ pub fn draw_display_type_select(frame: &mut Frame, app: &mut App) {
     if let (Some(preview_area), Some(dt)) = (areas.preview, state.selected()) {
         let block = Block::default()
             .borders(Borders::LEFT)
-            .border_style(p.border_inactive)
+            .border_style(s.border)
             .padding(Padding::left(1))
-            .title(Span::styled(
-                format!(" Preview: {} ", dt.label()),
-                p.meta_label,
-            ));
+            .title(Span::styled(format!(" Preview: {} ", dt.label()), s.muted));
         let message = match command {
             None => Some(" No command in this pane"),
             Some(cmd) if cmd.output_history.is_empty() => Some(" No output yet"),
@@ -88,8 +81,7 @@ pub fn draw_display_type_select(frame: &mut Frame, app: &mut App) {
                 render_command_output(frame, preview_area, &app.config, cmd, *dt, block)
             }
             (_, message) => frame.render_widget(
-                Paragraph::new(Span::styled(message.unwrap_or_default(), p.meta_label))
-                    .block(block),
+                Paragraph::new(Span::styled(message.unwrap_or_default(), s.muted)).block(block),
                 preview_area,
             ),
         }
@@ -99,7 +91,7 @@ pub fn draw_display_type_select(frame: &mut Frame, app: &mut App) {
         frame,
         areas.footer,
         picker::hints(
-            p,
+            &s,
             &[
                 ("↑↓", "move"),
                 ("enter", "apply"),
@@ -199,5 +191,42 @@ mod tests {
         let charts = screen.lines().find(|l| l.contains("CHARTS")).unwrap();
         assert!(charts.contains("no numbers"));
         assert!(screen.contains("esc cancel"));
+    }
+}
+
+#[cfg(test)]
+mod style_tests {
+    use ratatui::backend::TestBackend;
+    use ratatui::Terminal;
+
+    use super::*;
+    use crate::config::AppConfig;
+    use crate::ui::DisplayType;
+
+    #[test]
+    fn test_selected_row_uses_one_highlight_colour() {
+        let mut app = App::new(AppConfig::default(), Vec::new());
+        app.mode = AppMode::new_display_type_select(Some(DisplayType::Counter));
+        let mut terminal = Terminal::new(TestBackend::new(60, 30)).unwrap();
+        terminal
+            .draw(|frame| draw_display_type_select(frame, &mut app))
+            .unwrap();
+
+        let buffer = terminal.backend().buffer();
+        let row = (0..buffer.area.height)
+            .find(|&y| {
+                (0..buffer.area.width)
+                    .map(|x| buffer[(x, y)].symbol())
+                    .collect::<String>()
+                    .contains("Counter")
+            })
+            .unwrap();
+        let expected = app.config.theme.palette.search_match.bg;
+        let start = (0..buffer.area.width)
+            .find(|&x| buffer[(x, row)].symbol() == "C")
+            .unwrap();
+        for x in start..start + "Counter".len() as u16 {
+            assert_eq!(buffer[(x, row)].bg, expected.unwrap());
+        }
     }
 }

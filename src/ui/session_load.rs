@@ -7,10 +7,9 @@ use ratatui::widgets::{Block, Borders, ListItem, Padding, Paragraph};
 use ratatui::Frame;
 
 use crate::app::App;
-use crate::config::theme::Palette;
 use crate::mode::{AppMode, SessionPrompt};
 use crate::session::{SessionEntry, SessionPreview};
-use crate::ui::picker;
+use crate::ui::picker::{self, PickerStyle};
 
 const META_WIDTH: usize = 18;
 
@@ -41,7 +40,7 @@ fn session_row<'a>(
     entry: &'a SessionEntry,
     width: usize,
     now: SystemTime,
-    p: &crate::config::theme::Palette,
+    s: &PickerStyle,
 ) -> ListItem<'a> {
     let name_width = width.saturating_sub(META_WIDTH + 3);
     let name: String = entry.name.chars().take(name_width).collect();
@@ -51,22 +50,22 @@ fn session_row<'a>(
         format_size(entry.size)
     );
     ListItem::new(Line::from(vec![
-        Span::styled(format!("{name:<name_width$}"), p.meta_value),
-        Span::styled(meta, p.meta_label),
+        Span::styled(format!("{name:<name_width$}"), s.text),
+        Span::styled(meta, s.muted),
     ]))
 }
 
 fn draw_preview(
     frame: &mut Frame,
     area: Rect,
-    p: &Palette,
+    s: &PickerStyle,
     preview: Option<&Result<SessionPreview, String>>,
 ) {
     let block = Block::default()
         .borders(Borders::LEFT)
-        .border_style(p.border_inactive)
+        .border_style(s.border)
         .padding(Padding::left(1))
-        .title(Span::styled(" Preview ", p.meta_label));
+        .title(Span::styled(" Preview ", s.muted));
     let inner = block.inner(area);
     frame.render_widget(block, area);
 
@@ -74,7 +73,7 @@ fn draw_preview(
         Some(Ok(preview)) => preview,
         Some(Err(e)) => {
             frame.render_widget(
-                Paragraph::new(Span::styled(format!("Preview unavailable: {e}"), p.error)),
+                Paragraph::new(Span::styled(format!("Preview unavailable: {e}"), s.error)),
                 inner,
             );
             return;
@@ -99,8 +98,8 @@ fn draw_preview(
         open_panes.push(id);
         let pane = Block::default()
             .borders(Borders::ALL)
-            .border_style(p.border_inactive)
-            .title(Span::styled(format!(" {id} "), p.meta_value))
+            .border_style(s.muted)
+            .title(Span::styled(format!(" {id} "), s.accent))
             .title_alignment(Alignment::Center);
         frame.render_widget(pane, rect);
     }
@@ -111,15 +110,22 @@ fn draw_preview(
         .iter()
         .map(|pane| {
             let exec: String = pane.exec.chars().take(exec_width).collect();
-            let interval = if open_panes.contains(&pane.id) {
-                format_duration(pane.interval).to_string()
+            let closed = !open_panes.contains(&pane.id);
+            let interval = if closed {
+                Span::styled(format!(" {:>11}", "closed pane"), s.error)
             } else {
-                "closed pane".to_string()
+                Span::styled(
+                    format!(" {:>11}", format_duration(pane.interval).to_string()),
+                    s.muted,
+                )
             };
             Line::from(vec![
-                Span::styled(format!("{:>2} ", pane.id), p.meta_highlight),
-                Span::styled(format!(" {exec:<exec_width$}"), p.meta_value),
-                Span::styled(format!(" {interval:>11}"), p.meta_label),
+                Span::styled(format!("{:>2} ", pane.id), s.accent),
+                Span::styled(
+                    format!(" {exec:<exec_width$}"),
+                    if closed { s.disabled } else { s.text },
+                ),
+                interval,
             ])
         })
         .collect();
@@ -135,7 +141,7 @@ pub fn draw_session_list(frame: &mut Frame, app: &mut App) {
     else {
         return;
     };
-    let p = &app.config.theme.palette;
+    let s = PickerStyle::from_palette(&app.config.theme.palette);
 
     let empty_message = if state.items().is_empty() {
         "No sessions yet. Press S in normal mode to save one."
@@ -150,37 +156,37 @@ pub fn draw_session_list(frame: &mut Frame, app: &mut App) {
         (70, None, 1)
     };
     let area = picker::popup_area(frame.area(), width, rows as u16);
-    let areas = picker::draw_frame(frame, area, p, "Load session", &state.filter, list_width);
+    let areas = picker::draw_frame(frame, area, &s, "Load session", &state.filter, list_width);
 
     if let Some(preview_area) = areas.preview {
         let preview = state
             .selected()
             .and_then(|entry| previews.get(&entry.file_name));
-        draw_preview(frame, preview_area, p, preview);
+        draw_preview(frame, preview_area, &s, preview);
     }
 
     let now = SystemTime::now();
     let width = areas.list.width as usize;
     let rows: Vec<ListItem> = state
         .visible()
-        .map(|(_, entry)| session_row(entry, width, now, p))
+        .map(|(_, entry)| session_row(entry, width, now, &s))
         .collect();
 
     picker::draw_list(
         frame,
         areas.list,
-        p,
+        &s,
         rows,
         state.state.selected(),
         empty_message,
     );
     let selected_name = state.selected().map_or("", |s| s.name.as_str());
     let footer = match prompt {
-        SessionPrompt::Error(message) => Line::from(Span::styled(format!(" {message}"), p.error)),
+        SessionPrompt::Error(message) => Line::from(Span::styled(format!(" {message}"), s.error)),
         SessionPrompt::ConfirmDelete => Line::from(vec![
-            Span::styled(format!(" Delete {selected_name}? "), p.error),
-            Span::styled("y", p.meta_highlight),
-            Span::styled(" to confirm, any other key to cancel", p.meta_label),
+            Span::styled(format!(" Delete {selected_name}? "), s.error),
+            Span::styled("y", s.key),
+            Span::styled(" to confirm, any other key to cancel", s.muted),
         ]),
         SessionPrompt::Rename(input) => {
             let label = " Rename to: ";
@@ -189,12 +195,12 @@ pub fn draw_session_list(frame: &mut Frame, app: &mut App) {
                 frame.set_cursor_position((cursor_x, areas.footer.y));
             }
             Line::from(vec![
-                Span::styled(label, p.meta_label),
-                Span::styled(input.value().to_string(), p.meta_value),
+                Span::styled(label, s.muted),
+                Span::styled(input.value().to_string(), s.text),
             ])
         }
         SessionPrompt::None if has_items => picker::hints(
-            p,
+            &s,
             &[
                 ("↑↓", "move"),
                 ("enter", "load"),
@@ -204,7 +210,7 @@ pub fn draw_session_list(frame: &mut Frame, app: &mut App) {
                 ("esc", "cancel"),
             ],
         ),
-        SessionPrompt::None => picker::hints(p, &[("esc", "close")]),
+        SessionPrompt::None => picker::hints(&s, &[("esc", "close")]),
     };
     picker::draw_footer(frame, areas.footer, footer);
 }
