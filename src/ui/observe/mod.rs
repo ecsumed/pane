@@ -14,6 +14,8 @@ use crate::mode::{AppMode, ObserveFocus};
 use crate::pane::PaneKey;
 use crate::ui::utils::LayoutExt;
 
+const HISTORY_WIDTH: u16 = 30;
+
 pub fn draw(
     frame: &mut Frame,
     area: Rect,
@@ -22,7 +24,7 @@ pub fn draw(
     mode_state: &mut AppMode,
 ) {
     let [main_area, history_area] =
-        Layout::horizontal([Constraint::Percentage(80), Constraint::Percentage(20)])
+        Layout::horizontal([Constraint::Min(0), Constraint::Length(HISTORY_WIDTH)])
             .collapse_if(config.theme.collapse_borders)
             .areas(area);
 
@@ -132,6 +134,18 @@ pub(crate) mod tests {
             })
             .find(|(_, row)| row.contains(text))
             .unwrap_or_else(|| panic!("{text} not on screen"))
+    }
+
+    #[tokio::test]
+    async fn test_history_panel_has_fixed_width() {
+        let mut app = observe_app(&[("a", Some(0))]).await;
+        for width in [100, 200] {
+            let buffer = render(&mut app, width, 20);
+            let (_, row) = row_containing(&buffer, "History");
+            let chars: Vec<char> = row.chars().collect();
+            let start = chars.iter().rposition(|&c| c == '┌').unwrap();
+            assert_eq!(chars.len() - start, 30);
+        }
     }
 
     #[tokio::test]
