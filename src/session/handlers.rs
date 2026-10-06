@@ -5,7 +5,7 @@ use super::models::SessionState;
 use super::utils::generate_session_filename;
 use crate::app::App;
 
-pub fn save_session_by_name(app: &App, session_filename: &str) -> io::Result<()> {
+pub fn save_session_by_name(app: &App, session_filename: &str) -> io::Result<String> {
     let session_state = SessionState {
         pane_manager: app.pane_manager.clone(),
         tasks: app
@@ -35,13 +35,13 @@ pub fn save_session_by_name(app: &App, session_filename: &str) -> io::Result<()>
         format!("{}.toml", session_filename)
     };
 
-    let session_path = sessions_dir.join(final_filename);
+    let session_path = sessions_dir.join(&final_filename);
 
     fs::write(session_path, toml_string)?;
-    Ok(())
+    Ok(final_filename.trim_end_matches(".toml").to_string())
 }
 
-pub fn save_session(app: &App) -> io::Result<()> {
+pub fn save_session(app: &App) -> io::Result<String> {
     let session_filename = generate_session_filename();
 
     save_session_by_name(app, &session_filename)
@@ -71,7 +71,7 @@ pub fn load_session_by_name(app: &mut App, session_filename: &str) -> io::Result
     Ok(())
 }
 
-pub fn load_latest_session(app: &mut App) -> io::Result<()> {
+pub fn load_latest_session(app: &mut App) -> io::Result<String> {
     let sessions_dir = &app.config.sessions_dir;
 
     if !sessions_dir.exists() {
@@ -99,7 +99,9 @@ pub fn load_latest_session(app: &mut App) -> io::Result<()> {
         .and_then(|name| name.to_str())
         .ok_or_else(|| io::Error::new(ErrorKind::InvalidData, "Invalid filename"))?;
 
-    load_session_by_name(app, latest_filename)
+    let name = latest_filename.trim_end_matches(".toml").to_string();
+    load_session_by_name(app, latest_filename)?;
+    Ok(name)
 }
 
 fn session_path(app_config: &crate::config::AppConfig, file_name: &str) -> std::path::PathBuf {

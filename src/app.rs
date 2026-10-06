@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::io::{self};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use crossterm::event::EventStream;
 use futures::{FutureExt, StreamExt};
@@ -26,6 +26,15 @@ pub enum AppControl {
     SetDisplay(PaneKey, DisplayType),
 }
 
+const NOTICE_DURATION: Duration = Duration::from_secs(4);
+
+#[derive(Debug)]
+pub struct Notice {
+    pub text: String,
+    pub is_error: bool,
+    shown_at: Instant,
+}
+
 pub struct App {
     pub pane_manager: PaneManager,
     pub tasks: HashMap<PaneKey, Command>,
@@ -38,6 +47,7 @@ pub struct App {
     pub config: AppConfig,
     pub pane_area: Rect,
     pub observe_diff_mode: DiffMode,
+    pub notice: Option<Notice>,
 }
 
 impl App {
@@ -68,6 +78,7 @@ impl App {
             config,
             pane_area: Rect::new(0, 0, 0, 0),
             observe_diff_mode: DiffMode::default(),
+            notice: None,
         }
     }
 
@@ -120,6 +131,20 @@ impl App {
             }
         }
         Ok(())
+    }
+
+    pub fn notify(&mut self, text: impl Into<String>, is_error: bool) {
+        self.notice = Some(Notice {
+            text: text.into(),
+            is_error,
+            shown_at: Instant::now(),
+        });
+    }
+
+    pub fn current_notice(&self) -> Option<&Notice> {
+        self.notice
+            .as_ref()
+            .filter(|notice| notice.shown_at.elapsed() < NOTICE_DURATION)
     }
 
     pub fn handle_command_event(&mut self, id: PaneKey, event: CommandEvent) {
@@ -683,6 +708,62 @@ mod tests {
         app.handle_command_event(root_pane, output("boom", 1));
         assert!(app.exit);
         cleanup(app, root_pane);
+    }
+
+    async fn press_key(app: &mut App, c: char) {
+        use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
+        let event = Event::Key(KeyEvent::new(KeyCode::Char(c), KeyModifiers::NONE));
+        controls::handle_event(app, event).await.unwrap();
+    }
+
+    fn status_line(app: &mut App) -> (String, Option<ratatui::style::Color>) {
+        let mut terminal = Terminal::new(TestBackend::new(100, 10)).unwrap();
+        render_terminal(&mut terminal, app);
+        let buffer = terminal.backend().buffer();
+        let y = buffer.area.height - 1;
+        let text: String = (0..buffer.area.width)
+            .map(|x| buffer[(x, y)].symbol())
+            .collect();
+        let x = text.find("Saved").or(text.find("Couldn't")).unwrap_or(0) as u16;
+        (text, Some(buffer[(x, y)].fg))
+    }
+
+    #[tokio::test]
+    async fn test_saving_a_session_shows_a_notice() {
+        let dir = std::env::temp_dir().join(format!("pane-notice-{}", std::process::id()));
+        let (mut app, _) = mock_app();
+        app.config.sessions_dir = dir.clone();
+
+        press_key(&mut app, 's').await;
+        let (line, _) = status_line(&mut app);
+        std::fs::remove_dir_all(&dir).unwrap();
+
+        assert!(line.contains("Saved session session-"), "{line}");
+    }
+
+    #[tokio::test]
+    async fn test_failed_save_shows_an_error_notice() {
+        let file = std::env::temp_dir().join(format!("pane-notice-file-{}", std::process::id()));
+        std::fs::write(&file, "").unwrap();
+        let (mut app, _) = mock_app();
+        app.config.sessions_dir = file.join("sessions");
+
+        press_key(&mut app, 's').await;
+        let (line, colour) = status_line(&mut app);
+        std::fs::remove_file(&file).unwrap();
+
+        assert!(line.contains("Couldn't save session"), "{line}");
+        assert_eq!(colour, app.config.theme.palette.error.fg);
+    }
+
+    #[test]
+    fn test_notices_expire() {
+        let (mut app, _) = mock_app();
+        app.notify("hello", false);
+        assert!(app.current_notice().is_some());
+
+        app.notice.as_mut().unwrap().shown_at = Instant::now() - NOTICE_DURATION;
+        assert!(app.current_notice().is_none());
     }
 
     #[tokio::test]

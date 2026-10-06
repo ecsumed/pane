@@ -117,18 +117,22 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
             }
             Action::SaveSession => {
                 info!("Saving session...");
-                if let Err(e) = save_session(app) {
-                    error!("Error saving session: {}", e);
-                } else {
-                    info!("Session saved successfully!");
+                match save_session(app) {
+                    Ok(name) => app.notify(format!("Saved session {name}"), false),
+                    Err(e) => {
+                        error!("Error saving session: {}", e);
+                        app.notify(format!("Couldn't save session: {e}"), true);
+                    }
                 }
             }
             Action::LoadLatestSession => {
                 info!("Loading latest session...");
-                if let Err(e) = load_latest_session(app) {
-                    error!("Error loading session: {}", e);
-                } else {
-                    info!("Session loaded successfully!");
+                match load_latest_session(app) {
+                    Ok(name) => app.notify(format!("Loaded session {name}"), false),
+                    Err(e) => {
+                        error!("Error loading session: {}", e);
+                        app.notify(format!("Couldn't load session: {e}"), true);
+                    }
                 }
             }
             Action::EnterSessionLoadMode => {
