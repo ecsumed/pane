@@ -12,12 +12,11 @@ pub fn render_diff<'a>(
     current: &'a str,
     previous: &'a str,
     mode: DiffMode,
-    query: &str,
 ) -> Vec<Line<'a>> {
     match mode {
-        DiffMode::None => plain::render(theme, current, query),
-        DiffMode::Line => line::render(theme, current, previous, query),
-        DiffMode::Word => word::render(theme, current, previous, query),
-        DiffMode::Char => char::render(theme, current, previous, query),
+        DiffMode::None => plain::render(theme, current),
+        DiffMode::Line => line::render(theme, current, previous),
+        DiffMode::Word => word::render(theme, current, previous),
+        DiffMode::Char => char::render(theme, current, previous),
     }
 }

@@ -20,12 +20,11 @@ pub fn render(
 
     let current_str = current_output.map(|c| c.output.as_str()).unwrap_or("");
     let previous_str = previous_output.map(|c| c.output.as_str()).unwrap_or("");
-    let query = "";
 
     let lines = match display_type {
-        DiffChar => diffs::char::render(&config.theme, current_str, previous_str, query),
-        DiffWord => diffs::word::render(&config.theme, current_str, previous_str, query),
-        DiffLine => diffs::line::render(&config.theme, current_str, previous_str, query),
+        DiffChar => diffs::char::render(&config.theme, current_str, previous_str),
+        DiffWord => diffs::word::render(&config.theme, current_str, previous_str),
+        DiffLine => diffs::line::render(&config.theme, current_str, previous_str),
         _ => Vec::new(),
     };
 
