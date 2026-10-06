@@ -10,6 +10,37 @@ use crate::config::theme::Palette;
 const CHROME_HEIGHT: u16 = 4;
 const MIN_PREVIEW_WIDTH: u16 = 30;
 
+pub struct PickerStyle {
+    pub border: Style,
+    pub title: Style,
+    pub text: Style,
+    pub key: Style,
+    pub muted: Style,
+    pub disabled: Style,
+    pub accent: Style,
+    pub marker: Style,
+    pub selected: Style,
+    pub error: Style,
+}
+
+impl PickerStyle {
+    pub fn from_palette(p: &Palette) -> Self {
+        let muted = p.meta_label.remove_modifier(Modifier::BOLD);
+        Self {
+            border: p.meta_secondary,
+            title: p.meta_value.add_modifier(Modifier::BOLD),
+            text: p.meta_value,
+            key: p.meta_value.add_modifier(Modifier::BOLD),
+            muted,
+            disabled: muted.add_modifier(Modifier::DIM),
+            accent: p.meta_secondary.add_modifier(Modifier::BOLD),
+            marker: p.meta_meter.add_modifier(Modifier::BOLD),
+            selected: p.search_match.add_modifier(Modifier::BOLD),
+            error: p.error,
+        }
+    }
+}
+
 pub struct PickerAreas {
     pub list: Rect,
     pub preview: Option<Rect>,
@@ -33,7 +64,7 @@ pub fn popup_area(frame_area: Rect, width: u16, content_rows: u16) -> Rect {
 pub fn draw_frame(
     frame: &mut Frame,
     area: Rect,
-    p: &Palette,
+    s: &PickerStyle,
     title: &str,
     filter: &Input,
     list_width: Option<u16>,
@@ -42,8 +73,8 @@ pub fn draw_frame(
 
     let block = Block::default()
         .borders(Borders::ALL)
-        .border_style(p.border_active)
-        .title(Span::styled(format!(" {title} "), p.h1));
+        .border_style(s.border)
+        .title(Span::styled(format!(" {title} "), s.title));
     let inner = block.inner(area);
     frame.render_widget(block, area);
 
@@ -55,9 +86,9 @@ pub fn draw_frame(
     .areas(inner);
 
     let filter_line = Line::from(vec![
-        Span::styled(" / ", p.meta_highlight),
+        Span::styled(" / ", s.accent),
         Span::styled(" ", Style::default()),
-        Span::styled(filter.value().to_string(), p.meta_value),
+        Span::styled(filter.value().to_string(), s.text),
     ]);
     frame.render_widget(Paragraph::new(filter_line), filter_area);
     if filter_area.width > 0 && filter_area.height > 0 {
@@ -85,21 +116,21 @@ pub fn draw_frame(
 pub fn draw_list(
     frame: &mut Frame,
     area: Rect,
-    p: &Palette,
+    s: &PickerStyle,
     rows: Vec<ListItem>,
     selected_row: Option<usize>,
     empty_message: &str,
 ) {
     if rows.is_empty() {
         frame.render_widget(
-            Paragraph::new(Span::styled(format!(" {empty_message}"), p.meta_label)),
+            Paragraph::new(Span::styled(format!(" {empty_message}"), s.muted)),
             area,
         );
         return;
     }
 
     let list = List::new(rows)
-        .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
+        .highlight_style(s.selected)
         .highlight_symbol("> ");
     let mut state = ListState::default().with_selected(selected_row);
     frame.render_stateful_widget(list, area, &mut state);
@@ -109,14 +140,14 @@ pub fn draw_footer(frame: &mut Frame, area: Rect, line: Line) {
     frame.render_widget(Paragraph::new(line), area);
 }
 
-pub fn hints<'a>(p: &Palette, hints: &[(&'a str, &'a str)]) -> Line<'a> {
+pub fn hints<'a>(s: &PickerStyle, hints: &[(&'a str, &'a str)]) -> Line<'a> {
     let mut spans = vec![Span::raw(" ")];
     for (i, (key, action)) in hints.iter().enumerate() {
         if i > 0 {
-            spans.push(Span::styled(" · ", p.meta_label));
+            spans.push(Span::styled(" · ", s.muted));
         }
-        spans.push(Span::styled(*key, p.meta_highlight));
-        spans.push(Span::styled(format!(" {action}"), p.meta_label));
+        spans.push(Span::styled(*key, s.key));
+        spans.push(Span::styled(format!(" {action}"), s.muted));
     }
     Line::from(spans)
 }
