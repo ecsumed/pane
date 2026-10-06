@@ -1,12 +1,15 @@
 use std::time::SystemTime;
 
+use humantime::format_duration;
+use ratatui::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::ListItem;
+use ratatui::widgets::{Block, Borders, ListItem, Padding, Paragraph};
 use ratatui::Frame;
 
 use crate::app::App;
+use crate::config::theme::Palette;
 use crate::mode::{AppMode, SessionPrompt};
-use crate::session::SessionEntry;
+use crate::session::{SessionEntry, SessionPreview};
 use crate::ui::picker;
 
 const META_WIDTH: usize = 18;
@@ -53,10 +56,81 @@ fn session_row<'a>(
     ]))
 }
 
+fn draw_preview(
+    frame: &mut Frame,
+    area: Rect,
+    p: &Palette,
+    preview: Option<&Result<SessionPreview, String>>,
+) {
+    let block = Block::default()
+        .borders(Borders::LEFT)
+        .border_style(p.border_inactive)
+        .padding(Padding::left(1))
+        .title(Span::styled(" Preview ", p.meta_label));
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+
+    let preview = match preview {
+        Some(Ok(preview)) => preview,
+        Some(Err(e)) => {
+            frame.render_widget(
+                Paragraph::new(Span::styled(format!("Preview unavailable: {e}"), p.error)),
+                inner,
+            );
+            return;
+        }
+        None => return,
+    };
+
+    let map_height = (inner.height / 2).clamp(3, 14);
+    let [map, _, commands] = Layout::vertical([
+        Constraint::Length(map_height),
+        Constraint::Length(1),
+        Constraint::Min(0),
+    ])
+    .areas(inner);
+
+    let mut open_panes = Vec::new();
+    for (key, rect) in preview.pane_manager.get_pane_bounds(map) {
+        let id = preview
+            .pane_manager
+            .pane_key_to_friendly_id(&key)
+            .unwrap_or(0);
+        open_panes.push(id);
+        let pane = Block::default()
+            .borders(Borders::ALL)
+            .border_style(p.border_inactive)
+            .title(Span::styled(format!(" {id} "), p.meta_value))
+            .title_alignment(Alignment::Center);
+        frame.render_widget(pane, rect);
+    }
+
+    let exec_width = (commands.width as usize).saturating_sub(17);
+    let lines: Vec<Line> = preview
+        .panes
+        .iter()
+        .map(|pane| {
+            let exec: String = pane.exec.chars().take(exec_width).collect();
+            let interval = if open_panes.contains(&pane.id) {
+                format_duration(pane.interval).to_string()
+            } else {
+                "closed pane".to_string()
+            };
+            Line::from(vec![
+                Span::styled(format!("{:>2} ", pane.id), p.meta_highlight),
+                Span::styled(format!(" {exec:<exec_width$}"), p.meta_value),
+                Span::styled(format!(" {interval:>11}"), p.meta_label),
+            ])
+        })
+        .collect();
+    frame.render_widget(Paragraph::new(lines), commands);
+}
+
 pub fn draw_session_list(frame: &mut Frame, app: &mut App) {
     let AppMode::SessionLoad {
         picker: state,
         prompt,
+        previews,
     } = &app.mode
     else {
         return;
@@ -69,8 +143,21 @@ pub fn draw_session_list(frame: &mut Frame, app: &mut App) {
         "No matching sessions"
     };
 
-    let area = picker::popup_area(frame.area(), 70, state.items().len() as u16);
-    let areas = picker::draw_frame(frame, area, p, "Load session", &state.filter, None);
+    let has_items = !state.items().is_empty();
+    let (width, list_width, rows) = if has_items {
+        (120, Some(48), state.items().len().max(18))
+    } else {
+        (70, None, 1)
+    };
+    let area = picker::popup_area(frame.area(), width, rows as u16);
+    let areas = picker::draw_frame(frame, area, p, "Load session", &state.filter, list_width);
+
+    if let Some(preview_area) = areas.preview {
+        let preview = state
+            .selected()
+            .and_then(|entry| previews.get(&entry.file_name));
+        draw_preview(frame, preview_area, p, preview);
+    }
 
     let now = SystemTime::now();
     let width = areas.list.width as usize;
@@ -141,6 +228,7 @@ mod tests {
         app.mode = AppMode::SessionLoad {
             picker,
             prompt: SessionPrompt::None,
+            previews: Default::default(),
         };
         app
     }
@@ -182,6 +270,40 @@ mod tests {
         assert_eq!(format_size(512), "512 B");
         assert_eq!(format_size(964_915), "942 KB");
         assert_eq!(format_size(3 * 1_048_576), "3.0 MB");
+    }
+
+    #[test]
+    fn test_preview_shows_layout_and_commands() {
+        use crate::pane::PaneManager;
+        use crate::session::preview_for_tests;
+
+        let mut app = app_with_sessions(1, 0);
+        if let AppMode::SessionLoad { previews, .. } = &mut app.mode {
+            previews.insert(
+                "session-00.toml".to_string(),
+                Ok(preview_for_tests(
+                    PaneManager::new(),
+                    &[(1, "kubectl get pods", 10), (9, "ghost command", 3)],
+                )),
+            );
+        }
+
+        let screen = render(&mut app, 120, 30);
+        assert!(screen.contains("Preview"));
+        assert!(screen.contains("── 1 ──"));
+        let live = screen
+            .lines()
+            .find(|l| l.contains("kubectl get pods"))
+            .unwrap();
+        assert!(live.contains("10s"), "{live}");
+        let ghost = screen
+            .lines()
+            .find(|l| l.contains("ghost command"))
+            .unwrap();
+        assert!(ghost.contains("closed pane"), "{ghost}");
+
+        let narrow = render(&mut app, 60, 30);
+        assert!(!narrow.contains("Preview"));
     }
 
     #[test]

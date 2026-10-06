@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt;
 
 use ratatui::widgets::{ListState, ScrollbarState};
@@ -5,11 +6,12 @@ use strum::IntoEnumIterator;
 use tui_input::Input;
 
 use crate::app::App;
+use crate::config::AppConfig;
 use crate::controls::KeyMode;
 use crate::logging::error;
 use crate::mode::Picker;
 use crate::pane::PaneKey;
-use crate::session::{self, SessionEntry};
+use crate::session::{self, SessionEntry, SessionPreview};
 use crate::shell_history::ShellHistoryManager;
 use crate::ui::DisplayType;
 
@@ -26,6 +28,7 @@ pub enum AppMode {
     SessionLoad {
         picker: Picker<SessionEntry>,
         prompt: SessionPrompt,
+        previews: HashMap<String, Result<SessionPreview, String>>,
     },
     SessionSave {
         input: Input,
@@ -135,9 +138,26 @@ impl AppMode {
             Vec::new()
         });
 
-        AppMode::SessionLoad {
+        let mut mode = AppMode::SessionLoad {
             picker: Picker::new(sessions, |s: &SessionEntry| s.name.clone()),
             prompt: SessionPrompt::None,
+            previews: HashMap::new(),
+        };
+        mode.load_session_preview(&app.config);
+        mode
+    }
+
+    pub fn load_session_preview(&mut self, config: &AppConfig) {
+        let AppMode::SessionLoad {
+            picker, previews, ..
+        } = self
+        else {
+            return;
+        };
+        if let Some(entry) = picker.selected() {
+            previews.entry(entry.file_name.clone()).or_insert_with(|| {
+                session::load_session_preview(config, &entry.file_name).map_err(|e| e.to_string())
+            });
         }
     }
 
