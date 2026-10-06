@@ -1946,6 +1946,7 @@ dependencies = [
  "futures",
  "humantime",
  "insta",
+ "libc",
  "ratatui 0.30.0",
  "serde",
  "serde_with",
