@@ -174,19 +174,37 @@ pub fn draw_session_list(frame: &mut Frame, app: &mut App) {
         state.state.selected(),
         empty_message,
     );
+    let selected_name = state.selected().map_or("", |s| s.name.as_str());
     let footer = match prompt {
-        SessionPrompt::Error(message) => {
-            Line::from(Span::styled(format!(" Failed to load: {message}"), p.error))
+        SessionPrompt::Error(message) => Line::from(Span::styled(format!(" {message}"), p.error)),
+        SessionPrompt::ConfirmDelete => Line::from(vec![
+            Span::styled(format!(" Delete {selected_name}? "), p.error),
+            Span::styled("y", p.meta_highlight),
+            Span::styled(" to confirm, any other key to cancel", p.meta_label),
+        ]),
+        SessionPrompt::Rename(input) => {
+            let label = " Rename to: ";
+            let cursor_x = areas.footer.x + (label.len() + input.visual_cursor()) as u16;
+            if cursor_x < areas.footer.right() {
+                frame.set_cursor_position((cursor_x, areas.footer.y));
+            }
+            Line::from(vec![
+                Span::styled(label, p.meta_label),
+                Span::styled(input.value().to_string(), p.meta_value),
+            ])
         }
-        SessionPrompt::None => picker::hints(
+        SessionPrompt::None if has_items => picker::hints(
             p,
             &[
                 ("↑↓", "move"),
                 ("enter", "load"),
                 ("type", "filter"),
+                ("ctrl-d", "delete"),
+                ("ctrl-r", "rename"),
                 ("esc", "cancel"),
             ],
         ),
+        SessionPrompt::None => picker::hints(p, &[("esc", "close")]),
     };
     picker::draw_footer(frame, areas.footer, footer);
 }

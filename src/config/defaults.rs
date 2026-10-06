@@ -89,7 +89,13 @@ pub fn default_keybindings() -> HashMap<KeyMode, HashMap<KeyCombination, Action>
     );
 
     // SESSION LOAD BINDINGS
-    map.insert(KeyMode::SessionLoad, HashMap::new());
+    map.insert(
+        KeyMode::SessionLoad,
+        HashMap::from([
+            (key!(ctrl - d), Action::Delete),
+            (key!(ctrl - r), Action::Rename),
+        ]),
+    );
 
     // SESSION SAVE MODE BINDINGS
     map.insert(KeyMode::SessionSave, HashMap::new());

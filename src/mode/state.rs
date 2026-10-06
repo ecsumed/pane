@@ -55,11 +55,13 @@ pub enum AppMode {
     },
 }
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default)]
 pub enum SessionPrompt {
     #[default]
     None,
     Error(String),
+    ConfirmDelete,
+    Rename(Input),
 }
 
 #[derive(Debug, Default, PartialEq)]

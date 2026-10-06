@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub enum Action {
     Confirm,
     Cycle,
+    Delete,
     EnterCmdMode,
     EnterDisplaySelectMode,
     EnterHelpMode,
@@ -26,6 +27,7 @@ pub enum Action {
     PaneIncreaseVertical,
     Pause,
     Quit,
+    Rename,
     Resume,
     SaveSession,
     Search,

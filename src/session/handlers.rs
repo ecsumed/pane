@@ -96,3 +96,37 @@ pub fn load_latest_session(app: &mut App) -> io::Result<()> {
 
     load_session_by_name(app, latest_filename)
 }
+
+fn session_path(app_config: &crate::config::AppConfig, file_name: &str) -> std::path::PathBuf {
+    app_config.sessions_dir.join(file_name)
+}
+
+pub fn delete_session(config: &crate::config::AppConfig, file_name: &str) -> io::Result<()> {
+    fs::remove_file(session_path(config, file_name))
+}
+
+pub fn rename_session(
+    config: &crate::config::AppConfig,
+    file_name: &str,
+    new_name: &str,
+) -> io::Result<String> {
+    let new_name = new_name.trim().trim_end_matches(".toml");
+    if new_name.is_empty() || new_name.contains(['/', '\\']) {
+        return Err(io::Error::new(
+            ErrorKind::InvalidInput,
+            "Session names can't be empty or contain slashes",
+        ));
+    }
+
+    let new_file_name = format!("{new_name}.toml");
+    let target = session_path(config, &new_file_name);
+    if new_file_name != file_name && target.exists() {
+        return Err(io::Error::new(
+            ErrorKind::AlreadyExists,
+            format!("A session named {new_name} already exists"),
+        ));
+    }
+
+    fs::rename(session_path(config, file_name), target)?;
+    Ok(new_file_name)
+}
