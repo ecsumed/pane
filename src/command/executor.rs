@@ -12,6 +12,24 @@ use crate::command::{CommandEvent, CommandOutput};
 use crate::logging::warn;
 use crate::pane::PaneKey;
 
+struct ProcessGroup(Option<i32>);
+
+impl ProcessGroup {
+    fn disarm(&mut self) {
+        self.0 = None;
+    }
+}
+
+impl Drop for ProcessGroup {
+    fn drop(&mut self) {
+        if let Some(pgid) = self.0 {
+            unsafe {
+                libc::killpg(pgid, libc::SIGKILL);
+            }
+        }
+    }
+}
+
 impl super::Command {
     pub async fn run_and_send_output(
         id: PaneKey,
@@ -32,9 +50,15 @@ impl super::Command {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .kill_on_drop(true)
+            .process_group(0)
             .spawn()?;
 
+        let mut group = ProcessGroup(command.id().map(|pid| pid as i32));
         let collected = time::timeout(timeout, command.wait_with_output()).await;
+        if collected.is_ok() {
+            group.disarm();
+        }
+        drop(group);
 
         let duration = start.elapsed();
 
@@ -108,6 +132,22 @@ mod tests {
         let exec = "head -c 200000 /dev/zero | tr '\\0' x >&2; echo done";
         let out = run(exec, Duration::from_secs(3)).await;
         assert_eq!(out.output, "done\n");
+    }
+
+    #[tokio::test]
+    async fn test_timeout_kills_whole_pipeline() {
+        let out = run("sleep 7.31 | cat", Duration::from_millis(200)).await;
+        assert!(out.output.contains("timed out"), "{}", out.output);
+
+        time::sleep(Duration::from_millis(200)).await;
+        let leftover = std::process::Command::new("pgrep")
+            .args(["-f", "sleep 7.31"])
+            .output()
+            .unwrap();
+        assert!(
+            leftover.stdout.is_empty(),
+            "Pipeline child still running after timeout"
+        );
     }
 
     #[tokio::test]
