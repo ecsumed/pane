@@ -1,57 +1,72 @@
-use ratatui::style::{Modifier, Style};
-use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Widget};
+use ratatui::widgets::ListItem;
 use ratatui::Frame;
 
 use crate::app::App;
 use crate::mode::AppMode;
-use crate::ui::utils::centered_rect;
+use crate::ui::picker;
 
 pub fn draw_display_type_select(frame: &mut Frame, app: &mut App) {
-    if let AppMode::DisplayTypeSelect { items, state } = &mut app.mode {
-        let area = frame.area();
+    let AppMode::DisplayTypeSelect { picker: state } = &app.mode else {
+        return;
+    };
+    let p = &app.config.theme.palette;
 
-        let list_items = items
-            .iter()
-            .map(|dt| ListItem::new(format!("{:?}", dt)))
-            .collect::<Vec<_>>();
+    let rows: Vec<ListItem> = state
+        .visible()
+        .map(|(_, dt)| ListItem::new(format!("{:?}", dt)))
+        .collect();
 
-        let percent_x = 60;
-        let popup_area = centered_rect(percent_x, area, items.len() as u16 + 2);
-
-        Clear.render(popup_area, frame.buffer_mut());
-
-        let list_widget = List::new(list_items)
-            .block(Block::default().title("Select Type").borders(Borders::ALL))
-            .highlight_style(Style::default().add_modifier(Modifier::BOLD))
-            .highlight_symbol(">> ");
-
-        frame.render_stateful_widget(list_widget, popup_area, state);
-    }
+    let area = picker::popup_area(frame.area(), 40, state.items().len() as u16);
+    let areas = picker::draw_frame(frame, area, p, "Display", &state.filter);
+    picker::draw_list(
+        frame,
+        areas.list,
+        p,
+        rows,
+        state.state.selected(),
+        "No matching display types",
+    );
+    picker::draw_footer(
+        frame,
+        areas.footer,
+        picker::hints(
+            p,
+            &[
+                ("↑↓", "move"),
+                ("enter", "apply"),
+                ("type", "filter"),
+                ("esc", "cancel"),
+            ],
+        ),
+    );
 }
 
 #[cfg(test)]
 mod tests {
+    use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
     use ratatui::backend::TestBackend;
     use ratatui::Terminal;
+    use strum::IntoEnumIterator;
 
     use super::*;
     use crate::config::AppConfig;
+    use crate::ui::DisplayType;
+
+    fn render(app: &mut App, width: u16, height: u16) -> String {
+        let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
+        terminal
+            .draw(|frame| draw_display_type_select(frame, app))
+            .unwrap();
+        terminal.backend().to_string()
+    }
 
     #[test]
     fn test_all_display_types_visible() {
         let mut app = App::new(AppConfig::default(), Vec::new());
         app.mode = AppMode::new_display_type_select();
 
-        let mut terminal = Terminal::new(TestBackend::new(100, 30)).unwrap();
-        terminal
-            .draw(|frame| draw_display_type_select(frame, &mut app))
-            .unwrap();
-        let screen = terminal.backend().to_string();
-
-        let AppMode::DisplayTypeSelect { items, .. } = &app.mode else {
-            unreachable!()
-        };
-        for item in items {
+        let screen = render(&mut app, 100, 30);
+        for item in DisplayType::iter() {
             assert!(
                 screen.contains(&format!("{:?}", item)),
                 "{:?} not shown",
@@ -59,9 +74,23 @@ mod tests {
             );
         }
 
-        let mut small = Terminal::new(TestBackend::new(40, 5)).unwrap();
-        small
-            .draw(|frame| draw_display_type_select(frame, &mut app))
-            .unwrap();
+        render(&mut app, 40, 5);
+        render(&mut app, 10, 2);
+    }
+
+    #[test]
+    fn test_filter_narrows_display_types() {
+        let mut app = App::new(AppConfig::default(), Vec::new());
+        app.mode = AppMode::new_display_type_select();
+        if let AppMode::DisplayTypeSelect { picker } = &mut app.mode {
+            for c in "chart".chars() {
+                let key = KeyEvent::new(KeyCode::Char(c), KeyModifiers::NONE);
+                picker.handle_filter_event(&Event::Key(key));
+            }
+        }
+
+        let screen = render(&mut app, 100, 30);
+        assert!(screen.contains("LineChart"));
+        assert!(!screen.contains("RawText"));
     }
 }

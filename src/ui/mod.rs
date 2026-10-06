@@ -6,6 +6,7 @@ pub mod draw;
 mod help_menu;
 mod observe;
 mod panes;
+mod picker;
 mod session_load;
 mod session_save;
 mod status_line;

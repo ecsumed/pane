@@ -13,7 +13,7 @@ use crate::session::load_session_by_name;
 pub async fn handle_session_load_keys(app: &mut App, event: Event) -> io::Result<()> {
     let current_context: KeyMode = app.mode.key_mode();
 
-    let AppMode::SessionLoad { items, state, .. } = &mut app.mode else {
+    let AppMode::SessionLoad { picker } = &mut app.mode else {
         return Ok(());
     };
 
@@ -38,43 +38,23 @@ pub async fn handle_session_load_keys(app: &mut App, event: Event) -> io::Result
                 .and_then(|map| map.get(&key_comb))
         });
 
-    if let Some(act) = action {
-        match act {
-            Action::MoveUp => {
-                if let Some(selected) = state.selected() {
-                    let next = if selected == 0 {
-                        items.len() - 1
-                    } else {
-                        selected - 1
-                    };
-                    state.select(Some(next));
-                }
-            }
-            Action::MoveDown => {
-                if let Some(selected) = state.selected() {
-                    let next = (selected + 1) % items.len();
-                    state.select(Some(next));
-                }
-            }
-            Action::Confirm => {
-                if let Some(selected) = state.selected() {
-                    let session_filename = items[selected].clone();
+    match action {
+        Some(Action::MoveUp) => picker.move_up(),
+        Some(Action::MoveDown) => picker.move_down(),
+        Some(Action::Confirm) => {
+            if let Some(session_filename) = picker.selected().cloned() {
+                info!("Loading session: {}", session_filename);
 
-                    info!("Loading session: {}", session_filename);
-
-                    if let Err(e) = load_session_by_name(app, &session_filename) {
-                        error!("Error loading session: {}", e);
-                    } else {
-                        info!("Session loaded successfully!");
-                    }
+                if let Err(e) = load_session_by_name(app, &session_filename) {
+                    error!("Error loading session: {}", e);
+                } else {
+                    info!("Session loaded successfully!");
                 }
                 app.mode = AppMode::Normal;
             }
-            Action::Escape | Action::Quit => {
-                app.mode = AppMode::Normal;
-            }
-            _ => {}
         }
+        Some(Action::Escape) => app.mode = AppMode::Normal,
+        _ => picker.handle_filter_event(&event),
     }
     Ok(())
 }
