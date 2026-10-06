@@ -651,6 +651,20 @@ mod tests {
         let result = simulate_app(&mut app, 1);
         assert!(result.await.is_ok(), "Timed out waiting for CommandEvents");
 
+        for out in app
+            .tasks
+            .get_mut(&root_pane)
+            .unwrap()
+            .output_history
+            .iter_mut()
+        {
+            out.time = chrono::NaiveDate::from_ymd_opt(2026, 1, 1)
+                .unwrap()
+                .and_hms_opt(12, 0, 0)
+                .unwrap();
+            out.duration = Duration::from_millis(20);
+        }
+
         render_terminal(&mut terminal, &mut app);
         assert_ui_snapshot("observe_mode", terminal.backend().to_string());
 
