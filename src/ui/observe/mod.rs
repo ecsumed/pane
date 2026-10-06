@@ -181,6 +181,25 @@ pub(crate) mod tests {
     }
 
     #[tokio::test]
+    async fn test_content_title_names_command_and_compared_runs() {
+        let mut app = observe_app(&[("a", Some(0)), ("b", Some(0))]).await;
+        let buffer = render(&mut app, 140, 20);
+        let (_, title) = row_containing(&buffer, "kubectl get pods");
+        assert!(title.contains("every 5s"), "{title}");
+        assert!(
+            title.contains("12:00:10 vs 12:00:00 · Word diff"),
+            "{title}"
+        );
+
+        if let AppMode::Observe { diff_mode, .. } = &mut app.mode {
+            *diff_mode = crate::mode::DiffMode::None;
+        }
+        let buffer = render(&mut app, 140, 20);
+        let (_, title) = row_containing(&buffer, "kubectl get pods");
+        assert!(title.contains("12:00:10 · Plain"), "{title}");
+    }
+
+    #[tokio::test]
     async fn test_history_panel_has_fixed_width() {
         let mut app = observe_app(&[("a", Some(0))]).await;
         for width in [100, 200] {

@@ -1,6 +1,10 @@
+use humantime::format_duration;
+use ratatui::text::{Line, Span};
+
 use crate::config::AppConfig;
 use crate::mode::DiffMode;
 use crate::ui::diffs;
+use crate::ui::picker::PickerStyle;
 use crate::ui::utils::highlight_lines;
 use crate::{command::Command, ui::utils::scrollbar};
 use ratatui::widgets::ScrollbarState;
@@ -47,10 +51,32 @@ pub fn render<'a>(
         p.border_inactive
     };
 
+    let s = PickerStyle::from_palette(p);
+    let mode = match diff_mode {
+        DiffMode::None => "Plain".to_string(),
+        other => format!("{other} diff"),
+    };
+    let time = |o: &crate::command::CommandOutput| o.time.format("%H:%M:%S").to_string();
+    let compared = match (current_output, previous_output) {
+        (Some(current), Some(previous)) if diff_mode != DiffMode::None => {
+            format!(" {} vs {} · {mode} ", time(current), time(previous))
+        }
+        (Some(current), _) => format!(" {} · {mode} ", time(current)),
+        (None, _) => format!(" no output yet · {mode} "),
+    };
+
     let content_block = Block::default()
         .borders(Borders::ALL)
         .border_style(border_style)
-        .padding(Padding::left(2));
+        .padding(Padding::left(2))
+        .title(Line::from(vec![
+            Span::styled(format!(" {} ", command.exec), s.title),
+            Span::styled(
+                format!("· every {} ", format_duration(command.interval)),
+                s.muted,
+            ),
+        ]))
+        .title(Line::from(Span::styled(compared, s.muted)).right_aligned());
 
     let inner_area = content_block.inner(area);
 
