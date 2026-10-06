@@ -1,6 +1,7 @@
 use crate::config::AppConfig;
 use crate::mode::DiffMode;
 use crate::ui::diffs;
+use crate::ui::utils::highlight_lines;
 use crate::{command::Command, ui::utils::scrollbar};
 use ratatui::widgets::ScrollbarState;
 use ratatui::{
@@ -34,12 +35,10 @@ pub fn render<'a>(
     let current_text = current_output.map_or("", |c| &c.output);
     let previous_text = previous_output.map_or("", |c| &c.output);
 
-    let display_text = diffs::render_diff(
-        &config.theme,
-        current_text,
-        previous_text,
-        diff_mode,
+    let (display_text, _) = highlight_lines(
+        diffs::render_diff(&config.theme, current_text, previous_text, diff_mode),
         search_query,
+        p.search_match,
     );
 
     let border_style = if is_focused {
