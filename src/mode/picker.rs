@@ -72,6 +72,11 @@ impl<T> Picker<T> {
         }
     }
 
+    pub fn clear_filter(&mut self) {
+        self.filter.reset();
+        self.apply_filter();
+    }
+
     pub fn items(&self) -> &[T] {
         &self.items
     }
