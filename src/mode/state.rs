@@ -53,6 +53,7 @@ pub enum AppMode {
         scroll_offset: u16,
         max_scroll: u16,
         scrollbar_state: ScrollbarState,
+        change_counts: HashMap<NaiveDateTime, usize>,
     },
 }
 
@@ -214,6 +215,7 @@ impl AppMode {
             scroll_offset: 0,
             max_scroll: 0,
             scrollbar_state: ScrollbarState::default(),
+            change_counts: HashMap::new(),
         }
     }
 }

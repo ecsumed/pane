@@ -44,6 +44,7 @@ pub fn draw(
         scroll_offset,
         max_scroll,
         scrollbar_state,
+        change_counts,
     } = mode_state
     {
         let Some(command) = commands.get(active_id) else {
@@ -56,7 +57,13 @@ pub fn draw(
         }
 
         // Render History
-        let history_w = history::widget(config, command, *focus == ObserveFocus::History);
+        history::update_change_counts(command, change_counts);
+        let history_w = history::widget(
+            config,
+            command,
+            change_counts,
+            *focus == ObserveFocus::History,
+        );
         history_list_state.select(Some(selected_history_idx));
         frame.render_stateful_widget(history_w, history_area, history_list_state);
 
@@ -134,6 +141,43 @@ pub(crate) mod tests {
             })
             .find(|(_, row)| row.contains(text))
             .unwrap_or_else(|| panic!("{text} not on screen"))
+    }
+
+    #[tokio::test]
+    async fn test_history_rows_show_status_duration_and_changes() {
+        let mut app = observe_app(&[
+            ("a\nb\n", Some(0)),
+            ("a\nb\n", Some(0)),
+            ("Command failed", Some(1)),
+            ("a\nB\n", None),
+        ])
+        .await;
+        let buffer = render(&mut app, 120, 20);
+
+        let (_, title) = row_containing(&buffer, "History (4)");
+        assert!(title.contains("History (4)"));
+        let (_, timed_out) = row_containing(&buffer, "12:00:30");
+        assert!(
+            timed_out.contains('⏱') && timed_out.contains("1.5s"),
+            "{timed_out}"
+        );
+        let (y, failed) = row_containing(&buffer, "12:00:20");
+        assert!(failed.contains('✗'), "{failed}");
+        let x = failed.chars().position(|c| c == '✗').unwrap() as u16;
+        assert_eq!(
+            buffer[(x, y)].fg,
+            app.config.theme.palette.error.fg.unwrap()
+        );
+        let (_, unchanged) = row_containing(&buffer, "12:00:10");
+        assert!(
+            unchanged.contains('✓') && unchanged.trim_end_matches(['│', ' ']).ends_with('='),
+            "{unchanged}"
+        );
+        let (_, oldest) = row_containing(&buffer, "12:00:00");
+        assert!(
+            !oldest.contains('±') && !oldest.contains("1.5s ="),
+            "{oldest}"
+        );
     }
 
     #[tokio::test]
