@@ -31,7 +31,7 @@ pub struct ContentView<'a> {
 
 fn wrapped(paragraph: Paragraph, wrap: bool) -> Paragraph {
     if wrap {
-        paragraph.wrap(Wrap { trim: true })
+        paragraph.wrap(Wrap { trim: false })
     } else {
         paragraph
     }
