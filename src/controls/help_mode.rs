@@ -67,3 +67,39 @@ pub async fn handle_help_keys(app: &mut App, event: Event) -> io::Result<()> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+    use super::*;
+    use crate::config::AppConfig;
+
+    async fn press(app: &mut App, code: KeyCode, modifiers: KeyModifiers) {
+        handle_help_keys(app, Event::Key(KeyEvent::new(code, modifiers)))
+            .await
+            .unwrap();
+    }
+
+    fn offset(app: &App) -> u16 {
+        match app.mode {
+            AppMode::Help { scroll_offset, .. } => scroll_offset,
+            _ => panic!("left help"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_g_goes_to_top_and_shift_g_to_bottom() {
+        let mut app = App::new(AppConfig::default(), Vec::new());
+        app.mode = AppMode::Help {
+            scroll_offset: 5,
+            max_scroll: 40,
+            scrollbar_state: Default::default(),
+        };
+
+        press(&mut app, KeyCode::Char('G'), KeyModifiers::SHIFT).await;
+        assert_eq!(offset(&app), 40);
+        press(&mut app, KeyCode::Char('g'), KeyModifiers::NONE).await;
+        assert_eq!(offset(&app), 0);
+    }
+}

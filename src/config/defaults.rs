@@ -107,8 +107,8 @@ pub fn default_keybindings() -> HashMap<KeyMode, HashMap<KeyCombination, Action>
     map.insert(
         KeyMode::Help,
         HashMap::from([
-            (key!(g), Action::ScrollBottom),
-            (key!(shift - g), Action::ScrollTop),
+            (key!(g), Action::ScrollTop),
+            (key!(shift - g), Action::ScrollBottom),
         ]),
     );
 
@@ -120,8 +120,8 @@ pub fn default_keybindings() -> HashMap<KeyMode, HashMap<KeyCombination, Action>
             (key!(n), Action::NextMatch),
             (key!(shift - n), Action::PrevMatch),
             (key!(w), Action::WrapToggle),
-            (key!(g), Action::ScrollBottom),
-            (key!(shift - g), Action::ScrollTop),
+            (key!(g), Action::ScrollTop),
+            (key!(shift - g), Action::ScrollBottom),
         ]),
     );
 
