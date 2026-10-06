@@ -42,7 +42,7 @@ pub async fn handle_session_load_keys(app: &mut App, event: Event) -> io::Result
         Some(Action::MoveUp) => picker.move_up(),
         Some(Action::MoveDown) => picker.move_down(),
         Some(Action::Confirm) => {
-            if let Some(session_filename) = picker.selected().cloned() {
+            if let Some(session_filename) = picker.selected().map(|s| s.file_name.clone()) {
                 info!("Loading session: {}", session_filename);
 
                 if let Err(e) = load_session_by_name(app, &session_filename) {
