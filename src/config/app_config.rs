@@ -133,11 +133,11 @@ impl AppConfig {
         }
 
         if let Some(interval) = cli.interval {
-            self.interval = Duration::from_secs(interval);
+            self.interval = interval;
         }
 
         if let Some(timeout) = cli.timeout {
-            self.timeout = Duration::from_secs(timeout);
+            self.timeout = timeout;
         }
 
         if cli.verbose.is_present() {

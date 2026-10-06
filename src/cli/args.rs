@@ -1,6 +1,9 @@
+use std::time::Duration;
+
 use clap::Parser;
 use clap_verbosity_flag::{ErrorLevel, Verbosity};
 
+use crate::config::utils::parse_duration;
 use crate::ui::DisplayType;
 
 #[derive(Parser, Debug)]
@@ -25,13 +28,13 @@ pub struct Cli {
     )]
     pub display: Option<DisplayType>,
 
-    /// The interval to wait between executions
-    #[arg(short = 'n', long, value_name = "SECONDS")]
-    pub interval: Option<u64>,
+    /// The interval to wait between executions, e.g. 2, 0.5, 500ms or 1m
+    #[arg(short = 'n', long, value_name = "DURATION", value_parser = parse_duration)]
+    pub interval: Option<Duration>,
 
-    /// Kill a command if it runs longer than this
-    #[arg(short = 't', long, value_name = "SECONDS")]
-    pub timeout: Option<u64>,
+    /// Kill a command if it runs longer than this, e.g. 30, 2.5 or 2m
+    #[arg(short = 't', long, value_name = "DURATION", value_parser = parse_duration)]
+    pub timeout: Option<Duration>,
 
     #[command(flatten)]
     pub verbose: Verbosity<ErrorLevel>,
@@ -62,4 +65,17 @@ pub struct Cli {
     /// Print the default configuration as TOML and exit
     #[arg(long)]
     pub print_default_config: bool,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_interval_and_timeout_accept_durations() {
+        let cli = Cli::try_parse_from(["pane", "-n", "0.5", "-t", "2m", "date"]).unwrap();
+        assert_eq!(cli.interval, Some(Duration::from_millis(500)));
+        assert_eq!(cli.timeout, Some(Duration::from_secs(120)));
+        assert!(Cli::try_parse_from(["pane", "-n", "0", "date"]).is_err());
+    }
 }
