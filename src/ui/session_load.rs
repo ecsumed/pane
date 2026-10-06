@@ -5,7 +5,7 @@ use ratatui::widgets::ListItem;
 use ratatui::Frame;
 
 use crate::app::App;
-use crate::mode::AppMode;
+use crate::mode::{AppMode, SessionPrompt};
 use crate::session::SessionEntry;
 use crate::ui::picker;
 
@@ -54,7 +54,11 @@ fn session_row<'a>(
 }
 
 pub fn draw_session_list(frame: &mut Frame, app: &mut App) {
-    let AppMode::SessionLoad { picker: state } = &app.mode else {
+    let AppMode::SessionLoad {
+        picker: state,
+        prompt,
+    } = &app.mode
+    else {
         return;
     };
     let p = &app.config.theme.palette;
@@ -83,10 +87,11 @@ pub fn draw_session_list(frame: &mut Frame, app: &mut App) {
         state.state.selected(),
         empty_message,
     );
-    picker::draw_footer(
-        frame,
-        areas.footer,
-        picker::hints(
+    let footer = match prompt {
+        SessionPrompt::Error(message) => {
+            Line::from(Span::styled(format!(" Failed to load: {message}"), p.error))
+        }
+        SessionPrompt::None => picker::hints(
             p,
             &[
                 ("↑↓", "move"),
@@ -95,7 +100,8 @@ pub fn draw_session_list(frame: &mut Frame, app: &mut App) {
                 ("esc", "cancel"),
             ],
         ),
-    );
+    };
+    picker::draw_footer(frame, areas.footer, footer);
 }
 
 #[cfg(test)]
@@ -132,7 +138,10 @@ mod tests {
             |s: &SessionEntry| s.name.clone(),
         );
         picker.state.select(Some(selected));
-        app.mode = AppMode::SessionLoad { picker };
+        app.mode = AppMode::SessionLoad {
+            picker,
+            prompt: SessionPrompt::None,
+        };
         app
     }
 
