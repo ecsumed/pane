@@ -9,7 +9,7 @@ use crate::controls::KeyMode;
 use crate::logging::error;
 use crate::mode::Picker;
 use crate::pane::PaneKey;
-use crate::session;
+use crate::session::{self, SessionEntry};
 use crate::shell_history::ShellHistoryManager;
 use crate::ui::DisplayType;
 
@@ -24,7 +24,7 @@ pub enum AppMode {
         history: ShellHistoryManager,
     },
     SessionLoad {
-        picker: Picker<String>,
+        picker: Picker<SessionEntry>,
     },
     SessionSave {
         input: Input,
@@ -122,13 +122,13 @@ impl AppMode {
     }
 
     pub fn new_session_load(app: &App) -> Self {
-        let sessions = session::fetch_session_filenames(&app.config).unwrap_or_else(|e| {
+        let sessions = session::fetch_sessions(&app.config).unwrap_or_else(|e| {
             error!("Failed to read sessions: {}", e);
             Vec::new()
         });
 
         AppMode::SessionLoad {
-            picker: Picker::new(sessions, |s| s.clone()),
+            picker: Picker::new(sessions, |s: &SessionEntry| s.name.clone()),
         }
     }
 
