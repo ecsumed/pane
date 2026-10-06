@@ -75,7 +75,7 @@ mod tests {
     #[tokio::test]
     async fn test_typing_filters_and_esc_cancels() {
         let mut app = App::new(AppConfig::default(), Vec::new());
-        app.mode = AppMode::new_display_type_select();
+        app.mode = AppMode::new_display_type_select(None);
 
         press(&mut app, KeyCode::Char('q')).await;
         let AppMode::DisplayTypeSelect { picker } = &app.mode else {
@@ -90,7 +90,7 @@ mod tests {
     #[tokio::test]
     async fn test_enter_applies_filtered_selection() {
         let mut app = App::new(AppConfig::default(), Vec::new());
-        app.mode = AppMode::new_display_type_select();
+        app.mode = AppMode::new_display_type_select(None);
 
         for c in "counter".chars() {
             press(&mut app, KeyCode::Char(c)).await;

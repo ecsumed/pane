@@ -138,10 +138,15 @@ impl AppMode {
         }
     }
 
-    pub fn new_display_type_select() -> Self {
-        AppMode::DisplayTypeSelect {
-            picker: Picker::new(DisplayType::iter().collect(), |dt| format!("{:?}", dt)),
+    pub fn new_display_type_select(current: Option<DisplayType>) -> Self {
+        let mut picker = Picker::new(DisplayType::iter().collect(), |dt: &DisplayType| {
+            format!("{} {}", dt.group(), dt.label())
+        });
+        if let Some(index) = current.and_then(|c| picker.items().iter().position(|&dt| dt == c)) {
+            picker.select_item(index);
         }
+
+        AppMode::DisplayTypeSelect { picker }
     }
 
     pub fn new_help() -> Self {

@@ -1,29 +1,71 @@
+use ratatui::style::Modifier;
+use ratatui::text::{Line, Span};
 use ratatui::widgets::ListItem;
 use ratatui::Frame;
 
 use crate::app::App;
+use crate::command::Command;
 use crate::mode::AppMode;
 use crate::ui::picker;
+
+fn has_numbers(command: Option<&Command>) -> bool {
+    command.is_some_and(|c| {
+        c.output_history
+            .iter()
+            .any(|o| o.output.trim().parse::<f64>().is_ok())
+    })
+}
 
 pub fn draw_display_type_select(frame: &mut Frame, app: &mut App) {
     let AppMode::DisplayTypeSelect { picker: state } = &app.mode else {
         return;
     };
     let p = &app.config.theme.palette;
+    let command = app.tasks.get(&app.pane_manager.active_pane_id);
+    let current = command.map(|c| c.display_type);
+    let numeric = has_numbers(command);
 
-    let rows: Vec<ListItem> = state
-        .visible()
-        .map(|(_, dt)| ListItem::new(format!("{:?}", dt)))
-        .collect();
+    let mut rows = Vec::new();
+    let mut selected_row = None;
+    let mut last_group = None;
+    let selected = state.selected_index();
 
-    let area = picker::popup_area(frame.area(), 40, state.items().len() as u16);
+    for (index, dt) in state.visible() {
+        if last_group != Some(dt.group()) {
+            last_group = Some(dt.group());
+            let mut header = vec![Span::styled(
+                dt.group().to_uppercase(),
+                p.meta_secondary.add_modifier(Modifier::BOLD),
+            )];
+            if dt.needs_numbers() && !numeric {
+                header.push(Span::styled("  no numbers in output", p.meta_label));
+            }
+            rows.push(ListItem::new(Line::from(header)));
+        }
+
+        let dimmed = dt.needs_numbers() && !numeric;
+        let mut spans = vec![Span::styled(
+            format!("  {}", dt.label()),
+            if dimmed { p.meta_label } else { p.meta_value },
+        )];
+        if Some(*dt) == current {
+            spans.push(Span::styled(" ●", p.meta_meter));
+        }
+
+        if Some(index) == selected {
+            selected_row = Some(rows.len());
+        }
+        rows.push(ListItem::new(Line::from(spans)));
+    }
+
+    let area = picker::popup_area(frame.area(), 54, (state.items().len() + 4) as u16);
     let areas = picker::draw_frame(frame, area, p, "Display", &state.filter);
     picker::draw_list(
         frame,
         areas.list,
         p,
         rows,
-        state.state.selected(),
+        selected_row,
         "No matching display types",
     );
     picker::draw_footer(
@@ -63,15 +105,14 @@ mod tests {
     #[test]
     fn test_all_display_types_visible() {
         let mut app = App::new(AppConfig::default(), Vec::new());
-        app.mode = AppMode::new_display_type_select();
+        app.mode = AppMode::new_display_type_select(None);
 
         let screen = render(&mut app, 100, 30);
         for item in DisplayType::iter() {
-            assert!(
-                screen.contains(&format!("{:?}", item)),
-                "{:?} not shown",
-                item
-            );
+            assert!(screen.contains(item.label()), "{:?} not shown", item);
+        }
+        for group in ["TEXT", "DIFF", "CHARTS", "OTHER"] {
+            assert!(screen.contains(group), "{group} header missing");
         }
 
         render(&mut app, 40, 5);
@@ -81,7 +122,7 @@ mod tests {
     #[test]
     fn test_filter_narrows_display_types() {
         let mut app = App::new(AppConfig::default(), Vec::new());
-        app.mode = AppMode::new_display_type_select();
+        app.mode = AppMode::new_display_type_select(None);
         if let AppMode::DisplayTypeSelect { picker } = &mut app.mode {
             for c in "chart".chars() {
                 let key = KeyEvent::new(KeyCode::Char(c), KeyModifiers::NONE);
@@ -90,7 +131,31 @@ mod tests {
         }
 
         let screen = render(&mut app, 100, 30);
-        assert!(screen.contains("LineChart"));
-        assert!(!screen.contains("RawText"));
+        assert!(screen.contains("Line chart"));
+        assert!(screen.contains("CHARTS"));
+        assert!(!screen.contains("Raw text"));
+    }
+
+    #[tokio::test]
+    async fn test_current_type_marked_and_charts_dimmed() {
+        let mut app = App::new(AppConfig::default(), Vec::new());
+        let id = app.pane_manager.active_pane_id;
+        app.set_command(id, "echo not-a-number".to_string()).await;
+        if let Some(task) = app.tasks.get_mut(&id) {
+            task.display_type = DisplayType::DiffWord;
+            task.task_handle.take().unwrap().abort();
+        }
+        app.mode = AppMode::new_display_type_select(Some(DisplayType::DiffWord));
+
+        let screen = render(&mut app, 100, 30);
+        let marked = screen
+            .lines()
+            .find(|l| l.contains("Changed words"))
+            .unwrap();
+        assert!(marked.contains('●'));
+        assert!(marked.contains("> "), "current type not preselected");
+        let charts = screen.lines().find(|l| l.contains("CHARTS")).unwrap();
+        assert!(charts.contains("no numbers"));
+        assert!(screen.contains("esc cancel"));
     }
 }
