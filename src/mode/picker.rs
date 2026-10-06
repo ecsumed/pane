@@ -90,6 +90,12 @@ impl<T> Picker<T> {
         self.selected_index().map(|i| &self.items[i])
     }
 
+    pub fn select_item(&mut self, index: usize) {
+        if let Some(pos) = self.visible.iter().position(|&i| i == index) {
+            self.state.select(Some(pos));
+        }
+    }
+
     pub fn move_up(&mut self) {
         let len = self.visible.len();
         if len == 0 {

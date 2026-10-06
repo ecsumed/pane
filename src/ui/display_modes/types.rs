@@ -21,3 +21,41 @@ pub enum DisplayType {
     ScatterChart,
     Counter,
 }
+
+impl DisplayType {
+    pub fn label(&self) -> &'static str {
+        match self {
+            DisplayType::RawText => "Raw text",
+            DisplayType::MultiLine => "History",
+            DisplayType::MultiLineTime => "History + time",
+            DisplayType::MultiLineDateTime => "History + date/time",
+            DisplayType::DiffChar => "Changed characters",
+            DisplayType::DiffLine => "Changed lines",
+            DisplayType::DiffWord => "Changed words",
+            DisplayType::Sparkline => "Sparkline",
+            DisplayType::LineChart => "Line chart",
+            DisplayType::BarChart => "Bar chart",
+            DisplayType::ScatterChart => "Scatter chart",
+            DisplayType::Counter => "Counter",
+        }
+    }
+
+    pub fn group(&self) -> &'static str {
+        match self {
+            DisplayType::RawText
+            | DisplayType::MultiLine
+            | DisplayType::MultiLineTime
+            | DisplayType::MultiLineDateTime => "Text",
+            DisplayType::DiffChar | DisplayType::DiffLine | DisplayType::DiffWord => "Diff",
+            DisplayType::Sparkline
+            | DisplayType::LineChart
+            | DisplayType::BarChart
+            | DisplayType::ScatterChart => "Charts",
+            DisplayType::Counter => "Other",
+        }
+    }
+
+    pub fn needs_numbers(&self) -> bool {
+        self.group() == "Charts"
+    }
+}

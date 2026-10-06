@@ -150,7 +150,9 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
             }
             Action::EnterDisplaySelectMode => {
                 info!("Display select mode");
-                app.mode = AppMode::new_display_type_select();
+                let id = app.pane_manager.active_pane_id;
+                app.mode =
+                    AppMode::new_display_type_select(app.tasks.get(&id).map(|c| c.display_type));
             }
             Action::PaneIncreaseVertical => {
                 app.pane_manager.resize_pane(&CardinalDirection::Right, 1);
