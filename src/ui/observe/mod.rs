@@ -222,7 +222,7 @@ pub(crate) mod tests {
             let row: String = (0..buffer.area.width)
                 .map(|x| buffer[(x, y)].symbol())
                 .collect();
-            !row.contains("/ ")
+            !row.contains("│  / ")
         }));
 
         press(&mut app, KeyCode::Char('/')).await;
@@ -249,6 +249,32 @@ pub(crate) mod tests {
         }
         let buffer = render(&mut app, 120, 20);
         row_containing(&buffer, "no matches");
+    }
+
+    #[tokio::test]
+    async fn test_key_hints_follow_focus() {
+        use crossterm::event::KeyCode;
+
+        let mut app = observe_app(&[("a", Some(0))]).await;
+        let buffer = render(&mut app, 140, 20);
+        let (_, hints) = row_containing(&buffer, "select run");
+        assert!(hints.contains("esc back"), "{hints}");
+
+        press(&mut app, KeyCode::Left).await;
+        let buffer = render(&mut app, 140, 20);
+        let (_, hints) = row_containing(&buffer, "↑↓ scroll");
+        assert!(!hints.contains("n/N"), "{hints}");
+
+        press(&mut app, KeyCode::Char('/')).await;
+        let buffer = render(&mut app, 140, 20);
+        row_containing(&buffer, "enter keep");
+
+        press(&mut app, KeyCode::Char('a')).await;
+        press(&mut app, KeyCode::Enter).await;
+        let buffer = render(&mut app, 140, 20);
+        let (_, hints) = row_containing(&buffer, "↑↓ scroll");
+        assert!(hints.contains("n/N match"), "{hints}");
+        assert!(hints.contains("esc clear "), "{hints}");
     }
 
     #[tokio::test]
