@@ -13,7 +13,7 @@ use crate::session::load_session_by_name;
 pub async fn handle_session_load_keys(app: &mut App, event: Event) -> io::Result<()> {
     let current_context: KeyMode = app.mode.key_mode();
 
-    let AppMode::SessionLoad { picker, prompt } = &mut app.mode else {
+    let AppMode::SessionLoad { picker, prompt, .. } = &mut app.mode else {
         return Ok(());
     };
 
@@ -63,6 +63,8 @@ pub async fn handle_session_load_keys(app: &mut App, event: Event) -> io::Result
         Some(Action::Escape) => app.mode = AppMode::Normal,
         _ => picker.handle_filter_event(&event),
     }
+
+    app.mode.load_session_preview(&app.config);
     Ok(())
 }
 
