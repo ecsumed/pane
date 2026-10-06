@@ -14,7 +14,7 @@ use crate::command::{Command, CommandControl, CommandEvent, CommandSerializableS
 use crate::config::AppConfig;
 use crate::controls;
 use crate::logging::{error, info, warn};
-use crate::mode::AppMode;
+use crate::mode::{AppMode, DiffMode};
 use crate::pane::{PaneKey, PaneManager};
 use crate::ui::draw::draw_ui;
 use crate::ui::DisplayType;
@@ -37,6 +37,7 @@ pub struct App {
     pub app_control_rx: mpsc::UnboundedReceiver<AppControl>,
     pub config: AppConfig,
     pub pane_area: Rect,
+    pub observe_diff_mode: DiffMode,
 }
 
 impl App {
@@ -66,6 +67,7 @@ impl App {
             app_control_rx,
             config,
             pane_area: Rect::new(0, 0, 0, 0),
+            observe_diff_mode: DiffMode::default(),
         }
     }
 

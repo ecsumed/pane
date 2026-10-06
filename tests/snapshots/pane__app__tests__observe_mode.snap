@@ -41,4 +41,4 @@ expression: content
 "│                                                                                                              ││                          │"
 "│                                                                                                              ││                          │"
 "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────┘"
-" Observe -> Char <tab> - cycle                                                                                     ?-Help q/esc - Quit/Back "
+" Observe -> Word <tab> - cycle                                                                                     ?-Help q/esc - Quit/Back "

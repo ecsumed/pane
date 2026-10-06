@@ -112,6 +112,7 @@ pub async fn handle_observe_mode_keys(app: &mut App, event: Event) -> io::Result
                     DiffMode::Word => DiffMode::Char,
                     DiffMode::Char => DiffMode::None,
                 };
+                app.observe_diff_mode = *diff_mode;
                 debug!("Cycling diff to {}", diff_mode);
             }
 
@@ -186,6 +187,31 @@ mod tests {
 
         press(&mut app, KeyCode::Esc).await;
         assert!(matches!(app.mode, AppMode::Normal));
+    }
+
+    #[tokio::test]
+    async fn test_diff_mode_defaults_to_word_and_is_remembered() {
+        let mut app = App::new(AppConfig::default(), Vec::new());
+        app.mode = AppMode::new_observing(&app);
+        assert!(matches!(
+            app.mode,
+            AppMode::Observe {
+                diff_mode: DiffMode::Word,
+                ..
+            }
+        ));
+
+        press(&mut app, KeyCode::Tab).await;
+        press(&mut app, KeyCode::Esc).await;
+        app.mode = AppMode::new_observing(&app);
+
+        assert!(matches!(
+            app.mode,
+            AppMode::Observe {
+                diff_mode: DiffMode::Char,
+                ..
+            }
+        ));
     }
 
     #[tokio::test]
