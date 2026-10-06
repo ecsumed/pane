@@ -16,8 +16,4 @@ curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ecsumed/pane/releases/l
 * Display as raw text, multiline, counter, sparkline, diff, etc.
 
 ## TODO
-* Hide Search for non-plain modes?
-* Conver chrono to jiff?
-* Fix interval hang on inc/dec
-* Improve resize functionality
-* Improve move functionality
+See [TODO.md](TODO.md).
