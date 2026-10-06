@@ -25,19 +25,6 @@ pub fn default_sessions_dir_path(proj_dirs: &Option<ProjectDirs>) -> PathBuf {
     }
 }
 
-pub fn default_snapshot_dir_path(proj_dirs: &Option<ProjectDirs>) -> PathBuf {
-    #[cfg(target_os = "macos")]
-    if let Some(home_dir) = get_home_dir() {
-        return home_dir.join(".config").join(app_name()).join("snapshots");
-    }
-
-    if let Some(dirs) = proj_dirs {
-        dirs.data_dir().join("snapshots")
-    } else {
-        PathBuf::from("./data/snapshots")
-    }
-}
-
 pub fn default_logging_dir_path(proj_dirs: &Option<ProjectDirs>) -> PathBuf {
     #[cfg(target_os = "macos")]
     if let Some(home_dir) = get_home_dir() {

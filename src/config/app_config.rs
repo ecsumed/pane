@@ -36,7 +36,6 @@ pub struct AppConfig {
     pub max_history: usize,
     pub zen: bool,
     pub sessions_dir: PathBuf,
-    pub snapshot_dir: PathBuf,
     pub logs_dir: PathBuf,
     pub log_level: Option<String>,
     pub keybindings: HashMap<KeyMode, HashMap<KeyCombination, Action>>,
@@ -62,7 +61,6 @@ impl fmt::Display for AppConfig {
         )?;
         writeln!(f, "  Logs Directory: {:?}", self.logs_dir)?;
         writeln!(f, "  Sessions Directory: {:?}", self.sessions_dir)?;
-        writeln!(f, "  Snapshot Directory: {:?}", self.snapshot_dir)?;
 
         writeln!(f, "  Theme")?;
         writeln!(f, "    Collapse borders: {}", self.theme.collapse_borders)?;

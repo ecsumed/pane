@@ -88,29 +88,7 @@ impl App {
 
             tokio::select! {
                 Some((id, event)) = self.output_rx.recv() => {
-                    match event {
-                        CommandEvent::Started => {
-                            if let Some(command) = self.tasks.get_mut(&id) {
-                                command.state = crate::command::CommandState::Executing;
-                            }
-                        }
-                        CommandEvent::Output(out) => {
-                            if let Some(code) = out.exit_status {
-                                if code != 0 && self.config.beep {
-                                    App::beep()
-                                }
-                                if code != 0 && self.config.err_exit {
-                                    info!("Exiting because err_exit was set.");
-                                    self.exit();
-                                }
-                            }
-
-                            if let Some(command) = self.tasks.get_mut(&id) {
-                                command.state = crate::command::CommandState::Idle;
-                                command.record_output(out, self.config.max_history);
-                            }
-                        }
-                    }
+                    self.handle_command_event(id, event);
                 },
                 Some(Ok(event)) = events.next().fuse() => {
                     controls::handle_event(self, event).await?;
@@ -142,6 +120,37 @@ impl App {
             }
         }
         Ok(())
+    }
+
+    pub fn handle_command_event(&mut self, id: PaneKey, event: CommandEvent) {
+        let CommandEvent::Output(out) = event else {
+            if let Some(command) = self.tasks.get_mut(&id) {
+                command.state = crate::command::CommandState::Executing;
+            }
+            return;
+        };
+
+        let failed = out.exit_status.is_some_and(|code| code != 0);
+        if failed && self.config.beep {
+            App::beep()
+        }
+
+        let Some(command) = self.tasks.get_mut(&id) else {
+            return;
+        };
+        let changed = command
+            .last_output()
+            .is_some_and(|last| last.output != out.output);
+        command.state = crate::command::CommandState::Idle;
+        command.record_output(out, self.config.max_history);
+
+        if failed && self.config.err_exit {
+            info!("Exiting because err_exit was set.");
+            self.exit();
+        } else if changed && self.config.chg_exit {
+            info!("Exiting because chg_exit was set and the output changed.");
+            self.exit();
+        }
     }
 
     pub fn exit(&mut self) {
@@ -636,6 +645,44 @@ mod tests {
         for task in app.tasks.values() {
             task.task_handle.as_ref().unwrap().abort();
         }
+    }
+
+    fn output(text: &str, code: i32) -> CommandEvent {
+        CommandEvent::Output(crate::command::CommandOutput {
+            output: text.to_string(),
+            time: chrono::Local::now().naive_local(),
+            exit_status: Some(code),
+            duration: Duration::from_millis(1),
+        })
+    }
+
+    #[tokio::test]
+    async fn test_chg_exit_exits_only_when_output_changes() {
+        let (mut app, root_pane) = mock_app();
+        app.config.chg_exit = true;
+        app.set_command(root_pane, "sleep 5".to_string()).await;
+
+        app.handle_command_event(root_pane, output("same", 0));
+        app.handle_command_event(root_pane, output("same", 0));
+        assert!(!app.exit, "exited without a change");
+
+        app.handle_command_event(root_pane, output("different", 0));
+        assert!(app.exit);
+        assert_eq!(app.tasks[&root_pane].output_history.len(), 3);
+        cleanup(app, root_pane);
+    }
+
+    #[tokio::test]
+    async fn test_err_exit_still_exits_on_failure() {
+        let (mut app, root_pane) = mock_app();
+        app.config.err_exit = true;
+        app.set_command(root_pane, "sleep 5".to_string()).await;
+
+        app.handle_command_event(root_pane, output("fine", 0));
+        assert!(!app.exit);
+        app.handle_command_event(root_pane, output("boom", 1));
+        assert!(app.exit);
+        cleanup(app, root_pane);
     }
 
     #[tokio::test]
