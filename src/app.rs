@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io::{self};
 use std::time::Duration;
 
@@ -178,6 +178,20 @@ impl App {
         }
     }
 
+    pub fn kill_active_pane(&mut self) {
+        let id = self.pane_manager.active_pane_id;
+        self.pane_manager.kill_pane();
+
+        if self.pane_manager.nodes.contains_key(id) {
+            return;
+        }
+        if let Some(command) = self.tasks.remove(&id) {
+            if let Some(h) = command.task_handle {
+                h.abort();
+            }
+        }
+    }
+
     pub fn load_session(
         &mut self,
         pane_manager: PaneManager,
@@ -187,6 +201,14 @@ impl App {
             if let Some(h) = old.task_handle {
                 h.abort();
             }
+        }
+
+        let panes: HashSet<PaneKey> = pane_manager.get_all_pane_keys().into_iter().collect();
+        let (tasks_state, orphans): (HashMap<_, _>, HashMap<_, _>) = tasks_state
+            .into_iter()
+            .partition(|(id, _)| panes.contains(id));
+        for (id, task) in orphans {
+            warn!("Skipping command without a pane {:?}: {}", id, task.exec);
         }
 
         let running_tasks =
@@ -522,6 +544,96 @@ mod tests {
             old_task.is_finished(),
             "Previous session task still running"
         );
+    }
+
+    fn serialized(exec: &str) -> CommandSerializableState {
+        CommandSerializableState {
+            exec: exec.to_string(),
+            interval: Duration::from_secs(60),
+            output_history: Default::default(),
+            state: CommandState::Paused,
+            display_type: DisplayType::RawText,
+        }
+    }
+
+    #[tokio::test]
+    async fn test_closing_a_pane_stops_and_removes_its_command() {
+        let (mut app, _) = mock_app();
+        app.pane_manager.split_pane(Direction::Vertical);
+        let closed = app.pane_manager.active_pane_id;
+        app.set_command(closed, "sleep 6.17".to_string()).await;
+        let task = app.tasks[&closed]
+            .task_handle
+            .as_ref()
+            .unwrap()
+            .abort_handle();
+        tokio::time::sleep(Duration::from_millis(100)).await;
+
+        app.kill_active_pane();
+        tokio::time::sleep(Duration::from_millis(200)).await;
+
+        assert!(!app.tasks.contains_key(&closed));
+        assert!(task.is_finished());
+        let leftover = std::process::Command::new("pgrep")
+            .args(["-f", "sleep 6.17"])
+            .output()
+            .unwrap();
+        assert!(
+            leftover.stdout.is_empty(),
+            "closed pane's process still running"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_closing_the_last_pane_keeps_its_command() {
+        let (mut app, root_pane) = mock_app();
+        app.set_command(root_pane, "sleep 5".to_string()).await;
+
+        app.kill_active_pane();
+        tokio::task::yield_now().await;
+
+        let task = app.tasks.get(&root_pane).expect("command removed");
+        assert!(!task.task_handle.as_ref().unwrap().is_finished());
+        cleanup(app, root_pane);
+    }
+
+    #[tokio::test]
+    async fn test_load_session_skips_commands_without_a_pane() {
+        let (mut app, _) = mock_app();
+        let pane_manager = PaneManager::new();
+        let pane = pane_manager.active_pane_id;
+        let orphan = PaneKey::from(slotmap::KeyData::from_ffi(12884901896));
+
+        app.load_session(
+            pane_manager,
+            HashMap::from([(pane, serialized("kept")), (orphan, serialized("orphan"))]),
+        )
+        .unwrap();
+
+        assert_eq!(app.tasks.len(), 1);
+        assert_eq!(app.tasks[&pane].exec, "kept");
+        for task in app.tasks.values() {
+            task.task_handle.as_ref().unwrap().abort();
+        }
+    }
+
+    #[tokio::test]
+    async fn test_save_session_skips_commands_without_a_pane() {
+        let dir = std::env::temp_dir().join(format!("pane-save-orphans-{}", std::process::id()));
+        let (mut app, root_pane) = mock_app();
+        app.config.sessions_dir = dir.clone();
+        let orphan = PaneKey::from(slotmap::KeyData::from_ffi(12884901896));
+        app.set_command(root_pane, "sleep 5".to_string()).await;
+        app.set_command(orphan, "sleep 5".to_string()).await;
+
+        crate::session::save_session_by_name(&app, "orphans").unwrap();
+        let preview = crate::session::load_session_preview(&app.config, "orphans.toml");
+        std::fs::remove_dir_all(&dir).unwrap();
+
+        assert_eq!(preview.unwrap().panes.len(), 1);
+        for task in app.tasks.values() {
+            task.task_handle.as_ref().unwrap().abort();
+        }
     }
 
     #[tokio::test]

@@ -9,9 +9,14 @@ pub fn save_session_by_name(app: &App, session_filename: &str) -> io::Result<()>
     let session_state = SessionState {
         pane_manager: app.pane_manager.clone(),
         tasks: app
-            .tasks
-            .iter()
-            .map(|(&id, command)| (id, command.to_serializable_state()))
+            .pane_manager
+            .get_all_pane_keys()
+            .into_iter()
+            .filter_map(|id| {
+                app.tasks
+                    .get(&id)
+                    .map(|command| (id, command.to_serializable_state()))
+            })
             .collect(),
     };
 
