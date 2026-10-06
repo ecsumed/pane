@@ -78,3 +78,70 @@ pub fn draw(
         frame.render_widget(search_w, search_area);
     }
 }
+
+#[cfg(test)]
+pub(crate) mod tests {
+    use ratatui::backend::TestBackend;
+    use ratatui::buffer::Buffer;
+    use ratatui::Terminal;
+
+    use crate::app::App;
+    use crate::command::CommandOutput;
+    use crate::config::AppConfig;
+    use crate::mode::AppMode;
+    use crate::ui::draw::draw_ui;
+
+    pub(crate) async fn observe_app(runs: &[(&str, Option<i32>)]) -> App {
+        let mut app = App::new(AppConfig::default(), Vec::new());
+        let id = app.pane_manager.active_pane_id;
+        app.set_command(id, "kubectl get pods".to_string()).await;
+        let task = app.tasks.get_mut(&id).unwrap();
+        task.task_handle.take().unwrap().abort();
+        let start = chrono::NaiveDate::from_ymd_opt(2026, 1, 1)
+            .unwrap()
+            .and_hms_opt(12, 0, 0)
+            .unwrap();
+        for (i, (output, code)) in runs.iter().enumerate() {
+            task.record_output(
+                CommandOutput {
+                    output: output.to_string(),
+                    time: start + chrono::Duration::seconds(10 * i as i64),
+                    exit_status: *code,
+                    duration: std::time::Duration::from_millis(1_500),
+                },
+                10,
+            );
+        }
+        app.mode = AppMode::new_observing(&app);
+        app
+    }
+
+    pub(crate) fn render(app: &mut App, width: u16, height: u16) -> Buffer {
+        let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
+        terminal.draw(|frame| draw_ui(app, frame)).unwrap();
+        terminal.backend().buffer().clone()
+    }
+
+    pub(crate) fn row_containing(buffer: &Buffer, text: &str) -> (u16, String) {
+        (0..buffer.area.height)
+            .map(|y| {
+                let row: String = (0..buffer.area.width)
+                    .map(|x| buffer[(x, y)].symbol())
+                    .collect();
+                (y, row)
+            })
+            .find(|(_, row)| row.contains(text))
+            .unwrap_or_else(|| panic!("{text} not on screen"))
+    }
+
+    #[tokio::test]
+    async fn test_selected_history_row_uses_palette_highlight() {
+        let mut app = observe_app(&[("a", Some(0)), ("b", Some(0))]).await;
+        let buffer = render(&mut app, 120, 20);
+
+        let (y, row) = row_containing(&buffer, "▸");
+        let x = row.chars().position(|c| c == '▸').unwrap() as u16;
+        let expected = app.config.theme.palette.search_match.bg.unwrap();
+        assert_eq!(buffer[(x + 2, y)].bg, expected);
+    }
+}

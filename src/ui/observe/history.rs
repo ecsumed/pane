@@ -1,11 +1,13 @@
 use crate::command::Command;
 use crate::config::AppConfig;
+use crate::ui::picker::PickerStyle;
 use crate::ui::utils::BlockExt;
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, List, ListItem};
 
 pub fn widget<'a>(config: &'a AppConfig, command: &'a Command, is_focused: bool) -> List<'a> {
     let p = &config.theme.palette;
+    let s = PickerStyle::from_palette(p);
 
     let items: Vec<ListItem> = command
         .output_history
@@ -18,7 +20,7 @@ pub fn widget<'a>(config: &'a AppConfig, command: &'a Command, is_focused: bool)
             } else {
                 out.time.format("%H:%M:%S").to_string()
             };
-            ListItem::new(label)
+            ListItem::new(Span::styled(label, s.text))
         })
         .collect();
 
@@ -34,11 +36,8 @@ pub fn widget<'a>(config: &'a AppConfig, command: &'a Command, is_focused: bool)
                 .borders(Borders::ALL)
                 .border_style(border_style)
                 .merge_if(config.theme.collapse_borders)
-                .title("History"),
+                .title(Span::styled(" History ", s.title)),
         )
-        .highlight_style(
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD),
-        )
+        .highlight_style(s.selected)
+        .highlight_symbol("▸ ")
 }
