@@ -76,8 +76,8 @@ pub enum ObserveFocus {
 pub enum DiffMode {
     None,
     Line,
-    Word,
     #[default]
+    Word,
     Char,
 }
 
@@ -200,7 +200,7 @@ impl AppMode {
     }
 
     pub fn new_observing(app: &App) -> Self {
-        let diff_mode = DiffMode::default();
+        let diff_mode = app.observe_diff_mode;
         let active_id = app.pane_manager.active_pane_id;
 
         AppMode::Observe {
