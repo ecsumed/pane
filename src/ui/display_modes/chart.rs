@@ -18,7 +18,13 @@ fn datetime_to_f64(dt: NaiveDateTime) -> f64 {
     seconds + millis
 }
 
-pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, command: &Command) {
+pub fn render(
+    frame: &mut Frame,
+    area: Rect,
+    config: &AppConfig,
+    command: &Command,
+    display_type: DisplayType,
+) {
     let p = &config.theme.palette;
 
     let data_result: Result<Vec<(f64, f64)>, &str> = command
@@ -61,7 +67,7 @@ pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, command: &Comma
                 &chart_data[..]
             };
 
-            let (graph_type, marker, style) = match command.display_type {
+            let (graph_type, marker, style) = match display_type {
                 DisplayType::LineChart => (GraphType::Line, symbols::Marker::Braille, p.chart_line),
                 DisplayType::BarChart => (GraphType::Bar, symbols::Marker::Quadrant, p.chart_bar),
                 _ => (GraphType::Scatter, symbols::Marker::Dot, p.chart_scatter),

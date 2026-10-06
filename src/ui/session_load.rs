@@ -23,7 +23,7 @@ pub fn draw_session_list(frame: &mut Frame, app: &mut App) {
     };
 
     let area = picker::popup_area(frame.area(), 70, state.items().len() as u16);
-    let areas = picker::draw_frame(frame, area, p, "Load session", &state.filter);
+    let areas = picker::draw_frame(frame, area, p, "Load session", &state.filter, None);
     picker::draw_list(
         frame,
         areas.list,

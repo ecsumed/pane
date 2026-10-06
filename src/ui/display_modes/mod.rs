@@ -21,21 +21,22 @@ pub fn render_command_output(
     area: Rect,
     config: &AppConfig,
     command: &Command,
+    display_type: DisplayType,
     block: Block,
 ) {
     let inner_area = block.inner(area);
 
     frame.render_widget(block.clone(), area);
 
-    match command.display_type {
+    match display_type {
         DisplayType::RawText => {
             raw_text::render(frame, inner_area, config, command);
         }
         DisplayType::MultiLine | DisplayType::MultiLineTime | DisplayType::MultiLineDateTime => {
-            multiline::render(frame, inner_area, config, command);
+            multiline::render(frame, inner_area, config, command, display_type);
         }
         DisplayType::DiffChar | DisplayType::DiffWord | DisplayType::DiffLine => {
-            diff::render(frame, inner_area, config, command);
+            diff::render(frame, inner_area, config, command, display_type);
         }
         DisplayType::Sparkline => {
             sparkline::render(frame, inner_area, config, command);
@@ -44,7 +45,7 @@ pub fn render_command_output(
             counter::render(frame, inner_area, config, command);
         }
         DisplayType::LineChart | DisplayType::BarChart | DisplayType::ScatterChart => {
-            chart::render(frame, inner_area, config, command);
+            chart::render(frame, inner_area, config, command, display_type);
         }
     }
 }

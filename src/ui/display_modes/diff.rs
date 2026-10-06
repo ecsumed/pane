@@ -6,9 +6,15 @@ use ratatui::Frame;
 use crate::command::Command;
 use crate::config::AppConfig;
 use crate::ui::diffs;
-use crate::ui::DisplayType::{DiffChar, DiffLine, DiffWord};
+use crate::ui::DisplayType::{self, DiffChar, DiffLine, DiffWord};
 
-pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, command: &Command) {
+pub fn render(
+    frame: &mut Frame,
+    area: Rect,
+    config: &AppConfig,
+    command: &Command,
+    display_type: DisplayType,
+) {
     let current_output = command.output_history.back();
     let previous_output = command.output_history.iter().rev().nth(1);
 
@@ -16,7 +22,7 @@ pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, command: &Comma
     let previous_str = previous_output.map(|c| c.output.as_str()).unwrap_or("");
     let query = "";
 
-    let lines = match command.display_type {
+    let lines = match display_type {
         DiffChar => diffs::char::render(&config.theme, current_str, previous_str, query),
         DiffWord => diffs::word::render(&config.theme, current_str, previous_str, query),
         DiffLine => diffs::line::render(&config.theme, current_str, previous_str, query),

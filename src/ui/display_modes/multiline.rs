@@ -7,14 +7,20 @@ use crate::command::Command;
 use crate::config::AppConfig;
 use crate::ui::DisplayType;
 
-pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, command: &Command) {
+pub fn render(
+    frame: &mut Frame,
+    area: Rect,
+    config: &AppConfig,
+    command: &Command,
+    display_type: DisplayType,
+) {
     let p = &config.theme.palette;
 
     let history_lines: Vec<Line> = command
         .output_history
         .iter()
         .map(|entry| {
-            let dt_string = match command.display_type {
+            let dt_string = match display_type {
                 DisplayType::MultiLineDateTime => {
                     format!("[{}]", entry.time.format("%Y-%m-%d %H:%M:%S"))
                 }

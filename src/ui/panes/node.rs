@@ -35,7 +35,7 @@ pub fn draw_recursive(
 
                 let block = create_pane_block(config, node_info);
 
-                render_command_output(frame, area, config, cmd, block);
+                render_command_output(frame, area, config, cmd, cmd.display_type, block);
             } else {
                 let block = create_pane_block(config, NodeInfo::no_command(is_active));
 

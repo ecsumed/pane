@@ -8,9 +8,11 @@ use tui_input::Input;
 use crate::config::theme::Palette;
 
 const CHROME_HEIGHT: u16 = 4;
+const MIN_PREVIEW_WIDTH: u16 = 30;
 
 pub struct PickerAreas {
     pub list: Rect,
+    pub preview: Option<Rect>,
     pub footer: Rect,
 }
 
@@ -34,6 +36,7 @@ pub fn draw_frame(
     p: &Palette,
     title: &str,
     filter: &Input,
+    list_width: Option<u16>,
 ) -> PickerAreas {
     Clear.render(area, frame.buffer_mut());
 
@@ -63,7 +66,20 @@ pub fn draw_frame(
         frame.set_cursor_position((cursor_x, filter_area.y));
     }
 
-    PickerAreas { list: body, footer }
+    let (list, preview) = match list_width {
+        Some(width) if body.width >= width + MIN_PREVIEW_WIDTH => {
+            let [list, preview] =
+                Layout::horizontal([Constraint::Length(width), Constraint::Min(0)]).areas(body);
+            (list, Some(preview))
+        }
+        _ => (body, None),
+    };
+
+    PickerAreas {
+        list,
+        preview,
+        footer,
+    }
 }
 
 pub fn draw_list(
