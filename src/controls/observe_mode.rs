@@ -15,7 +15,7 @@ pub async fn handle_observe_mode_keys(app: &mut App, event: Event) -> io::Result
 
     let AppMode::Observe {
         active_id,
-        selected_history_idx,
+        selected_time,
         diff_mode,
         search_input,
         focus,
@@ -70,9 +70,15 @@ pub async fn handle_observe_mode_keys(app: &mut App, event: Event) -> io::Result
 
             Action::MoveUp => match focus {
                 ObserveFocus::History => {
-                    if *selected_history_idx > 0 {
-                        *selected_history_idx -= 1;
-                        *scroll_offset = 0; // Reset scroll when changing history
+                    if let Some(cmd) = app.tasks.get(active_id) {
+                        let position = cmd.history_position(*selected_time);
+                        if position > 0 {
+                            *selected_time = match position - 1 {
+                                0 => None,
+                                newer => cmd.history_time_at(newer),
+                            };
+                            *scroll_offset = 0;
+                        }
                     }
                 }
                 ObserveFocus::Content => {
@@ -83,14 +89,12 @@ pub async fn handle_observe_mode_keys(app: &mut App, event: Event) -> io::Result
 
             Action::MoveDown => match focus {
                 ObserveFocus::History => {
-                    let history_len = app
-                        .tasks
-                        .get(active_id)
-                        .map_or(0, |cmd| cmd.output_history.len());
-
-                    if *selected_history_idx < history_len.saturating_sub(1) {
-                        *selected_history_idx += 1;
-                        *scroll_offset = 0;
+                    if let Some(cmd) = app.tasks.get(active_id) {
+                        let older = cmd.history_position(*selected_time) + 1;
+                        if older < cmd.output_history.len() {
+                            *selected_time = cmd.history_time_at(older);
+                            *scroll_offset = 0;
+                        }
                     }
                 }
                 ObserveFocus::Content => {
@@ -212,6 +216,73 @@ mod tests {
                 ..
             }
         ));
+    }
+
+    fn record(app: &mut App, minute: u32) {
+        let id = app.pane_manager.active_pane_id;
+        let time = chrono::NaiveDate::from_ymd_opt(2026, 1, 1)
+            .unwrap()
+            .and_hms_opt(12, minute, 0)
+            .unwrap();
+        app.tasks.get_mut(&id).unwrap().record_output(
+            crate::command::CommandOutput {
+                output: format!("run {minute}"),
+                time,
+                exit_status: Some(0),
+                duration: std::time::Duration::from_millis(1),
+            },
+            3,
+        );
+    }
+
+    fn selected_output(app: &App) -> Option<String> {
+        let AppMode::Observe {
+            active_id,
+            selected_time,
+            ..
+        } = &app.mode
+        else {
+            return None;
+        };
+        let cmd = app.tasks.get(active_id)?;
+        let position = cmd.history_position(*selected_time);
+        cmd.output_history
+            .iter()
+            .rev()
+            .nth(position)
+            .map(|o| o.output.clone())
+    }
+
+    #[tokio::test]
+    async fn test_viewed_entry_stays_put_when_history_rolls_over() {
+        let mut app = App::new(AppConfig::default(), Vec::new());
+        let id = app.pane_manager.active_pane_id;
+        app.set_command(id, "true".to_string()).await;
+        app.tasks
+            .get_mut(&id)
+            .unwrap()
+            .task_handle
+            .take()
+            .unwrap()
+            .abort();
+        for minute in 0..3 {
+            record(&mut app, minute);
+        }
+        app.mode = AppMode::new_observing(&app);
+
+        press(&mut app, KeyCode::Down).await;
+        assert_eq!(selected_output(&app).as_deref(), Some("run 1"));
+
+        record(&mut app, 3);
+        record(&mut app, 4);
+        assert_eq!(selected_output(&app).as_deref(), Some("run 2"));
+
+        press(&mut app, KeyCode::Up).await;
+        assert_eq!(selected_output(&app).as_deref(), Some("run 3"));
+        press(&mut app, KeyCode::Up).await;
+        assert_eq!(selected_output(&app).as_deref(), Some("run 4"));
+        record(&mut app, 5);
+        assert_eq!(selected_output(&app).as_deref(), Some("run 5"));
     }
 
     #[tokio::test]

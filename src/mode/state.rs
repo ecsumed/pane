@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::fmt;
 
+use chrono::NaiveDateTime;
+
 use ratatui::widgets::{ListState, ScrollbarState};
 use strum::IntoEnumIterator;
 use tui_input::Input;
@@ -43,8 +45,7 @@ pub enum AppMode {
     },
     Observe {
         active_id: PaneKey,
-        selected_history_idx: usize,
-        last_history_len: usize,
+        selected_time: Option<NaiveDateTime>,
         diff_mode: DiffMode,
         search_input: Input,
         history_list_state: ListState,
@@ -205,8 +206,7 @@ impl AppMode {
 
         AppMode::Observe {
             active_id,
-            selected_history_idx: 0,
-            last_history_len: 0,
+            selected_time: None,
             diff_mode,
             search_input: Input::default(),
             history_list_state: ListState::default(),

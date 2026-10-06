@@ -86,3 +86,24 @@ impl Command {
         }
     }
 }
+
+impl Command {
+    pub fn history_position(&self, time: Option<NaiveDateTime>) -> usize {
+        let Some(time) = time else {
+            return 0;
+        };
+        self.output_history
+            .iter()
+            .rev()
+            .position(|o| o.time == time)
+            .unwrap_or(self.output_history.len().saturating_sub(1))
+    }
+
+    pub fn history_time_at(&self, position: usize) -> Option<NaiveDateTime> {
+        self.output_history
+            .iter()
+            .rev()
+            .nth(position)
+            .map(|o| o.time)
+    }
+}

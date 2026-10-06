@@ -34,8 +34,7 @@ pub fn draw(
 
     if let AppMode::Observe {
         active_id,
-        selected_history_idx,
-        last_history_len,
+        selected_time,
         diff_mode,
         search_input,
         history_list_state,
@@ -49,20 +48,14 @@ pub fn draw(
             return;
         };
 
-        let current_len = command.output_history.len();
-        if current_len != *last_history_len {
-            let diff = current_len.abs_diff(*last_history_len);
-            if current_len > *last_history_len && *selected_history_idx > 0 {
-                *selected_history_idx += diff;
-            } else {
-                *selected_history_idx = selected_history_idx.saturating_sub(diff);
-            }
-            *last_history_len = current_len;
+        let selected_history_idx = command.history_position(*selected_time);
+        if selected_time.is_some() {
+            *selected_time = command.history_time_at(selected_history_idx);
         }
 
         // Render History
         let history_w = history::widget(config, command, *focus == ObserveFocus::History);
-        history_list_state.select(Some(*selected_history_idx));
+        history_list_state.select(Some(selected_history_idx));
         frame.render_stateful_widget(history_w, history_area, history_list_state);
 
         // Render Content
@@ -71,7 +64,7 @@ pub fn draw(
             content_area,
             config,
             command,
-            *selected_history_idx,
+            selected_history_idx,
             *diff_mode,
             search_input.value(),
             *scroll_offset,
