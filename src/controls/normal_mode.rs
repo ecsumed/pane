@@ -69,16 +69,7 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
                 app.pane_manager
                     .change_active(&CardinalDirection::Right, app.pane_area);
             }
-            Action::KillPane => {
-                let id = app.pane_manager.active_pane_id;
-                if let Err(e) = app
-                    .app_control_tx
-                    .send(AppControl::SendControl(id, CommandControl::Stop))
-                {
-                    warn!("Failed to send AppControl::SendControl: {}", e);
-                }
-                app.pane_manager.kill_pane();
-            }
+            Action::KillPane => app.kill_active_pane(),
             Action::Confirm => {
                 let id = app.pane_manager.active_pane_id;
                 if let Err(e) = app
