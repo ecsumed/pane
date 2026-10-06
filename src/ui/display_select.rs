@@ -1,11 +1,12 @@
 use ratatui::style::Modifier;
 use ratatui::text::{Line, Span};
-use ratatui::widgets::ListItem;
+use ratatui::widgets::{Block, Borders, ListItem, Padding, Paragraph};
 use ratatui::Frame;
 
 use crate::app::App;
 use crate::command::Command;
 use crate::mode::AppMode;
+use crate::ui::display_modes::render_command_output;
 use crate::ui::picker;
 
 fn has_numbers(command: Option<&Command>) -> bool {
@@ -58,8 +59,8 @@ pub fn draw_display_type_select(frame: &mut Frame, app: &mut App) {
         rows.push(ListItem::new(Line::from(spans)));
     }
 
-    let area = picker::popup_area(frame.area(), 54, (state.items().len() + 4) as u16);
-    let areas = picker::draw_frame(frame, area, p, "Display", &state.filter);
+    let area = picker::popup_area(frame.area(), 120, (state.items().len() + 4).max(20) as u16);
+    let areas = picker::draw_frame(frame, area, p, "Display", &state.filter, Some(34));
     picker::draw_list(
         frame,
         areas.list,
@@ -68,6 +69,32 @@ pub fn draw_display_type_select(frame: &mut Frame, app: &mut App) {
         selected_row,
         "No matching display types",
     );
+    if let (Some(preview_area), Some(dt)) = (areas.preview, state.selected()) {
+        let block = Block::default()
+            .borders(Borders::LEFT)
+            .border_style(p.border_inactive)
+            .padding(Padding::left(1))
+            .title(Span::styled(
+                format!(" Preview: {} ", dt.label()),
+                p.meta_label,
+            ));
+        let message = match command {
+            None => Some(" No command in this pane"),
+            Some(cmd) if cmd.output_history.is_empty() => Some(" No output yet"),
+            Some(_) => None,
+        };
+        match (command, message) {
+            (Some(cmd), None) => {
+                render_command_output(frame, preview_area, &app.config, cmd, *dt, block)
+            }
+            (_, message) => frame.render_widget(
+                Paragraph::new(Span::styled(message.unwrap_or_default(), p.meta_label))
+                    .block(block),
+                preview_area,
+            ),
+        }
+    }
+
     picker::draw_footer(
         frame,
         areas.footer,
@@ -91,6 +118,7 @@ mod tests {
     use strum::IntoEnumIterator;
 
     use super::*;
+    use crate::command::CommandOutput;
     use crate::config::AppConfig;
     use crate::ui::DisplayType;
 
@@ -144,16 +172,30 @@ mod tests {
         if let Some(task) = app.tasks.get_mut(&id) {
             task.display_type = DisplayType::DiffWord;
             task.task_handle.take().unwrap().abort();
+            task.record_output(
+                CommandOutput {
+                    output: "not-a-number".to_string(),
+                    time: chrono::Local::now().naive_local(),
+                    exit_status: Some(0),
+                    duration: std::time::Duration::from_millis(5),
+                },
+                10,
+            );
         }
         app.mode = AppMode::new_display_type_select(Some(DisplayType::DiffWord));
 
         let screen = render(&mut app, 100, 30);
         let marked = screen
             .lines()
-            .find(|l| l.contains("Changed words"))
-            .unwrap();
-        assert!(marked.contains('●'));
+            .find(|l| l.contains("Changed words ●"))
+            .expect("current type not marked");
         assert!(marked.contains("> "), "current type not preselected");
+        assert!(screen.contains("Preview: Changed words"));
+        assert!(screen.contains("not-a-number"));
+
+        let narrow = render(&mut app, 50, 30);
+        assert!(!narrow.contains("Preview"));
+        assert!(narrow.contains("Changed words ●"));
         let charts = screen.lines().find(|l| l.contains("CHARTS")).unwrap();
         assert!(charts.contains("no numbers"));
         assert!(screen.contains("esc cancel"));
