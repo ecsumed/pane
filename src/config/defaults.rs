@@ -117,6 +117,8 @@ pub fn default_keybindings() -> HashMap<KeyMode, HashMap<KeyCombination, Action>
         KeyMode::Observe,
         HashMap::from([
             (key!('/'), Action::Search),
+            (key!(n), Action::NextMatch),
+            (key!(shift - n), Action::PrevMatch),
             (key!(w), Action::WrapToggle),
             (key!(g), Action::ScrollBottom),
             (key!(shift - g), Action::ScrollTop),

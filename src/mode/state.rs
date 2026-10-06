@@ -54,6 +54,9 @@ pub enum AppMode {
         max_scroll: u16,
         scrollbar_state: ScrollbarState,
         change_counts: HashMap<NaiveDateTime, usize>,
+        current_match: usize,
+        match_count: usize,
+        jump_to_match: bool,
     },
 }
 
@@ -216,6 +219,9 @@ impl AppMode {
             max_scroll: 0,
             scrollbar_state: ScrollbarState::default(),
             change_counts: HashMap::new(),
+            current_match: 0,
+            match_count: 0,
+            jump_to_match: false,
         }
     }
 }

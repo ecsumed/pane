@@ -1,6 +1,5 @@
 mod content;
 mod history;
-mod search;
 
 use std::collections::HashMap;
 
@@ -23,14 +22,10 @@ pub fn draw(
     commands: &HashMap<PaneKey, Command>,
     mode_state: &mut AppMode,
 ) {
-    let [main_area, history_area] =
+    let [content_area, history_area] =
         Layout::horizontal([Constraint::Min(0), Constraint::Length(HISTORY_WIDTH)])
             .collapse_if(config.theme.collapse_borders)
             .areas(area);
-
-    let [search_area, content_area] = Layout::vertical([Constraint::Length(3), Constraint::Min(0)])
-        .collapse_if(config.theme.collapse_borders)
-        .areas(main_area);
 
     Clear.render(area, frame.buffer_mut());
 
@@ -45,6 +40,9 @@ pub fn draw(
         max_scroll,
         scrollbar_state,
         change_counts,
+        current_match,
+        match_count,
+        jump_to_match,
     } = mode_state
     {
         let Some(command) = commands.get(active_id) else {
@@ -67,24 +65,25 @@ pub fn draw(
         history_list_state.select(Some(selected_history_idx));
         frame.render_stateful_widget(history_w, history_area, history_list_state);
 
-        // Render Content
         content::render(
             frame,
             content_area,
             config,
             command,
-            selected_history_idx,
-            *diff_mode,
-            search_input.value(),
-            *scroll_offset,
-            max_scroll,
-            scrollbar_state,
-            *focus == ObserveFocus::Content,
+            content::ContentView {
+                selected_idx: selected_history_idx,
+                diff_mode: *diff_mode,
+                search: search_input,
+                search_focused: *focus == ObserveFocus::Search,
+                focused: *focus == ObserveFocus::Content,
+                scroll_offset,
+                max_scroll,
+                scrollbar_state,
+                current_match,
+                match_count,
+                jump_to_match,
+            },
         );
-
-        // Render Search
-        let search_w = search::widget(config, search_input.value(), *focus == ObserveFocus::Search);
-        frame.render_widget(search_w, search_area);
     }
 }
 
@@ -156,24 +155,24 @@ pub(crate) mod tests {
 
         let (_, title) = row_containing(&buffer, "History (4)");
         assert!(title.contains("History (4)"));
-        let (_, timed_out) = row_containing(&buffer, "12:00:30");
+        let (_, timed_out) = row_containing(&buffer, "12:00:30  ");
         assert!(
             timed_out.contains('⏱') && timed_out.contains("1.5s"),
             "{timed_out}"
         );
-        let (y, failed) = row_containing(&buffer, "12:00:20");
+        let (y, failed) = row_containing(&buffer, "12:00:20  ");
         assert!(failed.contains('✗'), "{failed}");
         let x = failed.chars().position(|c| c == '✗').unwrap() as u16;
         assert_eq!(
             buffer[(x, y)].fg,
             app.config.theme.palette.error.fg.unwrap()
         );
-        let (_, unchanged) = row_containing(&buffer, "12:00:10");
+        let (_, unchanged) = row_containing(&buffer, "12:00:10  ");
         assert!(
             unchanged.contains('✓') && unchanged.trim_end_matches(['│', ' ']).ends_with('='),
             "{unchanged}"
         );
-        let (_, oldest) = row_containing(&buffer, "12:00:00");
+        let (_, oldest) = row_containing(&buffer, "12:00:00  ");
         assert!(
             !oldest.contains('±') && !oldest.contains("1.5s ="),
             "{oldest}"
@@ -197,6 +196,59 @@ pub(crate) mod tests {
         let buffer = render(&mut app, 140, 20);
         let (_, title) = row_containing(&buffer, "kubectl get pods");
         assert!(title.contains("12:00:10 · Plain"), "{title}");
+    }
+
+    async fn press(app: &mut App, code: crossterm::event::KeyCode) {
+        use crossterm::event::{Event, KeyEvent, KeyModifiers};
+        let event = Event::Key(KeyEvent::new(code, KeyModifiers::NONE));
+        crate::controls::handle_event(app, event).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_search_strip_counts_and_jumps_between_matches() {
+        use crossterm::event::KeyCode;
+
+        let output: String = (0..60)
+            .map(|i| match i {
+                5 => "needle first\n".to_string(),
+                45 => "needle second\n".to_string(),
+                i => format!("line {i}\n"),
+            })
+            .collect();
+        let mut app = observe_app(&[(output.as_str(), Some(0))]).await;
+
+        let buffer = render(&mut app, 120, 20);
+        assert!((0..buffer.area.height).all(|y| {
+            let row: String = (0..buffer.area.width)
+                .map(|x| buffer[(x, y)].symbol())
+                .collect();
+            !row.contains("/ ")
+        }));
+
+        press(&mut app, KeyCode::Char('/')).await;
+        for c in "needle".chars() {
+            press(&mut app, KeyCode::Char(c)).await;
+        }
+        press(&mut app, KeyCode::Enter).await;
+        let buffer = render(&mut app, 120, 20);
+        row_containing(&buffer, "match 1 of 2");
+        row_containing(&buffer, "needle first");
+
+        press(&mut app, KeyCode::Char('n')).await;
+        let buffer = render(&mut app, 120, 20);
+        row_containing(&buffer, "match 2 of 2");
+        row_containing(&buffer, "needle second");
+
+        press(&mut app, KeyCode::Char('n')).await;
+        let buffer = render(&mut app, 120, 20);
+        row_containing(&buffer, "match 1 of 2");
+        row_containing(&buffer, "needle first");
+
+        for c in ['/', 'z', 'z', 'z'] {
+            press(&mut app, KeyCode::Char(c)).await;
+        }
+        let buffer = render(&mut app, 120, 20);
+        row_containing(&buffer, "no matches");
     }
 
     #[tokio::test]

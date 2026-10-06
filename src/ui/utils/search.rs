@@ -18,7 +18,11 @@ fn find_matches(haystack: &[char], needle: &[char]) -> Vec<(usize, usize)> {
     ranges
 }
 
-fn split_line<'a>(line: Line<'a>, ranges: &[(usize, usize)], match_style: Style) -> Line<'a> {
+fn split_line<'a>(
+    line: Line<'a>,
+    ranges: &[(usize, Style)],
+    bounds: &[(usize, usize)],
+) -> Line<'a> {
     let Line {
         style,
         alignment,
@@ -36,21 +40,20 @@ fn split_line<'a>(line: Line<'a>, ranges: &[(usize, usize)], match_style: Style)
         let mut cursor = start;
 
         while cursor < end {
-            while r < ranges.len() && ranges[r].1 <= cursor {
+            while r < bounds.len() && bounds[r].1 <= cursor {
                 r += 1;
             }
-            let (segment_end, highlighted) = match ranges.get(r) {
+            let (segment_end, highlight) = match bounds.get(r) {
                 Some(&(range_start, range_end)) if range_start <= cursor => {
-                    (range_end.min(end), true)
+                    (range_end.min(end), Some(ranges[r].1))
                 }
-                Some(&(range_start, _)) => (range_start.min(end), false),
-                None => (end, false),
+                Some(&(range_start, _)) => (range_start.min(end), None),
+                None => (end, None),
             };
             let text: String = chars[cursor - start..segment_end - start].iter().collect();
-            let segment_style = if highlighted {
-                span.style.patch(match_style)
-            } else {
-                span.style
+            let segment_style = match highlight {
+                Some(style) => span.style.patch(style),
+                None => span.style,
             };
             spans.push(Span::styled(text, segment_style));
             cursor = segment_end;
@@ -69,6 +72,7 @@ pub fn highlight_lines<'a>(
     lines: Vec<Line<'a>>,
     query: &str,
     match_style: Style,
+    current: Option<(usize, Style)>,
 ) -> (Vec<Line<'a>>, Vec<usize>) {
     let needle: Vec<char> = query.chars().map(fold).collect();
     if needle.is_empty() {
@@ -86,12 +90,24 @@ pub fn highlight_lines<'a>(
                 .flat_map(|s| s.content.chars())
                 .map(fold)
                 .collect();
-            let ranges = find_matches(&haystack, &needle);
-            if ranges.is_empty() {
+            let bounds = find_matches(&haystack, &needle);
+            if bounds.is_empty() {
                 return line;
             }
-            match_rows.extend(std::iter::repeat_n(row, ranges.len()));
-            split_line(line, &ranges, match_style)
+            let styles: Vec<(usize, Style)> = bounds
+                .iter()
+                .enumerate()
+                .map(|(i, _)| {
+                    let index = match_rows.len() + i;
+                    let style = match current {
+                        Some((current, style)) if current == index => match_style.patch(style),
+                        _ => match_style,
+                    };
+                    (index, style)
+                })
+                .collect();
+            match_rows.extend(std::iter::repeat_n(row, bounds.len()));
+            split_line(line, &styles, &bounds)
         })
         .collect();
 
@@ -125,7 +141,7 @@ mod tests {
                 .collect::<Vec<_>>(),
         );
 
-        let (lines, rows) = highlight_lines(vec![line], "istio-ingress", found);
+        let (lines, rows) = highlight_lines(vec![line], "istio-ingress", found, None);
 
         assert_eq!(rows, vec![0]);
         assert_eq!(joined(&lines[0]), "istio-ingress-7d9f8");
@@ -139,6 +155,7 @@ mod tests {
             vec![Line::from("Running running RUNNING"), Line::from("none")],
             "running",
             found,
+            None,
         );
 
         assert_eq!(rows, vec![0, 0, 0]);
@@ -155,7 +172,7 @@ mod tests {
         let added = Style::default().fg(Color::Green);
         let line = Line::from(vec![Span::raw("İstanbul "), Span::styled("pod", added)]);
 
-        let (lines, rows) = highlight_lines(vec![line], "od", found);
+        let (lines, rows) = highlight_lines(vec![line], "od", found, None);
 
         assert_eq!(rows, vec![0]);
         assert_eq!(joined(&lines[0]), "İstanbul pod");
@@ -164,8 +181,29 @@ mod tests {
     }
 
     #[test]
+    fn test_current_match_gets_its_own_style() {
+        let found = Style::default().bg(Color::Yellow);
+        let current = Style::default().add_modifier(Modifier::REVERSED);
+        let (lines, rows) = highlight_lines(
+            vec![Line::from("pod pod"), Line::from("pod")],
+            "pod",
+            found,
+            Some((1, current)),
+        );
+
+        assert_eq!(rows, vec![0, 0, 1]);
+        let styles: Vec<Style> = lines
+            .iter()
+            .flat_map(|l| l.spans.iter())
+            .filter(|s| s.content == "pod")
+            .map(|s| s.style)
+            .collect();
+        assert_eq!(styles, vec![found, found.patch(current), found]);
+    }
+
+    #[test]
     fn test_empty_query_changes_nothing() {
-        let (lines, rows) = highlight_lines(vec![Line::from("abc")], "", Style::default());
+        let (lines, rows) = highlight_lines(vec![Line::from("abc")], "", Style::default(), None);
         assert!(rows.is_empty());
         assert_eq!(joined(&lines[0]), "abc");
     }
