@@ -7,13 +7,13 @@ use crate::app::App;
 use crate::controls::actions::Action;
 use crate::controls::KeyMode;
 use crate::logging::{error, info};
-use crate::mode::AppMode;
+use crate::mode::{AppMode, SessionPrompt};
 use crate::session::load_session_by_name;
 
 pub async fn handle_session_load_keys(app: &mut App, event: Event) -> io::Result<()> {
     let current_context: KeyMode = app.mode.key_mode();
 
-    let AppMode::SessionLoad { picker } = &mut app.mode else {
+    let AppMode::SessionLoad { picker, prompt } = &mut app.mode else {
         return Ok(());
     };
 
@@ -25,6 +25,7 @@ pub async fn handle_session_load_keys(app: &mut App, event: Event) -> io::Result
     }
 
     let key_comb: KeyCombination = KeyCombination::from(key_event);
+    *prompt = SessionPrompt::None;
 
     let action = app
         .config
@@ -45,16 +46,65 @@ pub async fn handle_session_load_keys(app: &mut App, event: Event) -> io::Result
             if let Some(session_filename) = picker.selected().map(|s| s.file_name.clone()) {
                 info!("Loading session: {}", session_filename);
 
-                if let Err(e) = load_session_by_name(app, &session_filename) {
-                    error!("Error loading session: {}", e);
-                } else {
-                    info!("Session loaded successfully!");
+                match load_session_by_name(app, &session_filename) {
+                    Ok(()) => {
+                        info!("Session loaded successfully!");
+                        app.mode = AppMode::Normal;
+                    }
+                    Err(e) => {
+                        error!("Error loading session: {}", e);
+                        if let AppMode::SessionLoad { prompt, .. } = &mut app.mode {
+                            *prompt = SessionPrompt::Error(e.to_string());
+                        }
+                    }
                 }
-                app.mode = AppMode::Normal;
             }
         }
         Some(Action::Escape) => app.mode = AppMode::Normal,
         _ => picker.handle_filter_event(&event),
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+    use super::*;
+    use crate::config::AppConfig;
+
+    async fn press(app: &mut App, code: KeyCode) {
+        let event = Event::Key(KeyEvent::new(code, KeyModifiers::NONE));
+        handle_session_load_keys(app, event).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_failed_load_keeps_picker_open_with_error() {
+        let dir = std::env::temp_dir().join(format!("pane-load-error-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("broken.toml"), "this is not a session").unwrap();
+
+        let config = AppConfig {
+            sessions_dir: dir.clone(),
+            ..AppConfig::default()
+        };
+        let mut app = App::new(config, Vec::new());
+        app.mode = AppMode::new_session_load(&app);
+
+        press(&mut app, KeyCode::Enter).await;
+        let AppMode::SessionLoad { prompt, .. } = &app.mode else {
+            panic!("picker closed after failed load");
+        };
+        assert!(matches!(prompt, SessionPrompt::Error(_)));
+
+        press(&mut app, KeyCode::Down).await;
+        let AppMode::SessionLoad { prompt, .. } = &app.mode else {
+            panic!("picker closed");
+        };
+        assert_eq!(*prompt, SessionPrompt::None);
+
+        fs::remove_dir_all(&dir).unwrap();
+    }
 }

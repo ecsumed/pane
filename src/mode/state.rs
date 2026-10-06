@@ -25,6 +25,7 @@ pub enum AppMode {
     },
     SessionLoad {
         picker: Picker<SessionEntry>,
+        prompt: SessionPrompt,
     },
     SessionSave {
         input: Input,
@@ -49,6 +50,13 @@ pub enum AppMode {
         max_scroll: u16,
         scrollbar_state: ScrollbarState,
     },
+}
+
+#[derive(Debug, Default, PartialEq)]
+pub enum SessionPrompt {
+    #[default]
+    None,
+    Error(String),
 }
 
 #[derive(Debug, Default, PartialEq)]
@@ -129,6 +137,7 @@ impl AppMode {
 
         AppMode::SessionLoad {
             picker: Picker::new(sessions, |s: &SessionEntry| s.name.clone()),
+            prompt: SessionPrompt::None,
         }
     }
 
