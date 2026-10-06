@@ -21,6 +21,9 @@ pub async fn handle_observe_mode_keys(app: &mut App, event: Event) -> io::Result
         focus,
         scroll_offset,
         max_scroll,
+        current_match,
+        match_count,
+        jump_to_match,
         ..
     } = &mut app.mode
     else {
@@ -50,9 +53,22 @@ pub async fn handle_observe_mode_keys(app: &mut App, event: Event) -> io::Result
 
     if *focus == ObserveFocus::Search {
         match action {
-            Some(Action::Escape | Action::Confirm) => *focus = ObserveFocus::Content,
+            Some(Action::Confirm) => {
+                *focus = ObserveFocus::Content;
+                *jump_to_match = true;
+            }
+            Some(Action::Escape) => {
+                search_input.reset();
+                *focus = ObserveFocus::Content;
+            }
             _ => {
-                search_input.handle_event(&event);
+                if search_input
+                    .handle_event(&event)
+                    .is_some_and(|change| change.value)
+                {
+                    *current_match = 0;
+                    *jump_to_match = true;
+                }
             }
         }
         return Ok(());
@@ -60,8 +76,20 @@ pub async fn handle_observe_mode_keys(app: &mut App, event: Event) -> io::Result
 
     if let Some(act) = action {
         match act {
+            Action::Escape if !search_input.value().is_empty() => {
+                search_input.reset();
+            }
             Action::Escape | Action::Quit => {
                 app.mode = AppMode::Normal;
+            }
+
+            Action::NextMatch if *match_count > 0 => {
+                *current_match = (*current_match + 1) % *match_count;
+                *jump_to_match = true;
+            }
+            Action::PrevMatch if *match_count > 0 => {
+                *current_match = (*current_match + *match_count - 1) % *match_count;
+                *jump_to_match = true;
             }
 
             Action::MoveLeft => *focus = ObserveFocus::Content,
@@ -177,7 +205,28 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_escape_leaves_search_but_stays_in_observe() {
+    async fn test_enter_keeps_search_and_esc_clears_it() {
+        let mut app = App::new(AppConfig::default(), Vec::new());
+        app.mode = AppMode::new_observing(&app);
+
+        press(&mut app, KeyCode::Char('/')).await;
+        press(&mut app, KeyCode::Char('x')).await;
+        press(&mut app, KeyCode::Enter).await;
+
+        let (value, focus) = search_state(&app).expect("left observe mode");
+        assert_eq!(value, "x");
+        assert_eq!(*focus, ObserveFocus::Content);
+
+        press(&mut app, KeyCode::Esc).await;
+        let (value, _) = search_state(&app).expect("esc with a search should only clear it");
+        assert_eq!(value, "");
+
+        press(&mut app, KeyCode::Esc).await;
+        assert!(matches!(app.mode, AppMode::Normal));
+    }
+
+    #[tokio::test]
+    async fn test_esc_while_typing_cancels_search() {
         let mut app = App::new(AppConfig::default(), Vec::new());
         app.mode = AppMode::new_observing(&app);
 
@@ -186,11 +235,8 @@ mod tests {
         press(&mut app, KeyCode::Esc).await;
 
         let (value, focus) = search_state(&app).expect("left observe mode");
-        assert_eq!(value, "x");
+        assert_eq!(value, "");
         assert_eq!(*focus, ObserveFocus::Content);
-
-        press(&mut app, KeyCode::Esc).await;
-        assert!(matches!(app.mode, AppMode::Normal));
     }
 
     #[tokio::test]
