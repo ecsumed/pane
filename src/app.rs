@@ -89,48 +89,74 @@ impl App {
     {
         let mut tick_interval = interval(Duration::from_millis(250));
         let mut events = EventStream::new();
+        let mut needs_redraw = true;
 
         loop {
-            terminal.draw(|frame| {
-                self.pane_area = frame.area();
+            if needs_redraw {
+                terminal.draw(|frame| {
+                    self.pane_area = frame.area();
 
-                draw_ui(self, frame);
-            })?;
+                    draw_ui(self, frame);
+                })?;
+            }
 
-            tokio::select! {
+            needs_redraw = tokio::select! {
                 Some((id, event)) = self.output_rx.recv() => {
                     self.handle_command_event(id, event);
+                    self.drain_command_events();
+                    true
                 },
                 Some(Ok(event)) = events.next().fuse() => {
                     controls::handle_event(self, event).await?;
+                    true
                 },
-
                 Some(control) = self.app_control_rx.recv() => {
-                    match control {
-                        AppControl::SetCommand(id, exec) => {
-                            self.set_command(id, exec).await;
-                        },
-                        AppControl::SendControl(id, cmd_ctrl) => {
-                            if let Some(command) = self.tasks.get_mut(&id) {
-                                command.handle_control_signal(id, cmd_ctrl);
-                            }
-                        }
-                        AppControl::SetDisplay(id, display) => {
-                            if let Some(command) = self.tasks.get_mut(&id) {
-                                command.update_display(display);
-                            }
-                        }
+                    self.handle_app_control(control).await;
+                    while let Ok(control) = self.app_control_rx.try_recv() {
+                        self.handle_app_control(control).await;
                     }
+                    true
                 },
-                _ = tick_interval.tick() => {
-                },
-            }
+                _ = tick_interval.tick() => self.expire_notice(),
+            };
 
             if self.exit {
                 break;
             }
         }
         Ok(())
+    }
+
+    fn drain_command_events(&mut self) {
+        while let Ok((id, event)) = self.output_rx.try_recv() {
+            self.handle_command_event(id, event);
+        }
+    }
+
+    async fn handle_app_control(&mut self, control: AppControl) {
+        match control {
+            AppControl::SetCommand(id, exec) => {
+                self.set_command(id, exec).await;
+            }
+            AppControl::SendControl(id, cmd_ctrl) => {
+                if let Some(command) = self.tasks.get_mut(&id) {
+                    command.handle_control_signal(id, cmd_ctrl);
+                }
+            }
+            AppControl::SetDisplay(id, display) => {
+                if let Some(command) = self.tasks.get_mut(&id) {
+                    command.update_display(display);
+                }
+            }
+        }
+    }
+
+    fn expire_notice(&mut self) -> bool {
+        if self.notice.is_some() && self.current_notice().is_none() {
+            self.notice = None;
+            return true;
+        }
+        false
     }
 
     pub fn notify(&mut self, text: impl Into<String>, is_error: bool) {
@@ -764,6 +790,37 @@ mod tests {
 
         app.notice.as_mut().unwrap().shown_at = Instant::now() - NOTICE_DURATION;
         assert!(app.current_notice().is_none());
+    }
+
+    #[test]
+    fn test_tick_redraws_only_to_clear_an_expired_notice() {
+        let (mut app, _) = mock_app();
+        assert!(!app.expire_notice());
+
+        app.notify("hello", false);
+        assert!(!app.expire_notice());
+
+        app.notice.as_mut().unwrap().shown_at = Instant::now() - NOTICE_DURATION;
+        assert!(app.expire_notice());
+        assert!(app.notice.is_none());
+        assert!(!app.expire_notice());
+    }
+
+    #[tokio::test]
+    async fn test_pending_command_events_are_handled_together() {
+        let (mut app, root_pane) = mock_app();
+        app.set_command(root_pane, "sleep 5".to_string()).await;
+        for i in 0..5 {
+            app.output_tx
+                .send((root_pane, output(&format!("run {i}"), 0)))
+                .await
+                .unwrap();
+        }
+
+        app.drain_command_events();
+
+        assert_eq!(app.tasks[&root_pane].output_history.len(), 5);
+        cleanup(app, root_pane);
     }
 
     #[tokio::test]
