@@ -98,6 +98,7 @@ pub(crate) mod tests {
     use crate::config::AppConfig;
     use crate::mode::AppMode;
     use crate::ui::draw::draw_ui;
+    use crate::ui::observe::history;
 
     pub(crate) async fn observe_app(runs: &[(&str, Option<i32>)]) -> App {
         let mut app = App::new(AppConfig::default(), Vec::new());
@@ -149,34 +150,48 @@ pub(crate) mod tests {
             ("a\nb\n", Some(0)),
             ("Command failed", Some(1)),
             ("a\nB\n", None),
+            ("a\nb\nc\n", Some(0)),
         ])
         .await;
-        let buffer = render(&mut app, 120, 20);
+        let buffer = render(&mut app, 120, 24);
 
-        let (_, title) = row_containing(&buffer, "History (4)");
-        assert!(title.contains("History (4)"));
-        let (_, timed_out) = row_containing(&buffer, "12:00:30  ");
-        assert!(
-            timed_out.contains('⏱') && timed_out.contains("1.5s"),
-            "{timed_out}"
-        );
+        row_containing(&buffer, "History (5/10)");
+        let (y, latest) = row_containing(&buffer, "Latest   12:00:40");
+        assert!(latest.contains('✓'), "{latest}");
+        assert_eq!(row_containing(&buffer, "1.5s · +2 −1").0, y + 1);
+
+        let (y, timed_out) = row_containing(&buffer, "12:00:30  ");
+        assert!(timed_out.contains('⏱'), "{timed_out}");
+        assert_eq!(row_containing(&buffer, "timed out").0, y + 1);
+
         let (y, failed) = row_containing(&buffer, "12:00:20  ");
-        assert!(failed.contains('✗'), "{failed}");
         let x = failed.chars().position(|c| c == '✗').unwrap() as u16;
         assert_eq!(
             buffer[(x, y)].fg,
             app.config.theme.palette.error.fg.unwrap()
         );
-        let (_, unchanged) = row_containing(&buffer, "12:00:10  ");
-        assert!(
-            unchanged.contains('✓') && unchanged.trim_end_matches(['│', ' ']).ends_with('='),
-            "{unchanged}"
-        );
-        let (_, oldest) = row_containing(&buffer, "12:00:00  ");
-        assert!(
-            !oldest.contains('±') && !oldest.contains("1.5s ="),
-            "{oldest}"
-        );
+        assert_eq!(row_containing(&buffer, "exit 1").0, y + 1);
+
+        let (y, _) = row_containing(&buffer, "12:00:10  ");
+        assert_eq!(row_containing(&buffer, "no change").0, y + 1);
+        let (y, _) = row_containing(&buffer, "12:00:00  ");
+        assert_eq!(row_containing(&buffer, "first run").0, y + 1);
+    }
+
+    #[tokio::test]
+    async fn test_change_counts_forget_evicted_runs() {
+        let app = observe_app(&[("a", Some(0)), ("b", Some(0))]).await;
+        let command = app.tasks.values().next().unwrap();
+        let stale = chrono::NaiveDate::from_ymd_opt(2020, 1, 1)
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap();
+        let mut counts = history::ChangeCounts::from([(stale, (9, 9))]);
+
+        history::update_change_counts(command, &mut counts);
+
+        assert!(!counts.contains_key(&stale));
+        assert_eq!(counts.len(), 1);
     }
 
     #[tokio::test]

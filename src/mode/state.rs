@@ -53,7 +53,7 @@ pub enum AppMode {
         scroll_offset: u16,
         max_scroll: u16,
         scrollbar_state: ScrollbarState,
-        change_counts: HashMap<NaiveDateTime, usize>,
+        change_counts: HashMap<NaiveDateTime, (usize, usize)>,
         current_match: usize,
         match_count: usize,
         jump_to_match: bool,
