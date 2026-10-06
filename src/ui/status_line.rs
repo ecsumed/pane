@@ -7,12 +7,7 @@ use crate::app::App;
 use crate::mode::AppMode;
 
 pub fn mode_output(mode: &AppMode) -> String {
-    match mode {
-        AppMode::Observe { diff_mode, .. } => {
-            format!(" {} -> {} <tab> - cycle", mode, diff_mode)
-        }
-        _ => format!(" {}", mode),
-    }
+    format!(" {}", mode)
 }
 
 pub fn draw_status_line(frame: &mut Frame, area: Rect, app: &App) {

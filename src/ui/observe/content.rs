@@ -10,7 +10,7 @@ use crate::command::{Command, CommandOutput};
 use crate::config::AppConfig;
 use crate::mode::DiffMode;
 use crate::ui::diffs;
-use crate::ui::picker::PickerStyle;
+use crate::ui::picker::{self, PickerStyle};
 use crate::ui::utils::{highlight_lines, scrollbar};
 
 const MATCH_CONTEXT_ROWS: u16 = 2;
@@ -67,6 +67,38 @@ fn title<'a>(
         ]),
         Line::from(Span::styled(compared, s.muted)).right_aligned(),
     )
+}
+
+fn key_hints<'a>(view: &ContentView, s: &PickerStyle) -> Line<'a> {
+    let searching = !view.search.value().is_empty();
+    let back = if searching {
+        ("esc", "clear")
+    } else {
+        ("esc", "back")
+    };
+
+    let hints: Vec<(&str, &str)> = if view.search_focused {
+        vec![("type", "search"), ("enter", "keep"), ("esc", "cancel")]
+    } else if view.focused {
+        let mut hints = vec![("↑↓", "scroll"), ("→", "history"), ("tab", "diff")];
+        if searching {
+            hints.push(("n/N", "match"));
+        }
+        hints.extend([("/", "search"), ("w", "wrap"), back]);
+        hints
+    } else {
+        vec![
+            ("↑↓", "select run"),
+            ("←", "output"),
+            ("tab", "diff"),
+            ("/", "search"),
+            back,
+        ]
+    };
+
+    let mut line = picker::hints(s, &hints);
+    line.push_span(Span::raw(" "));
+    line
 }
 
 fn draw_search_strip(
@@ -150,7 +182,8 @@ pub fn render(
         .border_style(border_style)
         .padding(Padding::left(2))
         .title(left_title)
-        .title(right_title);
+        .title(right_title)
+        .title_bottom(key_hints(&view, &s));
     let inner = block.inner(area);
     frame.render_widget(block, area);
 
