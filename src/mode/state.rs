@@ -6,6 +6,8 @@ use tui_input::Input;
 
 use crate::app::App;
 use crate::controls::KeyMode;
+use crate::logging::error;
+use crate::mode::Picker;
 use crate::pane::PaneKey;
 use crate::session;
 use crate::shell_history::ShellHistoryManager;
@@ -22,15 +24,13 @@ pub enum AppMode {
         history: ShellHistoryManager,
     },
     SessionLoad {
-        state: ListState,
-        items: Vec<String>,
+        picker: Picker<String>,
     },
     SessionSave {
         input: Input,
     },
     DisplayTypeSelect {
-        state: ListState,
-        items: Vec<DisplayType>,
+        picker: Picker<DisplayType>,
     },
     Help {
         scroll_offset: u16,
@@ -122,16 +122,13 @@ impl AppMode {
     }
 
     pub fn new_session_load(app: &App) -> Self {
-        let sessions = session::fetch_session_filenames(&app.config).unwrap();
-
-        let mut state = ListState::default();
-        if !sessions.is_empty() {
-            state.select(Some(0));
-        }
+        let sessions = session::fetch_session_filenames(&app.config).unwrap_or_else(|e| {
+            error!("Failed to read sessions: {}", e);
+            Vec::new()
+        });
 
         AppMode::SessionLoad {
-            items: sessions,
-            state,
+            picker: Picker::new(sessions, |s| s.clone()),
         }
     }
 
@@ -142,14 +139,9 @@ impl AppMode {
     }
 
     pub fn new_display_type_select() -> Self {
-        let items: Vec<DisplayType> = DisplayType::iter().collect();
-
-        let mut state = ListState::default();
-        if !items.is_empty() {
-            state.select(Some(0));
+        AppMode::DisplayTypeSelect {
+            picker: Picker::new(DisplayType::iter().collect(), |dt| format!("{:?}", dt)),
         }
-
-        AppMode::DisplayTypeSelect { items, state }
     }
 
     pub fn new_help() -> Self {
