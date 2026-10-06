@@ -4,7 +4,7 @@ use std::time::Duration;
 use crokey::{key, KeyCombination};
 use ratatui::style::{Color, Modifier, Style};
 
-use super::utils::{app_name, default_sessions_dir_path, default_snapshot_dir_path};
+use super::utils::{app_name, default_sessions_dir_path};
 use super::AppConfig;
 use crate::config::theme::{Palette, Theme, ThemeMode};
 use crate::config::utils::default_logging_dir_path;
@@ -229,7 +229,6 @@ impl Default for AppConfig {
             max_history: MAX_HISTORY,
             logs_dir: default_logging_dir_path(&proj_dirs),
             sessions_dir: default_sessions_dir_path(&proj_dirs),
-            snapshot_dir: default_snapshot_dir_path(&proj_dirs),
             keybindings: default_keybindings(),
             theme: Theme::default(),
         }
