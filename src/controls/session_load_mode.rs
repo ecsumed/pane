@@ -117,6 +117,13 @@ pub async fn handle_session_load_keys(app: &mut App, event: Event) -> io::Result
                 match load_session_by_name(app, &session_filename) {
                     Ok(()) => {
                         info!("Session loaded successfully!");
+                        app.notify(
+                            format!(
+                                "Loaded session {}",
+                                session_filename.trim_end_matches(".toml")
+                            ),
+                            false,
+                        );
                         app.mode = AppMode::Normal;
                     }
                     Err(e) => {

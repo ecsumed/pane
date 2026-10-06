@@ -44,10 +44,12 @@ pub async fn handle_session_save_keys(app: &mut App, event: Event) -> io::Result
             Action::Confirm => {
                 let session_name = input.value().to_string();
                 info!("Saving session to {}", session_name);
-                if let Err(e) = save_session_by_name(app, &session_name) {
-                    error!("Saving session: {}", e);
-                } else {
-                    info!("Session saved successfully!");
+                match save_session_by_name(app, &session_name) {
+                    Ok(name) => app.notify(format!("Saved session {name}"), false),
+                    Err(e) => {
+                        error!("Saving session: {}", e);
+                        app.notify(format!("Couldn't save session: {e}"), true);
+                    }
                 }
                 app.mode = AppMode::Normal;
             }
