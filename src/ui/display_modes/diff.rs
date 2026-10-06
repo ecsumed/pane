@@ -31,7 +31,7 @@ pub fn render(
     let mut paragraph = Paragraph::new(Text::from(lines));
 
     if config.wrap {
-        paragraph = paragraph.wrap(Wrap { trim: true });
+        paragraph = paragraph.wrap(Wrap { trim: false });
     }
 
     frame.render_widget(paragraph, area);
