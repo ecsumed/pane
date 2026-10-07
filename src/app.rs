@@ -859,6 +859,38 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_angle_brackets_move_the_border_the_way_they_point() {
+        use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
+
+        let (mut app, _) = mock_app();
+        app.pane_manager.split_pane(Direction::Vertical);
+        app.pane_manager.split_pane(Direction::Horizontal);
+        let bottom_right = app.pane_manager.active_pane_id;
+        let mut terminal = mock_terminal();
+        let left_edge = |app: &App| {
+            app.pane_rects
+                .iter()
+                .find(|(k, _)| *k == bottom_right)
+                .unwrap()
+                .1
+                .x
+        };
+        let mut press = async |c: char| {
+            let event = Event::Key(KeyEvent::new(KeyCode::Char(c), KeyModifiers::NONE));
+            controls::handle_event(&mut app, event).await.unwrap();
+            render_terminal(&mut terminal, &mut app);
+            left_edge(&app)
+        };
+
+        let start = press('=').await;
+        let after_left = press('<').await;
+        assert!(after_left < start, "< should move the border left");
+        let after_right = press('>').await;
+        assert_eq!(after_right, start, "> should move it back right");
+        assert!(press('>').await > start);
+    }
+
+    #[tokio::test]
     async fn test_render_observe_mode() {
         let (mut app, root_pane) = mock_app();
         app.config.interval = Duration::from_secs(60);
