@@ -13,8 +13,6 @@
 - [ ] Apply a display type to all panes
 - [ ] Observe: mark a run with `m` and diff any two runs
 - [ ] Observe: copy the visible output with `y`
-- [ ] Improve pane resizing
-- [ ] Improve moving between panes
 
 ## Architecture
 - [ ] Central scheduler: cap concurrent commands, jitter, back off on failures
