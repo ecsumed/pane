@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use ratatui::text::Line;
+use ratatui::text::{Line, Span};
 
 use crate::{config::theme::Theme, mode::DiffMode};
 
@@ -10,6 +10,36 @@ mod plain;
 pub mod word;
 
 pub const DIFF_TIMEOUT: Duration = Duration::from_millis(25);
+
+pub fn owned(lines: Vec<Line<'_>>) -> Vec<Line<'static>> {
+    lines
+        .into_iter()
+        .map(|line| Line {
+            style: line.style,
+            alignment: line.alignment,
+            spans: line
+                .spans
+                .into_iter()
+                .map(|span| Span::styled(span.content.into_owned(), span.style))
+                .collect(),
+        })
+        .collect()
+}
+
+pub fn borrowed<'a>(lines: &'a [Line<'static>]) -> Vec<Line<'a>> {
+    lines
+        .iter()
+        .map(|line| Line {
+            style: line.style,
+            alignment: line.alignment,
+            spans: line
+                .spans
+                .iter()
+                .map(|span| Span::styled(span.content.as_ref(), span.style))
+                .collect(),
+        })
+        .collect()
+}
 
 pub fn render_diff<'a>(
     theme: &Theme,

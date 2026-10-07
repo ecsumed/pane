@@ -3,6 +3,7 @@ use std::fmt;
 
 use chrono::NaiveDateTime;
 
+use ratatui::text::Line;
 use ratatui::widgets::{ListState, ScrollbarState};
 use strum::IntoEnumIterator;
 use tui_input::Input;
@@ -60,7 +61,16 @@ pub enum AppMode {
         current_match: usize,
         match_count: usize,
         jump_to_match: bool,
+        content_cache: Option<ContentCache>,
     },
+}
+
+pub type ContentKey = (Option<NaiveDateTime>, Option<NaiveDateTime>, DiffMode);
+
+#[derive(Debug)]
+pub struct ContentCache {
+    pub key: ContentKey,
+    pub lines: Vec<Line<'static>>,
 }
 
 #[derive(Debug, Default)]
@@ -228,6 +238,7 @@ impl AppMode {
             current_match: 0,
             match_count: 0,
             jump_to_match: false,
+            content_cache: None,
         }
     }
 }

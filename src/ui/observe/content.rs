@@ -8,7 +8,7 @@ use tui_input::Input;
 
 use crate::command::{Command, CommandOutput};
 use crate::config::AppConfig;
-use crate::mode::DiffMode;
+use crate::mode::{ContentCache, DiffMode};
 use crate::ui::diffs;
 use crate::ui::picker::{self, PickerStyle};
 use crate::ui::utils::{highlight_lines, scrollbar};
@@ -27,6 +27,7 @@ pub struct ContentView<'a> {
     pub current_match: &'a mut usize,
     pub match_count: &'a mut usize,
     pub jump_to_match: &'a mut bool,
+    pub cache: &'a mut Option<ContentCache>,
 }
 
 fn wrapped(paragraph: Paragraph, wrap: bool) -> Paragraph {
@@ -152,15 +153,32 @@ pub fn render(
     let current_output = command.output_history.get(data_idx);
     let previous_output = prev_data_idx.and_then(|idx| command.output_history.get(idx));
 
-    let current_text = current_output.map_or("", |c| &c.output);
-    let previous_text = previous_output.map_or("", |c| &c.output);
+    let key = (
+        current_output.map(|c| c.time),
+        previous_output.map(|c| c.time),
+        view.diff_mode,
+    );
+    if view.cache.as_ref().is_none_or(|cache| cache.key != key) {
+        let current_text = current_output.map_or("", |c| &c.output);
+        let previous_text = previous_output.map_or("", |c| &c.output);
+        *view.cache = Some(ContentCache {
+            key,
+            lines: diffs::owned(diffs::render_diff(
+                &config.theme,
+                current_text,
+                previous_text,
+                view.diff_mode,
+            )),
+        });
+    }
+    let cached = view.cache.as_ref().map_or(&[][..], |cache| &cache.lines);
 
     let query = view.search.value();
     let current_style = p
         .search_match
         .add_modifier(Modifier::REVERSED | Modifier::BOLD);
     let (lines, match_rows) = highlight_lines(
-        diffs::render_diff(&config.theme, current_text, previous_text, view.diff_mode),
+        diffs::borrowed(cached),
         query,
         p.search_match,
         Some((*view.current_match, current_style)),
