@@ -42,6 +42,8 @@ pub enum AppMode {
         scroll_offset: u16,
         max_scroll: u16,
         scrollbar_state: ScrollbarState,
+        filter: Input,
+        filtering: bool,
     },
     Observe {
         active_id: PaneKey,
@@ -190,6 +192,8 @@ impl AppMode {
             scroll_offset: 0,
             max_scroll: 0,
             scrollbar_state: ScrollbarState::default(),
+            filter: Input::default(),
+            filtering: false,
         }
     }
 

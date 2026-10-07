@@ -1,7 +1,6 @@
 mod area;
 mod components;
 mod ext;
-pub mod formatting;
 mod search;
 
 pub use area::*;
