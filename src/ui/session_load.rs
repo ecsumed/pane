@@ -90,7 +90,7 @@ fn draw_preview(
     .areas(inner);
 
     let mut open_panes = Vec::new();
-    for (key, rect) in preview.pane_manager.get_pane_bounds(map) {
+    for (key, rect) in preview.pane_manager.layout(map, false) {
         let id = preview
             .pane_manager
             .pane_key_to_friendly_id(&key)

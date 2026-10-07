@@ -35,7 +35,17 @@ pub fn draw_ui(app: &mut App, frame: &mut Frame) {
         AppMode::Observe { .. } => {
             observe::draw(frame, main_area, &app.config, &app.tasks, &mut app.mode)
         }
-        _ => panes::draw(frame, main_area, &app.config, &app.pane_manager, &app.tasks),
+        _ => {
+            let collapse = app.config.theme.collapse_borders && app.config.zen;
+            app.pane_rects = app.pane_manager.layout(main_area, collapse);
+            panes::draw(
+                frame,
+                &app.config,
+                &app.pane_manager,
+                &app.pane_rects,
+                &app.tasks,
+            )
+        }
     }
 
     // Popups and overlays

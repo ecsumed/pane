@@ -13,17 +13,13 @@ mod node_info;
 
 pub fn draw(
     frame: &mut Frame,
-    area: Rect,
     config: &AppConfig,
     manager: &PaneManager,
+    rects: &[(PaneKey, Rect)],
     commands: &HashMap<PaneKey, Command>,
 ) {
-    let root_key = manager
-        .nodes
-        .iter()
-        .find(|(_, node)| node.parent.is_none())
-        .map(|(key, _)| key);
-    if let Some(key) = root_key {
-        node::draw_recursive(frame, area, config, manager, commands, key);
+    for &(key, area) in rects {
+        let is_active = key == manager.active_pane_id;
+        node::draw_pane(frame, area, config, is_active, commands.get(&key));
     }
 }

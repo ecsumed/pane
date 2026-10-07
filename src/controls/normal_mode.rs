@@ -55,19 +55,19 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
             Action::Cycle => app.pane_manager.cycle_panes(),
             Action::MoveUp => {
                 app.pane_manager
-                    .change_active(&CardinalDirection::Up, app.pane_area);
+                    .focus(CardinalDirection::Up, &app.pane_rects);
             }
             Action::MoveDown => {
                 app.pane_manager
-                    .change_active(&CardinalDirection::Down, app.pane_area);
+                    .focus(CardinalDirection::Down, &app.pane_rects);
             }
             Action::MoveLeft => {
                 app.pane_manager
-                    .change_active(&CardinalDirection::Left, app.pane_area);
+                    .focus(CardinalDirection::Left, &app.pane_rects);
             }
             Action::MoveRight => {
                 app.pane_manager
-                    .change_active(&CardinalDirection::Right, app.pane_area);
+                    .focus(CardinalDirection::Right, &app.pane_rects);
             }
             Action::KillPane => app.kill_active_pane(),
             Action::Confirm => {
@@ -150,17 +150,30 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
                     AppMode::new_display_type_select(app.tasks.get(&id).map(|c| c.display_type));
             }
             Action::PaneIncreaseVertical => {
-                app.pane_manager.resize_pane(&CardinalDirection::Right, 1);
+                app.pane_manager.resize_active(Direction::Vertical, true);
             }
             Action::PaneDecreaseVertical => {
-                app.pane_manager.resize_pane(&CardinalDirection::Left, -1);
+                app.pane_manager.resize_active(Direction::Vertical, false);
             }
             Action::PaneIncreaseHorizontal => {
-                app.pane_manager.resize_pane(&CardinalDirection::Down, 1);
+                app.pane_manager.resize_active(Direction::Horizontal, true);
             }
             Action::PaneDecreaseHorizontal => {
-                app.pane_manager.resize_pane(&CardinalDirection::Up, -1);
+                app.pane_manager.resize_active(Direction::Horizontal, false);
             }
+            Action::ResizeLeft => {
+                app.pane_manager.move_border(CardinalDirection::Left);
+            }
+            Action::ResizeRight => {
+                app.pane_manager.move_border(CardinalDirection::Right);
+            }
+            Action::ResizeUp => {
+                app.pane_manager.move_border(CardinalDirection::Up);
+            }
+            Action::ResizeDown => {
+                app.pane_manager.move_border(CardinalDirection::Down);
+            }
+            Action::EqualizePanes => app.pane_manager.equalize(),
             Action::EnterHelpMode => {
                 info!("Help mode");
                 app.mode = AppMode::new_help();

@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 use std::fmt;
 
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use slotmap::SlotMap;
 
+use super::navigation::neighbour;
 use super::node::{PaneKey, PaneNode};
 use super::node_data::{CardinalDirection, PaneNodeData};
 use crate::logging::{debug, info};
@@ -20,6 +21,20 @@ pub struct PaneManager {
     #[serde_as(as = "HashMap<PaneKeyAsString, _>")]
     pub pane_key_to_friendly_id: HashMap<PaneKey, usize>,
     pub id_counter: usize,
+
+    #[serde(skip)]
+    previous_active: Option<PaneKey>,
+}
+
+const SHARE_TOTAL: u32 = 1000;
+const RESIZE_STEP: u32 = 50;
+const MIN_SHARE: u32 = 50;
+
+fn axis(direction: CardinalDirection) -> Direction {
+    match direction {
+        CardinalDirection::Left | CardinalDirection::Right => Direction::Horizontal,
+        CardinalDirection::Up | CardinalDirection::Down => Direction::Vertical,
+    }
 }
 
 impl fmt::Display for PaneManager {
@@ -57,6 +72,7 @@ impl PaneManager {
             active_pane_id: root_key,
             pane_key_to_friendly_id,
             id_counter: id_counter + 1,
+            previous_active: None,
         }
     }
 
@@ -153,94 +169,95 @@ impl PaneManager {
     pub fn split_pane(&mut self, direction: Direction) -> bool {
         info!("Splitting pane {:?}", self.active_pane_id);
 
-        let Some(split_node) = self.nodes.get(self.active_pane_id) else {
+        let active_id = self.active_pane_id;
+        let Some(node) = self.nodes.get(active_id) else {
             return false;
         };
-        let active_id = self.active_pane_id;
-        let parent_key: Option<PaneKey> = split_node.parent;
+        let parent = node.parent;
+        let weight = node.weight;
 
-        let new_split_key = self.nodes.insert(PaneNode {
+        let split = self.nodes.insert(PaneNode {
             data: PaneNodeData::Split {
                 direction,
-                children: vec![active_id],
+                children: Vec::new(),
             },
-            parent: parent_key,
-            weight: split_node.weight,
+            parent,
+            weight,
         });
-
-        let new_single_key = self.nodes.insert(PaneNode {
+        let new_pane = self.nodes.insert(PaneNode {
             data: PaneNodeData::Single,
-            parent: Some(new_split_key),
+            parent: Some(split),
             weight: 1,
         });
 
-        if let Some(new_split_node) = self.nodes.get_mut(new_split_key) {
-            if let PaneNodeData::Split { children, .. } = &mut new_split_node.data {
-                children.push(new_single_key);
-            }
+        if let PaneNodeData::Split { children, .. } = &mut self.nodes[split].data {
+            children.extend([active_id, new_pane]);
+        }
+        let original = &mut self.nodes[active_id];
+        original.parent = Some(split);
+        original.weight = 1;
+
+        if let Some(parent) = parent {
+            self.replace_child(parent, active_id, split);
         }
 
-        let original_node = self.nodes.get_mut(active_id).unwrap();
-        original_node.parent = Some(new_split_key);
-        original_node.weight = 1;
-
-        if let Some(p_key) = parent_key {
-            let parent_node = self.nodes.get_mut(p_key).unwrap();
-            if let PaneNodeData::Split { children, .. } = &mut parent_node.data {
-                if let Some(pos) = children.iter().position(|&c| c == active_id) {
-                    children[pos] = new_split_key;
-                }
-            }
-        } else {
-            self.active_pane_id = new_split_key;
-        }
-
-        self.active_pane_id = new_single_key;
-
-        // Maintain our user-readable ids
+        self.focus_pane(new_pane);
         self.pane_key_to_friendly_id
-            .insert(new_single_key, self.id_counter);
+            .insert(new_pane, self.id_counter);
         self.id_counter += 1;
 
         debug!("{}", self);
-
         true
     }
 
-    pub fn cycle_panes(&mut self) {
-        info!("Cycling pane");
-
-        let pane_keys = self.get_all_pane_keys();
-
-        if pane_keys.is_empty() {
-            return;
+    fn focus_pane(&mut self, key: PaneKey) {
+        if key != self.active_pane_id {
+            self.previous_active = Some(self.active_pane_id);
+            self.active_pane_id = key;
         }
-
-        if let Some(pos) = pane_keys
-            .iter()
-            .position(|&p_key| p_key == self.active_pane_id)
-        {
-            let next_pos = (pos + 1) % pane_keys.len();
-
-            self.active_pane_id = pane_keys[next_pos];
-        } else {
-            self.active_pane_id = pane_keys[0];
-        }
-
-        debug!("{}", self);
     }
 
-    fn replace_child_in_parent(
-        nodes: &mut SlotMap<PaneKey, PaneNode>,
-        parent_id: PaneKey,
-        old_child_id: PaneKey,
-        new_child_id: PaneKey,
-    ) {
-        if let Some(parent_node) = nodes.get_mut(parent_id) {
-            if let PaneNodeData::Split { children, .. } = &mut parent_node.data {
-                if let Some(pos) = children.iter().position(|&c| c == old_child_id) {
-                    children[pos] = new_child_id;
-                }
+    pub fn cycle_panes(&mut self) {
+        let pane_keys = self.get_all_pane_keys();
+        let next = pane_keys
+            .iter()
+            .position(|&key| key == self.active_pane_id)
+            .map_or(0, |pos| (pos + 1) % pane_keys.len().max(1));
+        if let Some(&key) = pane_keys.get(next) {
+            self.focus_pane(key);
+        }
+    }
+
+    fn replace_child(&mut self, parent: PaneKey, old: PaneKey, new: PaneKey) {
+        if let Some(PaneNode {
+            data: PaneNodeData::Split { children, .. },
+            ..
+        }) = self.nodes.get_mut(parent)
+        {
+            if let Some(pos) = children.iter().position(|&c| c == old) {
+                children[pos] = new;
+            }
+        }
+    }
+
+    fn children(&self, key: PaneKey) -> &[PaneKey] {
+        match self.nodes.get(key).map(|n| &n.data) {
+            Some(PaneNodeData::Split { children, .. }) => children,
+            _ => &[],
+        }
+    }
+
+    fn edge_leaf(&self, mut key: PaneKey, first: bool) -> PaneKey {
+        loop {
+            let children = self.children(key);
+            let next = if first {
+                children.first()
+            } else {
+                children.last()
+            };
+            match next {
+                Some(&child) => key = child,
+                None => return key,
             }
         }
     }
@@ -249,300 +266,357 @@ impl PaneManager {
         info!("Killing pane {:?}", self.active_pane_id);
 
         let active_id = self.active_pane_id;
-        let Some(active_node) = self.nodes.get(active_id) else {
+        let Some(parent) = self.nodes.get(active_id).and_then(|n| n.parent) else {
+            info!("Can't kill last pane {:?}", active_id);
             return false;
         };
-        let Some(parent_id) = active_node.parent else {
-            info!("Can't kill last pane {:?}", self.active_pane_id);
-            return self.nodes.len() > 1;
+        let removed_weight = self.nodes[active_id].weight;
+
+        let PaneNodeData::Split { children, .. } = &mut self.nodes[parent].data else {
+            return false;
         };
+        let Some(index) = children.iter().position(|&c| c == active_id) else {
+            return false;
+        };
+        children.remove(index);
+        let neighbour_was_after = index < children.len();
+        let neighbour = children[index.min(children.len() - 1)];
+        let only_child = (children.len() == 1).then(|| children[0]);
 
-        // Store cloned copies to avoid borrow checker issues with mutable borrows.
-        let parent_id_clone = parent_id;
-        let grand_parent_id = self.nodes.get(parent_id_clone).and_then(|p| p.parent);
+        self.nodes[neighbour].weight += removed_weight;
 
-        // 1. Remove the active_id from the parent's children list.
-        let last_child_id_after_removal =
-            if let Some(parent_node) = self.nodes.get_mut(parent_id_clone) {
-                if let PaneNodeData::Split { children, .. } = &mut parent_node.data {
-                    children.retain(|&id| id != active_id);
-                    if children.len() == 1 {
-                        children.pop()
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            } else {
-                None
-            };
-
-        // 2. If a single child remains, promote it.
-        if let Some(promoted_child_id) = last_child_id_after_removal {
-            if let Some(promoted_child_node) = self.nodes.get_mut(promoted_child_id) {
-                promoted_child_node.parent = grand_parent_id;
+        if let Some(promoted) = only_child {
+            let grandparent = self.nodes[parent].parent;
+            let parent_weight = self.nodes[parent].weight;
+            let node = &mut self.nodes[promoted];
+            node.parent = grandparent;
+            node.weight = parent_weight;
+            if let Some(grandparent) = grandparent {
+                self.replace_child(grandparent, parent, promoted);
             }
-
-            // Replace the old parent with the promoted child in the grandparent's list.
-            if let Some(gp_id) = grand_parent_id {
-                PaneManager::replace_child_in_parent(
-                    &mut self.nodes,
-                    gp_id,
-                    parent_id_clone,
-                    promoted_child_id,
-                );
-            }
-
-            // The parent split node is no longer needed.
-            self.nodes.remove(parent_id_clone);
+            self.nodes.remove(parent);
         }
 
-        // 3. Remove the active pane itself.
         self.nodes.remove(active_id);
-
-        // 4. Update the active pane.
-        self.active_pane_id = self.find_next_active();
+        self.pane_key_to_friendly_id.remove(&active_id);
+        self.active_pane_id = self.edge_leaf(neighbour, neighbour_was_after);
+        self.previous_active = None;
 
         debug!("{}", self);
         true
     }
 
-    fn find_next_active(&self) -> PaneKey {
-        let keys = self.get_all_pane_keys();
-        keys[keys.len() - 1]
+    fn levels_on_axis(&self, direction: Direction) -> Vec<(PaneKey, usize, usize)> {
+        let mut levels = Vec::new();
+        let mut current = self.active_pane_id;
+        while let Some(parent) = self.nodes.get(current).and_then(|n| n.parent) {
+            if let PaneNodeData::Split {
+                direction: split, ..
+            } = &self.nodes[parent].data
+            {
+                let children = self.children(parent);
+                if *split == direction {
+                    if let Some(index) = children.iter().position(|&c| c == current) {
+                        levels.push((parent, index, children.len()));
+                    }
+                }
+            }
+            current = parent;
+        }
+        levels
     }
 
-    pub fn resize_pane(
-        &mut self,
-        // We only need the direction here.
-        direction: &CardinalDirection,
-        // The amount should be passed as signed (i8/i16) as before
-        amount: i8,
-    ) -> bool {
-        let active_id = self.active_pane_id;
-        let mut current_id = active_id;
-
-        // We iterate up the tree, checking each parent level.
-        loop {
-            let Some(parent_id) = self.nodes.get(current_id).and_then(|n| n.parent) else {
-                return false; // Reached the root, cannot resize further in this direction.
-            };
-
-            // Check if the current parent's split direction matches the resize direction.
-            let parent_node_data = self
-                .nodes
-                .get(parent_id)
-                .expect("Parent exists")
-                .data
-                .clone();
-            let (split_direction, children) = match parent_node_data {
-                PaneNodeData::Split {
-                    direction,
-                    children,
-                } => (direction, children),
-                _ => return false, // Parent must be a split.
-            };
-
-            let is_valid_split = matches!(
-                (direction, &split_direction),
-                (
-                    CardinalDirection::Left | CardinalDirection::Right,
-                    Direction::Vertical
-                ) | (
-                    CardinalDirection::Up | CardinalDirection::Down,
-                    Direction::Horizontal
-                )
-            );
-
-            if is_valid_split {
-                // Found the correct level to resize. Apply changes here.
-
-                // Determine the sibling index using your logic
-                let active_index = children
-                    .iter()
-                    .position(|&id| id == current_id)
-                    .expect("Active pane in parent's children");
-
-                let sibling_index = if active_index == 0 {
-                    1
-                } else {
-                    active_index - 1
-                };
-
-                let Some(&sibling_id) = children.get(sibling_index) else {
-                    return false;
-                };
-
-                // Determine if we increase or decrease based on user input
-                let final_amount = amount as i16;
-
-                // Apply the updates with clamping. The logic is now much cleaner:
-
-                let current_weight_active = self.nodes[current_id].weight as i16;
-                let current_weight_sibling = self.nodes[sibling_id].weight as i16;
-
-                let new_active_weight = (current_weight_active + final_amount).max(1) as u16;
-                let new_sibling_weight = (current_weight_sibling - final_amount).max(1) as u16;
-
-                // Apply updates only if the weights actually change
-                if new_active_weight != self.nodes[current_id].weight
-                    || new_sibling_weight != self.nodes[sibling_id].weight
-                {
-                    self.nodes.get_mut(current_id).unwrap().weight = new_active_weight;
-                    self.nodes.get_mut(sibling_id).unwrap().weight = new_sibling_weight;
-                    return true;
-                } else {
-                    return false; // Weights didn't change (hit a boundary)
-                }
+    fn normalize(&mut self, parent: PaneKey) {
+        let children = self.children(parent).to_vec();
+        let total: u32 = children.iter().map(|&c| self.nodes[c].weight as u32).sum();
+        if total == SHARE_TOTAL || total == 0 {
+            return;
+        }
+        let mut assigned = 0;
+        for (i, &child) in children.iter().enumerate() {
+            let share = if i + 1 == children.len() {
+                SHARE_TOTAL - assigned
             } else {
-                // This is not the right level to apply the change (e.g., trying to resize horizontally in a horizontal split).
-                // Continue up the tree to the next parent level.
-                current_id = parent_id;
-                continue;
+                self.nodes[child].weight as u32 * SHARE_TOTAL / total
+            };
+            assigned += share;
+            self.nodes[child].weight = share as u16;
+        }
+    }
+
+    fn transfer(&mut self, parent: PaneKey, from: usize, to: usize) -> bool {
+        self.normalize(parent);
+        let children = self.children(parent);
+        let (from, to) = (children[from], children[to]);
+        let available = (self.nodes[from].weight as u32).saturating_sub(MIN_SHARE);
+        let amount = available.min(RESIZE_STEP) as u16;
+        if amount == 0 {
+            return false;
+        }
+        self.nodes[from].weight -= amount;
+        self.nodes[to].weight += amount;
+        true
+    }
+
+    pub fn resize_active(&mut self, direction: Direction, grow: bool) -> bool {
+        let Some(&(parent, index, len)) = self
+            .levels_on_axis(direction)
+            .iter()
+            .find(|(_, _, len)| *len > 1)
+        else {
+            return false;
+        };
+        let other = if index + 1 < len {
+            index + 1
+        } else {
+            index - 1
+        };
+        if grow {
+            self.transfer(parent, other, index)
+        } else {
+            self.transfer(parent, index, other)
+        }
+    }
+
+    pub fn move_border(&mut self, direction: CardinalDirection) -> bool {
+        let forward = matches!(
+            direction,
+            CardinalDirection::Right | CardinalDirection::Down
+        );
+        let levels = self.levels_on_axis(axis(direction));
+
+        let ahead = |&&(_, index, len): &&(PaneKey, usize, usize)| {
+            if forward {
+                index + 1 < len
+            } else {
+                index > 0
+            }
+        };
+        let behind = |&&(_, index, len): &&(PaneKey, usize, usize)| {
+            if forward {
+                index > 0
+            } else {
+                index + 1 < len
+            }
+        };
+        let step = |index: usize| if forward { index + 1 } else { index - 1 };
+        let back = |index: usize| if forward { index - 1 } else { index + 1 };
+
+        if let Some(&(parent, index, _)) = levels.iter().find(ahead) {
+            return self.transfer(parent, step(index), index);
+        }
+        if let Some(&(parent, index, _)) = levels.iter().find(behind) {
+            return self.transfer(parent, index, back(index));
+        }
+        false
+    }
+
+    pub fn equalize(&mut self) {
+        let splits: Vec<PaneKey> = self
+            .nodes
+            .iter()
+            .filter(|(_, n)| matches!(n.data, PaneNodeData::Split { .. }))
+            .map(|(key, _)| key)
+            .collect();
+        for split in splits {
+            for child in self.children(split).to_vec() {
+                self.nodes[child].weight = 1;
             }
         }
     }
 
-    pub fn get_pane_bounds(&self, total_size: Rect) -> BTreeMap<PaneKey, Rect> {
-        let mut bounds_map = BTreeMap::new();
-        // Assuming the root is the only node with no parent
-        if let Some(root_key) = self
-            .nodes
-            .keys()
-            .find(|&key| self.nodes[key].parent.is_none())
-        {
-            Self::calculate_bounds(&self.nodes, root_key, total_size, &mut bounds_map);
+    pub fn layout(&self, area: Rect, collapse: bool) -> Vec<(PaneKey, Rect)> {
+        let mut rects = Vec::new();
+        if let Some(root) = self.find_root() {
+            self.layout_node(root, area, collapse, &mut rects);
         }
-        bounds_map
+        rects
     }
 
-    fn calculate_bounds(
-        nodes: &SlotMap<PaneKey, PaneNode>,
-        current_key: PaneKey,
-        rect: Rect,
-        bounds_map: &mut BTreeMap<PaneKey, Rect>,
+    fn layout_node(
+        &self,
+        key: PaneKey,
+        area: Rect,
+        collapse: bool,
+        rects: &mut Vec<(PaneKey, Rect)>,
     ) {
-        let Some(node) = nodes.get(current_key) else {
+        let Some(node) = self.nodes.get(key) else {
+            return;
+        };
+        let PaneNodeData::Split {
+            direction,
+            children,
+        } = &node.data
+        else {
+            rects.push((key, area));
             return;
         };
 
-        match &node.data {
-            PaneNodeData::Single => {
-                bounds_map.insert(current_key, rect);
-            }
-            PaneNodeData::Split {
-                direction,
-                children,
-            } => {
-                let total_weight: u16 = children
-                    .iter()
-                    .filter_map(|&key| nodes.get(key))
-                    .map(|n| n.weight)
-                    .sum();
+        let total: u32 = children.iter().map(|&c| self.nodes[c].weight as u32).sum();
+        let constraints = children
+            .iter()
+            .map(|&c| Constraint::Ratio(self.nodes[c].weight as u32, total.max(1)));
+        let chunks = Layout::default()
+            .direction(*direction)
+            .constraints(constraints)
+            .spacing(if collapse { -1 } else { 0 })
+            .split(area);
 
-                let constraints: Vec<Constraint> = if total_weight > 0 {
-                    children
-                        .iter()
-                        .map(|&key| {
-                            let child_node = nodes.get(key).expect("Child pane not found");
-                            Constraint::Ratio(child_node.weight as u32, total_weight as u32)
-                        })
-                        .collect()
-                } else {
-                    // All children have a weight of 0, distribute evenly
-                    let num_children = children.len() as u32;
-                    if num_children == 0 {
-                        return;
-                    }
-                    (0..num_children)
-                        .map(|_| Constraint::Ratio(1, num_children))
-                        .collect()
-                };
-
-                let direction = match direction {
-                    Direction::Vertical => ratatui::layout::Direction::Vertical,
-                    Direction::Horizontal => ratatui::layout::Direction::Horizontal,
-                };
-
-                let chunks = Layout::default()
-                    .direction(direction)
-                    .constraints(constraints)
-                    .split(rect);
-
-                for (i, &child_key) in children.iter().enumerate() {
-                    if let Some(&child_rect) = chunks.get(i) {
-                        Self::calculate_bounds(nodes, child_key, child_rect, bounds_map);
-                    }
-                }
-            }
-        }
-    }
-    pub fn change_active(&mut self, direction: &CardinalDirection, total_size: Rect) -> bool {
-        let active_id = self.active_pane_id;
-        // Calculate all bounds (you might want to cache this in your App struct)
-        let bounds_map = self.get_pane_bounds(total_size);
-
-        debug!("{:?}", bounds_map);
-
-        let Some(active_bounds) = bounds_map.get(&active_id) else {
-            return false;
-        };
-
-        let active_center = (
-            active_bounds.x as f32 + active_bounds.width as f32 / 2.0,
-            active_bounds.y as f32 + active_bounds.height as f32 / 2.0,
-        );
-
-        let next_active_id =
-            self.find_next_pane_id_center_point(direction, active_id, active_center, &bounds_map);
-
-        if let Some(next_id) = next_active_id {
-            self.active_pane_id = next_id;
-            true
-        } else {
-            false
+        for (&child, &chunk) in children.iter().zip(chunks.iter()) {
+            self.layout_node(child, chunk, collapse, rects);
         }
     }
 
-    fn find_next_pane_id_center_point(
-        &self,
-        direction: &CardinalDirection,
-        active_id: PaneKey,
-        active_center: (f32, f32),
-        bounds_map: &BTreeMap<PaneKey, Rect>,
-    ) -> Option<PaneKey> {
-        let mut best_candidate: Option<(PaneKey, f32)> = None; // (Key, distance_squared)
-
-        for (&candidate_key, &candidate_bounds) in bounds_map.iter() {
-            if candidate_key == active_id {
-                continue;
+    pub fn focus(&mut self, direction: CardinalDirection, rects: &[(PaneKey, Rect)]) -> bool {
+        match neighbour(rects, self.active_pane_id, direction, self.previous_active) {
+            Some(key) => {
+                self.focus_pane(key);
+                true
             }
+            None => false,
+        }
+    }
+}
 
-            let candidate_center = (
-                candidate_bounds.x as f32 + candidate_bounds.width as f32 / 2.0,
-                candidate_bounds.y as f32 + candidate_bounds.height as f32 / 2.0,
-            );
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-            let is_in_direction = match direction {
-                CardinalDirection::Up => candidate_center.1 < active_center.1,
-                CardinalDirection::Down => candidate_center.1 > active_center.1,
-                CardinalDirection::Left => candidate_center.0 < active_center.0,
-                CardinalDirection::Right => candidate_center.0 > active_center.0,
-            };
+    const AREA: Rect = Rect {
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 40,
+    };
 
-            if is_in_direction {
-                // Calculate Euclidean distance squared (saves a sqrt call)
-                let dx = candidate_center.0 - active_center.0;
-                let dy = candidate_center.1 - active_center.1;
-                let distance_sq = dx * dx + dy * dy;
+    fn rect_of(manager: &PaneManager, key: PaneKey) -> Rect {
+        manager
+            .layout(AREA, false)
+            .into_iter()
+            .find(|(k, _)| *k == key)
+            .unwrap()
+            .1
+    }
 
-                if best_candidate.is_none() || distance_sq < best_candidate.unwrap().1 {
-                    best_candidate = Some((candidate_key, distance_sq));
-                }
-            }
+    fn side_by_side() -> (PaneManager, PaneKey, PaneKey) {
+        let mut manager = PaneManager::new();
+        let left = manager.active_pane_id;
+        manager.split_pane(Direction::Horizontal);
+        let right = manager.active_pane_id;
+        (manager, left, right)
+    }
+
+    #[test]
+    fn test_resizing_moves_in_even_steps_and_stops_at_the_minimum() {
+        let (mut manager, _, right) = side_by_side();
+        let mut widths = vec![rect_of(&manager, right).width];
+        while manager.resize_active(Direction::Horizontal, true) {
+            widths.push(rect_of(&manager, right).width);
         }
 
-        best_candidate.map(|(key, _)| key)
+        assert_eq!(widths[..4], [50, 55, 60, 65]);
+        assert_eq!(*widths.last().unwrap(), 95);
+        assert!(widths.windows(2).all(|w| w[1] - w[0] == 5), "{widths:?}");
+
+        for _ in 0..3 {
+            manager.resize_active(Direction::Horizontal, false);
+        }
+        assert_eq!(rect_of(&manager, right).width, 80);
+    }
+
+    #[test]
+    fn test_old_integer_weights_still_resize_smoothly() {
+        let (mut manager, left, right) = side_by_side();
+        manager.nodes[left].weight = 1;
+        manager.nodes[right].weight = 3;
+
+        assert_eq!(rect_of(&manager, right).width, 75);
+        manager.resize_active(Direction::Horizontal, true);
+        assert_eq!(rect_of(&manager, right).width, 80);
+    }
+
+    #[test]
+    fn test_shift_arrows_move_the_nearest_border() {
+        let (mut manager, left, right) = side_by_side();
+
+        manager.move_border(CardinalDirection::Left);
+        assert_eq!(rect_of(&manager, right).width, 55);
+
+        manager.move_border(CardinalDirection::Right);
+        manager.move_border(CardinalDirection::Right);
+        assert_eq!(rect_of(&manager, right).width, 45);
+
+        manager.focus_pane(left);
+        manager.move_border(CardinalDirection::Right);
+        assert_eq!(rect_of(&manager, left).width, 60);
+        assert!(!manager.move_border(CardinalDirection::Up));
+    }
+
+    #[test]
+    fn test_border_moves_find_the_split_that_owns_the_border() {
+        let (mut manager, left, right) = side_by_side();
+        manager.split_pane(Direction::Vertical);
+        let bottom_right = manager.active_pane_id;
+
+        manager.move_border(CardinalDirection::Left);
+        assert_eq!(rect_of(&manager, left).width, 45);
+        assert_eq!(rect_of(&manager, right).width, 55);
+        assert_eq!(rect_of(&manager, bottom_right).width, 55);
+
+        manager.move_border(CardinalDirection::Up);
+        assert_eq!(rect_of(&manager, bottom_right).height, 22);
+    }
+
+    #[test]
+    fn test_equalize_resets_every_split() {
+        let (mut manager, _, right) = side_by_side();
+        manager.resize_active(Direction::Horizontal, true);
+        manager.resize_active(Direction::Horizontal, true);
+        manager.equalize();
+        assert_eq!(rect_of(&manager, right).width, 50);
+    }
+
+    #[test]
+    fn test_focus_moves_to_adjacent_pane_and_back() {
+        let (mut manager, left, top_right) = side_by_side();
+        manager.split_pane(Direction::Vertical);
+        let bottom_right = manager.active_pane_id;
+        let rects = manager.layout(AREA, false);
+
+        assert!(manager.focus(CardinalDirection::Left, &rects));
+        assert_eq!(manager.active_pane_id, left);
+        assert!(manager.focus(CardinalDirection::Right, &rects));
+        assert_eq!(manager.active_pane_id, bottom_right);
+
+        assert!(manager.focus(CardinalDirection::Up, &rects));
+        assert_eq!(manager.active_pane_id, top_right);
+        assert!(!manager.focus(CardinalDirection::Up, &rects));
+    }
+
+    #[test]
+    fn test_closing_a_pane_gives_space_and_focus_to_its_neighbour() {
+        let mut manager = PaneManager::new();
+        let first = manager.active_pane_id;
+        manager.split_pane(Direction::Horizontal);
+        let second = manager.active_pane_id;
+        manager.split_pane(Direction::Vertical);
+        let third = manager.active_pane_id;
+        for _ in 0..2 {
+            manager.focus_pane(first);
+            manager.resize_active(Direction::Horizontal, true);
+        }
+        assert_eq!(rect_of(&manager, first).width, 60);
+
+        manager.focus_pane(third);
+        assert!(manager.kill_pane());
+        assert_eq!(manager.active_pane_id, second);
+        assert_eq!(rect_of(&manager, second).width, 40);
+        assert_eq!(rect_of(&manager, second).height, 40);
+        assert!(!manager.pane_key_to_friendly_id.contains_key(&third));
+
+        assert!(manager.kill_pane());
+        assert_eq!(manager.active_pane_id, first);
+        assert_eq!(rect_of(&manager, first), AREA);
+        assert!(!manager.kill_pane());
     }
 }

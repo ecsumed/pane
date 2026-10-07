@@ -45,7 +45,7 @@ pub struct App {
     pub app_control_tx: mpsc::UnboundedSender<AppControl>,
     pub app_control_rx: mpsc::UnboundedReceiver<AppControl>,
     pub config: AppConfig,
-    pub pane_area: Rect,
+    pub pane_rects: Vec<(PaneKey, Rect)>,
     pub observe_diff_mode: DiffMode,
     pub notice: Option<Notice>,
 }
@@ -76,7 +76,7 @@ impl App {
             app_control_tx,
             app_control_rx,
             config,
-            pane_area: Rect::new(0, 0, 0, 0),
+            pane_rects: Vec::new(),
             observe_diff_mode: DiffMode::default(),
             notice: None,
         }
@@ -93,11 +93,7 @@ impl App {
 
         loop {
             if needs_redraw {
-                terminal.draw(|frame| {
-                    self.pane_area = frame.area();
-
-                    draw_ui(self, frame);
-                })?;
+                terminal.draw(|frame| draw_ui(self, frame))?;
             }
 
             needs_redraw = tokio::select! {
@@ -288,7 +284,6 @@ mod tests {
     use super::*;
     use crate::command::{CommandControl, CommandState};
     use crate::config::AppConfig;
-    use crate::pane::CardinalDirection;
     use crate::ui;
     use ratatui::backend::TestBackend;
     use ratatui::layout::Direction;
@@ -500,7 +495,8 @@ mod tests {
 
         // 5. Split horizontally and increase size
         app.pane_manager.split_pane(Direction::Horizontal);
-        app.pane_manager.resize_pane(&CardinalDirection::Up, 2);
+        app.pane_manager.resize_active(Direction::Horizontal, true);
+        app.pane_manager.resize_active(Direction::Horizontal, true);
 
         // 6. Set command "ls"
         _ = app
@@ -821,6 +817,45 @@ mod tests {
 
         assert_eq!(app.tasks[&root_pane].output_history.len(), 5);
         cleanup(app, root_pane);
+    }
+
+    #[tokio::test]
+    async fn test_pane_keys_move_focus_and_borders_using_the_drawn_layout() {
+        use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
+
+        let (mut app, left) = mock_app();
+        app.pane_manager.split_pane(Direction::Horizontal);
+        let right = app.pane_manager.active_pane_id;
+        let mut terminal = mock_terminal();
+        let width_of = |app: &App, key: PaneKey| {
+            app.pane_rects
+                .iter()
+                .find(|(k, _)| *k == key)
+                .unwrap()
+                .1
+                .width
+        };
+        let press = |code, modifiers| Event::Key(KeyEvent::new(code, modifiers));
+
+        render_terminal(&mut terminal, &mut app);
+        let start = width_of(&app, right);
+
+        controls::handle_event(&mut app, press(KeyCode::Left, KeyModifiers::NONE))
+            .await
+            .unwrap();
+        assert_eq!(app.pane_manager.active_pane_id, left);
+
+        controls::handle_event(&mut app, press(KeyCode::Right, KeyModifiers::SHIFT))
+            .await
+            .unwrap();
+        render_terminal(&mut terminal, &mut app);
+        assert!(width_of(&app, right) < start);
+
+        controls::handle_event(&mut app, press(KeyCode::Char('='), KeyModifiers::NONE))
+            .await
+            .unwrap();
+        render_terminal(&mut terminal, &mut app);
+        assert_eq!(width_of(&app, right), start);
     }
 
     #[tokio::test]
