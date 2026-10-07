@@ -8,7 +8,6 @@ use ratatui::layout::Rect;
 use ratatui::prelude::Backend;
 use ratatui::Terminal;
 use tokio::sync::mpsc::{self};
-use tokio::time::interval;
 
 use crate::command::{Command, CommandControl, CommandEvent, CommandSerializableState};
 use crate::config::AppConfig;
@@ -92,7 +91,6 @@ impl App {
         B: Backend,
         B::Error: std::error::Error + Send + Sync + 'static,
     {
-        let mut tick_interval = interval(Duration::from_millis(250));
         let mut events = EventStream::new();
         let mut dirty = true;
         let mut urgent = true;
@@ -106,6 +104,7 @@ impl App {
                 urgent = false;
             }
             let next_frame = tokio::time::Instant::from_std(last_draw + FRAME_INTERVAL);
+            let notice_expiry = self.notice_expiry().map(tokio::time::Instant::from_std);
 
             tokio::select! {
                 Some((id, event)) = self.output_rx.recv() => {
@@ -127,7 +126,7 @@ impl App {
                     urgent = true;
                 },
                 _ = tokio::time::sleep_until(next_frame), if dirty => {},
-                _ = tick_interval.tick() => {
+                _ = tokio::time::sleep_until(notice_expiry.unwrap_or(next_frame)), if notice_expiry.is_some() => {
                     dirty |= self.expire_notice();
                 },
             }
@@ -178,6 +177,12 @@ impl App {
             is_error,
             shown_at: Instant::now(),
         });
+    }
+
+    fn notice_expiry(&self) -> Option<Instant> {
+        self.notice
+            .as_ref()
+            .map(|notice| notice.shown_at + NOTICE_DURATION)
     }
 
     pub fn current_notice(&self) -> Option<&Notice> {
@@ -819,7 +824,18 @@ mod tests {
     }
 
     #[test]
-    fn test_tick_redraws_only_to_clear_an_expired_notice() {
+    fn test_loop_only_needs_waking_while_a_notice_is_shown() {
+        let (mut app, _) = mock_app();
+        assert_eq!(app.notice_expiry(), None);
+
+        app.notify("hello", false);
+        let expiry = app.notice_expiry().unwrap();
+        assert!(expiry > Instant::now());
+        assert!(expiry <= Instant::now() + NOTICE_DURATION);
+    }
+
+    #[test]
+    fn test_expired_notice_triggers_one_redraw_to_clear_it() {
         let (mut app, _) = mock_app();
         assert!(!app.expire_notice());
 
