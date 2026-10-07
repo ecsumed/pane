@@ -2,6 +2,7 @@ use std::io;
 
 use crokey::crossterm::event::{self, Event};
 use crokey::KeyCombination;
+use tui_input::backend::crossterm::EventHandler;
 
 use crate::app::App;
 use crate::controls::actions::Action;
@@ -14,6 +15,8 @@ pub async fn handle_help_keys(app: &mut App, event: Event) -> io::Result<()> {
     let AppMode::Help {
         scroll_offset,
         max_scroll,
+        filter,
+        filtering,
         ..
     } = &mut app.mode
     else {
@@ -41,8 +44,34 @@ pub async fn handle_help_keys(app: &mut App, event: Event) -> io::Result<()> {
                 .and_then(|map| map.get(&key_comb))
         });
 
+    if *filtering {
+        match action {
+            Some(Action::Confirm) => *filtering = false,
+            Some(Action::Escape) => {
+                filter.reset();
+                *filtering = false;
+            }
+            _ => {
+                if filter
+                    .handle_event(&event)
+                    .is_some_and(|change| change.value)
+                {
+                    *scroll_offset = 0;
+                }
+            }
+        }
+        return Ok(());
+    }
+
     if let Some(act) = action {
         match act {
+            Action::Search => *filtering = true,
+
+            Action::Escape if !filter.value().is_empty() => {
+                filter.reset();
+                *scroll_offset = 0;
+            }
+
             Action::EnterHelpMode | Action::Escape | Action::Quit => {
                 app.mode = AppMode::Normal;
             }
@@ -91,11 +120,16 @@ mod tests {
     #[tokio::test]
     async fn test_g_goes_to_top_and_shift_g_to_bottom() {
         let mut app = App::new(AppConfig::default(), Vec::new());
-        app.mode = AppMode::Help {
-            scroll_offset: 5,
-            max_scroll: 40,
-            scrollbar_state: Default::default(),
-        };
+        app.mode = AppMode::new_help();
+        if let AppMode::Help {
+            scroll_offset,
+            max_scroll,
+            ..
+        } = &mut app.mode
+        {
+            *scroll_offset = 5;
+            *max_scroll = 40;
+        }
 
         press(&mut app, KeyCode::Char('G'), KeyModifiers::SHIFT).await;
         assert_eq!(offset(&app), 40);

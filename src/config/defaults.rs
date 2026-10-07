@@ -107,6 +107,7 @@ pub fn default_keybindings() -> HashMap<KeyMode, HashMap<KeyCombination, Action>
     map.insert(
         KeyMode::Help,
         HashMap::from([
+            (key!('/'), Action::Search),
             (key!(g), Action::ScrollTop),
             (key!(shift - g), Action::ScrollBottom),
         ]),
