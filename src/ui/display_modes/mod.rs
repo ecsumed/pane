@@ -14,6 +14,7 @@ mod sparkline;
 pub mod types;
 mod utils;
 
+pub use diff::refresh_view;
 pub use types::DisplayType;
 
 pub fn render_command_output(

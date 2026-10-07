@@ -12,4 +12,4 @@ mod session_save;
 mod status_line;
 pub mod utils;
 
-pub use self::display_modes::DisplayType;
+pub use self::display_modes::{refresh_view, DisplayType};

@@ -158,6 +158,7 @@ impl App {
             AppControl::SetDisplay(id, display) => {
                 if let Some(command) = self.tasks.get_mut(&id) {
                     command.update_display(display);
+                    crate::ui::refresh_view(&self.config.theme, command);
                 }
             }
         }
@@ -206,6 +207,7 @@ impl App {
             .is_some_and(|last| last.output != out.output);
         command.state = crate::command::CommandState::Idle;
         command.record_output(out, self.config.max_history);
+        crate::ui::refresh_view(&self.config.theme, command);
 
         if failed && self.config.err_exit {
             info!("Exiting because err_exit was set.");
@@ -290,6 +292,9 @@ impl App {
 
         self.pane_manager = pane_manager;
         self.tasks = running_tasks;
+        for command in self.tasks.values_mut() {
+            crate::ui::refresh_view(&self.config.theme, command);
+        }
 
         Ok(())
     }
@@ -913,6 +918,39 @@ mod tests {
         let after_right = press('>').await;
         assert_eq!(after_right, start, "> should move it back right");
         assert!(press('>').await > start);
+    }
+
+    fn view_text(app: &App, id: PaneKey) -> Option<String> {
+        app.tasks[&id].diff_view.as_ref().map(|lines| {
+            lines
+                .iter()
+                .flat_map(|l| l.spans.iter().map(|s| s.content.to_string()))
+                .collect()
+        })
+    }
+
+    #[tokio::test]
+    async fn test_diff_view_is_computed_once_per_run_and_reused_when_drawing() {
+        let (mut app, root_pane) = mock_app();
+        app.set_command(root_pane, "sleep 5".to_string()).await;
+        app.handle_app_control(AppControl::SetDisplay(root_pane, DisplayType::DiffWord))
+            .await;
+        assert_eq!(view_text(&app, root_pane).as_deref(), Some(""));
+
+        app.handle_command_event(root_pane, output("pods: 3", 0));
+        app.handle_command_event(root_pane, output("pods: 4", 0));
+        assert_eq!(view_text(&app, root_pane).as_deref(), Some("pods: 4"));
+
+        app.tasks.get_mut(&root_pane).unwrap().diff_view =
+            Some(vec![ratatui::text::Line::from("CACHED-VIEW")]);
+        let mut terminal = mock_terminal();
+        render_terminal(&mut terminal, &mut app);
+        assert!(terminal.backend().to_string().contains("CACHED-VIEW"));
+
+        app.handle_app_control(AppControl::SetDisplay(root_pane, DisplayType::RawText))
+            .await;
+        assert_eq!(view_text(&app, root_pane), None);
+        cleanup(app, root_pane);
     }
 
     #[tokio::test]

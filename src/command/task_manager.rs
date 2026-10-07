@@ -44,6 +44,7 @@ impl Command {
             display_type: display,
             task_handle: Some(task_handle),
             control_tx,
+            diff_view: None,
         }
     }
 
@@ -91,6 +92,7 @@ impl Command {
             display_type: state.display_type,
             task_handle: Some(task_handle),
             control_tx,
+            diff_view: None,
         }
     }
 
