@@ -155,12 +155,6 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
             Action::ShrinkHeight => {
                 app.pane_manager.resize_active(Direction::Vertical, false);
             }
-            Action::GrowWidth => {
-                app.pane_manager.resize_active(Direction::Horizontal, true);
-            }
-            Action::ShrinkWidth => {
-                app.pane_manager.resize_active(Direction::Horizontal, false);
-            }
             Action::ResizeLeft => {
                 app.pane_manager.move_border(CardinalDirection::Left);
             }
