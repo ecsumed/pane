@@ -1,67 +1,74 @@
-use ratatui::prelude::{Frame, Rect};
-use ratatui::style::{Modifier, Style};
-use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Widget};
+use ratatui::prelude::Frame;
+use ratatui::text::{Line, Span};
+use ratatui::widgets::ListItem;
 
 use crate::mode::AppMode;
+use crate::ui::picker::{self, PickerStyle, Prompt};
 use crate::App;
 
+const SUGGESTION_ROWS: u16 = 10;
+
 pub fn draw_input_popup(frame: &mut Frame, app: &mut App) {
-    if let AppMode::CmdEdit {
+    let AppMode::CmdEdit {
         input,
         state,
         suggestions,
         ..
-    } = &mut app.mode
-    {
-        let frame_area = frame.area();
-        let percent_x = 60;
+    } = &app.mode
+    else {
+        return;
+    };
+    let s = PickerStyle::from_palette(&app.config.theme.palette);
 
-        let input_area_width = frame_area.width * percent_x / 100;
-        let input_area_x = (frame_area.width.saturating_sub(input_area_width)) / 2;
-        let input_area_y = (frame_area.height.saturating_sub(3)) / 2;
+    let pane = app
+        .pane_manager
+        .pane_key_to_friendly_id(&app.pane_manager.active_pane_id)
+        .map_or(String::new(), |id| format!(" for pane {id}"));
+    let title = format!("Command{pane}");
 
-        let input_area =
-            Rect::new(input_area_x, input_area_y, input_area_width, 3).intersection(frame_area);
+    let typed = input.value();
+    let rows: Vec<ListItem> = suggestions
+        .iter()
+        .map(|suggestion| {
+            let (matched, rest) = match suggestion.strip_prefix(typed) {
+                Some(rest) => (typed, rest),
+                None => ("", suggestion.as_str()),
+            };
+            ListItem::new(Line::from(vec![
+                Span::styled(matched.to_string(), s.accent),
+                Span::styled(rest.to_string(), s.text),
+            ]))
+        })
+        .collect();
 
-        Clear.render(input_area, frame.buffer_mut());
+    let empty_message = if typed.is_empty() {
+        "Type a command. Matches from your shell history appear here."
+    } else {
+        "No matches in shell history. Enter runs it as typed."
+    };
 
-        let num_suggestions = suggestions.len() as u16;
-        let suggestions_height = num_suggestions + if num_suggestions > 0 { 1 } else { 0 };
-
-        let suggestions_area = Rect::new(
-            input_area.x,
-            input_area.bottom(),
-            input_area.width,
-            suggestions_height,
-        )
-        .intersection(frame_area);
-
-        Clear.render(suggestions_area, frame.buffer_mut());
-
-        let input_widget = Paragraph::new(input.value()).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Enter Command"),
-        );
-        frame.render_widget(input_widget, input_area);
-
-        let cursor_x = input_area.x + 1 + input.cursor() as u16;
-        let cursor_y = input_area.y + 1;
-        frame.set_cursor_position((cursor_x, cursor_y));
-
-        if !suggestions.is_empty() && suggestions_area.height > 0 {
-            let list_items: Vec<ListItem> = suggestions
-                .iter()
-                .map(|s| ListItem::new(s.as_str()))
-                .collect();
-
-            let suggestions_list = List::new(list_items)
-                .block(Block::default().borders(Borders::LEFT | Borders::RIGHT | Borders::BOTTOM))
-                .highlight_style(Style::default().add_modifier(Modifier::REVERSED));
-
-            frame.render_stateful_widget(suggestions_list, suggestions_area, state);
-        }
-    }
+    let area = picker::popup_area(frame.area(), 100, SUGGESTION_ROWS);
+    let prompt = Prompt {
+        symbol: "$",
+        input,
+        focused: true,
+        placeholder: "",
+    };
+    let areas = picker::draw_frame(frame, area, &s, &title, prompt, None);
+    picker::draw_list(frame, areas.list, &s, rows, state.selected(), empty_message);
+    picker::draw_footer(
+        frame,
+        areas.footer,
+        picker::hints(
+            &s,
+            &[
+                ("enter", "run"),
+                ("↑↓", "pick from history"),
+                ("tab", "complete"),
+                ("esc", "cancel"),
+            ],
+        ),
+    );
 }
 
 #[cfg(test)]
@@ -74,6 +81,32 @@ mod tests {
     use super::*;
     use crate::config::AppConfig;
     use crate::shell_history::ShellHistoryManager;
+
+    #[test]
+    fn test_suggestions_do_not_shift_when_one_is_selected() {
+        let mut app = App::new(AppConfig::default(), Vec::new());
+        let column = |app: &mut App| {
+            let mut terminal = Terminal::new(TestBackend::new(100, 20)).unwrap();
+            terminal.draw(|frame| draw_input_popup(frame, app)).unwrap();
+            let screen = terminal.backend().to_string();
+            screen
+                .lines()
+                .find_map(|l| l.find("kubectl get nodes"))
+                .unwrap()
+        };
+
+        app.mode = AppMode::CmdEdit {
+            input: Input::default().with_value("kubectl".to_string()),
+            state: ListState::default(),
+            suggestions: vec!["kubectl get pods".into(), "kubectl get nodes".into()],
+            history: ShellHistoryManager::from_commands(Vec::new()),
+        };
+        let unselected = column(&mut app);
+        if let AppMode::CmdEdit { state, .. } = &mut app.mode {
+            state.select(Some(0));
+        }
+        assert_eq!(column(&mut app), unselected);
+    }
 
     #[test]
     fn test_suggestions_fit_short_terminal() {
