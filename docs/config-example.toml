@@ -13,40 +13,47 @@ Tab = "TabComplete"
 
 [keybindings.DisplayTypeSelect]
 
+
 [keybindings.Global]
 Down = "MoveDown"
 Enter = "Confirm"
 Esc = "Escape"
 Left = "MoveLeft"
+q = "Quit"
 Right = "MoveRight"
 Tab = "Cycle"
 Up = "MoveUp"
-q = "Quit"
 
 [keybindings.Help]
-Shift-g = "ScrollTop"
-g = "ScrollBottom"
+"/" = "Search"
+g = "ScrollTop"
+Shift-g = "ScrollBottom"
 
 [keybindings.Normal]
-"+" = "PaneIncreaseVertical"
-"<" = "PaneDecreaseHorizontal"
-">" = "PaneIncreaseHorizontal"
+"=" = "EqualizePanes"
+"+" = "GrowHeight"
+"<" = "ShrinkWidth"
+">" = "GrowWidth"
 "?" = "EnterHelpMode"
-Hyphen = "PaneDecreaseVertical"
-Shift-d = "EnterDisplaySelectMode"
-Shift-l = "EnterSessionLoadMode"
-Shift-s = "EnterSessionSaveMode"
-Space = "Execute"
-Tab = "Cycle"
 c = "EnterCmdMode"
 d = "IntervalDecrease"
 h = "SplitHorizontal"
+Hyphen = "ShrinkHeight"
 i = "IntervalIncrease"
 l = "LoadLatestSession"
 o = "EnterObserveMode"
 p = "Pause"
 r = "Resume"
 s = "SaveSession"
+Shift-d = "EnterDisplaySelectMode"
+Shift-Down = "ResizeDown"
+Shift-l = "EnterSessionLoadMode"
+Shift-Left = "ResizeLeft"
+Shift-Right = "ResizeRight"
+Shift-s = "EnterSessionSaveMode"
+Shift-Up = "ResizeUp"
+Space = "Execute"
+Tab = "Cycle"
 v = "SplitVertical"
 w = "WrapToggle"
 x = "KillPane"
@@ -54,13 +61,18 @@ z = "ZenToggle"
 
 [keybindings.Observe]
 "/" = "Search"
-Shift-g = "ScrollTop"
-g = "ScrollBottom"
+g = "ScrollTop"
+n = "NextMatch"
+Shift-g = "ScrollBottom"
+Shift-n = "PrevMatch"
 w = "WrapToggle"
 
 [keybindings.SessionLoad]
+Ctrl-d = "Delete"
+Ctrl-r = "Rename"
 
 [keybindings.SessionSave]
+
 
 [theme]
 collapse_borders = false

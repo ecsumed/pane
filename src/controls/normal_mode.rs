@@ -149,16 +149,16 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
                 app.mode =
                     AppMode::new_display_type_select(app.tasks.get(&id).map(|c| c.display_type));
             }
-            Action::PaneIncreaseVertical => {
+            Action::GrowHeight => {
                 app.pane_manager.resize_active(Direction::Vertical, true);
             }
-            Action::PaneDecreaseVertical => {
+            Action::ShrinkHeight => {
                 app.pane_manager.resize_active(Direction::Vertical, false);
             }
-            Action::PaneIncreaseHorizontal => {
+            Action::GrowWidth => {
                 app.pane_manager.resize_active(Direction::Horizontal, true);
             }
-            Action::PaneDecreaseHorizontal => {
+            Action::ShrinkWidth => {
                 app.pane_manager.resize_active(Direction::Horizontal, false);
             }
             Action::ResizeLeft => {

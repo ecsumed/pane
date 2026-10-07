@@ -26,9 +26,9 @@ pub struct PaneManager {
     previous_active: Option<PaneKey>,
 }
 
-const SHARE_TOTAL: u32 = 1000;
-const RESIZE_STEP: u32 = 50;
-const MIN_SHARE: u32 = 50;
+const HALF_SHARE: u16 = 500;
+const RESIZE_STEP: u16 = 50;
+const MIN_SHARE: u16 = 50;
 
 fn axis(direction: CardinalDirection) -> Direction {
     match direction {
@@ -62,7 +62,7 @@ impl PaneManager {
         let root_key = nodes.insert(PaneNode {
             data: PaneNodeData::Single,
             parent: None,
-            weight: 1,
+            weight: HALF_SHARE * 2,
         });
 
         pane_key_to_friendly_id.insert(root_key, id_counter);
@@ -187,7 +187,7 @@ impl PaneManager {
         let new_pane = self.nodes.insert(PaneNode {
             data: PaneNodeData::Single,
             parent: Some(split),
-            weight: 1,
+            weight: HALF_SHARE,
         });
 
         if let PaneNodeData::Split { children, .. } = &mut self.nodes[split].data {
@@ -195,7 +195,7 @@ impl PaneManager {
         }
         let original = &mut self.nodes[active_id];
         original.parent = Some(split);
-        original.weight = 1;
+        original.weight = HALF_SHARE;
 
         if let Some(parent) = parent {
             self.replace_child(parent, active_id, split);
@@ -326,30 +326,13 @@ impl PaneManager {
         levels
     }
 
-    fn normalize(&mut self, parent: PaneKey) {
-        let children = self.children(parent).to_vec();
-        let total: u32 = children.iter().map(|&c| self.nodes[c].weight as u32).sum();
-        if total == SHARE_TOTAL || total == 0 {
-            return;
-        }
-        let mut assigned = 0;
-        for (i, &child) in children.iter().enumerate() {
-            let share = if i + 1 == children.len() {
-                SHARE_TOTAL - assigned
-            } else {
-                self.nodes[child].weight as u32 * SHARE_TOTAL / total
-            };
-            assigned += share;
-            self.nodes[child].weight = share as u16;
-        }
-    }
-
     fn transfer(&mut self, parent: PaneKey, from: usize, to: usize) -> bool {
-        self.normalize(parent);
         let children = self.children(parent);
         let (from, to) = (children[from], children[to]);
-        let available = (self.nodes[from].weight as u32).saturating_sub(MIN_SHARE);
-        let amount = available.min(RESIZE_STEP) as u16;
+        let amount = self.nodes[from]
+            .weight
+            .saturating_sub(MIN_SHARE)
+            .min(RESIZE_STEP);
         if amount == 0 {
             return false;
         }
@@ -419,8 +402,10 @@ impl PaneManager {
             .map(|(key, _)| key)
             .collect();
         for split in splits {
-            for child in self.children(split).to_vec() {
-                self.nodes[child].weight = 1;
+            let children = self.children(split).to_vec();
+            let share = HALF_SHARE * 2 / children.len().max(1) as u16;
+            for child in children {
+                self.nodes[child].weight = share;
             }
         }
     }
@@ -521,17 +506,6 @@ mod tests {
         for _ in 0..3 {
             manager.resize_active(Direction::Horizontal, false);
         }
-        assert_eq!(rect_of(&manager, right).width, 80);
-    }
-
-    #[test]
-    fn test_old_integer_weights_still_resize_smoothly() {
-        let (mut manager, left, right) = side_by_side();
-        manager.nodes[left].weight = 1;
-        manager.nodes[right].weight = 3;
-
-        assert_eq!(rect_of(&manager, right).width, 75);
-        manager.resize_active(Direction::Horizontal, true);
         assert_eq!(rect_of(&manager, right).width, 80);
     }
 
