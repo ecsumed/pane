@@ -9,11 +9,7 @@ use crate::ui::display_modes::render_command_output;
 use crate::ui::picker::{self, PickerStyle};
 
 fn has_numbers(command: Option<&Command>) -> bool {
-    command.is_some_and(|c| {
-        c.output_history
-            .iter()
-            .any(|o| o.output.trim().parse::<f64>().is_ok())
-    })
+    command.is_some_and(|c| c.output_history.iter().any(|o| o.output.number().is_some()))
 }
 
 pub fn draw_display_type_select(frame: &mut Frame, app: &mut App) {
@@ -173,7 +169,7 @@ mod tests {
             task.task_handle.take().unwrap().abort();
             task.record_output(
                 CommandOutput {
-                    output: "not-a-number".to_string(),
+                    output: "not-a-number".into(),
                     time: chrono::Local::now().naive_local(),
                     exit_status: Some(0),
                     duration: std::time::Duration::from_millis(5),

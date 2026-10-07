@@ -169,7 +169,7 @@ mod tests {
             task.task_handle.take().unwrap().abort();
             task.record_output(
                 CommandOutput {
-                    output: "[\n  [tasks]\n  [[pane_manager]]\n]\nexec = \"fake\"\n".to_string(),
+                    output: "[\n  [tasks]\n  [[pane_manager]]\n]\nexec = \"fake\"\n".into(),
                     time: chrono::Local::now().naive_local(),
                     exit_status: Some(0),
                     duration: Duration::from_millis(1),

@@ -33,11 +33,7 @@ pub fn render(
         .map(|entry| {
             let x = datetime_to_f64(entry.time);
 
-            let y = entry
-                .output
-                .trim()
-                .parse::<f64>()
-                .map_err(|_| "Conversion failed")?;
+            let y = entry.output.number().ok_or("Conversion failed")?;
 
             Ok((x, y))
         })

@@ -717,7 +717,7 @@ mod tests {
 
     fn output(text: &str, code: i32) -> CommandEvent {
         CommandEvent::Output(crate::command::CommandOutput {
-            output: text.to_string(),
+            output: text.into(),
             time: chrono::Local::now().naive_local(),
             exit_status: Some(code),
             duration: Duration::from_millis(1),
@@ -950,6 +950,24 @@ mod tests {
         app.handle_app_control(AppControl::SetDisplay(root_pane, DisplayType::RawText))
             .await;
         assert_eq!(view_text(&app, root_pane), None);
+        cleanup(app, root_pane);
+    }
+
+    #[tokio::test]
+    async fn test_history_shares_lines_between_runs() {
+        let (mut app, root_pane) = mock_app();
+        app.set_command(root_pane, "sleep 5".to_string()).await;
+        app.handle_command_event(root_pane, output("NAME READY\nistiod 1/1\n", 0));
+        app.handle_command_event(root_pane, output("NAME READY\nistiod 1/1\n", 0));
+        app.handle_command_event(root_pane, output("NAME READY\nistiod 0/1\n", 0));
+
+        let history = &app.tasks[&root_pane].output_history;
+        assert!(history[1].output.shares_storage_with(&history[0].output));
+        assert!(std::sync::Arc::ptr_eq(
+            &history[2].output.lines()[0],
+            &history[1].output.lines()[0]
+        ));
+        assert_eq!(history[2].output.to_string(), "NAME READY\nistiod 0/1\n");
         cleanup(app, root_pane);
     }
 

@@ -84,7 +84,7 @@ impl super::Command {
 
         let now_datetime: NaiveDateTime = Local::now().naive_local();
         let cmd_output = CommandOutput {
-            output: output_message,
+            output: output_message.into(),
             time: now_datetime,
             exit_status,
             duration,
@@ -123,7 +123,7 @@ mod tests {
     #[tokio::test]
     async fn test_stdin_is_not_inherited() {
         let out = run("cat; echo done", Duration::from_secs(5)).await;
-        assert_eq!(out.output, "done\n");
+        assert_eq!(out.output.to_string(), "done\n");
         assert_eq!(out.exit_status, Some(0));
     }
 
@@ -131,13 +131,17 @@ mod tests {
     async fn test_large_stderr_does_not_deadlock() {
         let exec = "head -c 200000 /dev/zero | tr '\\0' x >&2; echo done";
         let out = run(exec, Duration::from_secs(3)).await;
-        assert_eq!(out.output, "done\n");
+        assert_eq!(out.output.to_string(), "done\n");
     }
 
     #[tokio::test]
     async fn test_timeout_kills_whole_pipeline() {
         let out = run("sleep 7.31 | cat", Duration::from_millis(200)).await;
-        assert!(out.output.contains("timed out"), "{}", out.output);
+        assert!(
+            out.output.to_string().contains("timed out"),
+            "{}",
+            out.output
+        );
 
         time::sleep(Duration::from_millis(200)).await;
         let leftover = std::process::Command::new("pgrep")
@@ -153,7 +157,11 @@ mod tests {
     #[tokio::test]
     async fn test_command_times_out() {
         let out = run("sleep 10", Duration::from_millis(200)).await;
-        assert!(out.output.contains("timed out"), "{}", out.output);
+        assert!(
+            out.output.to_string().contains("timed out"),
+            "{}",
+            out.output
+        );
         assert_eq!(out.exit_status, None);
         assert!(out.duration < Duration::from_secs(2));
     }

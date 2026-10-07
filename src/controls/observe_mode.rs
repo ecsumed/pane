@@ -272,7 +272,7 @@ mod tests {
             .unwrap();
         app.tasks.get_mut(&id).unwrap().record_output(
             crate::command::CommandOutput {
-                output: format!("run {minute}"),
+                output: format!("run {minute}").into(),
                 time,
                 exit_status: Some(0),
                 duration: std::time::Duration::from_millis(1),
@@ -296,7 +296,7 @@ mod tests {
             .iter()
             .rev()
             .nth(position)
-            .map(|o| o.output.clone())
+            .map(|o| o.output.to_string())
     }
 
     #[tokio::test]

@@ -9,22 +9,28 @@ use crate::config::AppConfig;
 use crate::ui::diffs;
 use crate::ui::DisplayType::{self, DiffChar, DiffLine, DiffWord};
 
-fn compute<'a>(theme: &Theme, command: &'a Command, display_type: DisplayType) -> Vec<Line<'a>> {
+fn compute(theme: &Theme, command: &Command, display_type: DisplayType) -> Vec<Line<'static>> {
     let mut latest = command.output_history.iter().rev();
-    let current = latest.next().map_or("", |c| c.output.as_str());
-    let previous = latest.next().map_or("", |c| c.output.as_str());
+    let current = latest
+        .next()
+        .map(|c| c.output.to_string())
+        .unwrap_or_default();
+    let previous = latest
+        .next()
+        .map(|c| c.output.to_string())
+        .unwrap_or_default();
 
-    match display_type {
-        DiffChar => diffs::char::render(theme, current, previous),
-        DiffWord => diffs::word::render(theme, current, previous),
-        DiffLine => diffs::line::render(theme, current, previous),
+    diffs::owned(match display_type {
+        DiffChar => diffs::char::render(theme, &current, &previous),
+        DiffWord => diffs::word::render(theme, &current, &previous),
+        DiffLine => diffs::line::render(theme, &current, &previous),
         _ => Vec::new(),
-    }
+    })
 }
 
 pub fn refresh_view(theme: &Theme, command: &mut Command) {
     command.diff_view = matches!(command.display_type, DiffChar | DiffWord | DiffLine)
-        .then(|| diffs::owned(compute(theme, command, command.display_type)));
+        .then(|| compute(theme, command, command.display_type));
 }
 
 pub fn render(

@@ -1,16 +1,24 @@
 use ratatui::layout::Rect;
+use ratatui::text::Line;
 use ratatui::widgets::{Paragraph, Wrap};
 use ratatui::Frame;
 
 use crate::command::Command;
 use crate::config::AppConfig;
-use crate::ui::display_modes::utils;
 
 pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, cmd: &Command) {
     let p = &config.theme.palette;
 
-    let last_output = utils::formatted_last_output(cmd);
-    let mut widget = Paragraph::new(last_output).style(p.output);
+    let lines: Vec<Line> = match cmd.last_output() {
+        Some(out) => out
+            .output
+            .lines()
+            .iter()
+            .map(|line| Line::from(line.as_ref()))
+            .collect(),
+        None => vec![Line::from("N/A")],
+    };
+    let mut widget = Paragraph::new(lines).style(p.output);
 
     if config.wrap {
         widget = widget.wrap(Wrap { trim: false });
@@ -39,7 +47,7 @@ mod tests {
         task.task_handle.take().unwrap().abort();
         task.record_output(
             CommandOutput {
-                output: "root:\n  child: 1\n    leaf: 2\n".to_string(),
+                output: "root:\n  child: 1\n    leaf: 2\n".into(),
                 time: chrono::Local::now().naive_local(),
                 exit_status: Some(0),
                 duration: std::time::Duration::from_millis(1),

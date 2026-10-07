@@ -13,7 +13,7 @@ pub fn render(frame: &mut Frame, area: Rect, config: &AppConfig, command: &Comma
     let numeric_data: Vec<Option<u64>> = command
         .output_history
         .iter()
-        .map(|entry| entry.output.trim().parse::<f64>().ok().map(|v| v as u64))
+        .map(|entry| entry.output.number().map(|v| v as u64))
         .collect();
 
     if numeric_data.iter().all(|val| val.is_none()) {
