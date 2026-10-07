@@ -9,7 +9,7 @@ use crate::controls::actions::Action;
 use crate::controls::KeyMode;
 use crate::logging::{error, info};
 use crate::mode::AppMode;
-use crate::session::save_session_by_name;
+use crate::session::{save_session, save_session_by_name};
 
 pub async fn handle_session_save_keys(app: &mut App, event: Event) -> io::Result<()> {
     let current_context: KeyMode = app.mode.key_mode();
@@ -42,9 +42,14 @@ pub async fn handle_session_save_keys(app: &mut App, event: Event) -> io::Result
     if let Some(act) = action {
         match act {
             Action::Confirm => {
-                let session_name = input.value().to_string();
+                let session_name = input.value().trim().to_string();
                 info!("Saving session to {}", session_name);
-                match save_session_by_name(app, &session_name) {
+                let saved = if session_name.is_empty() {
+                    save_session(app)
+                } else {
+                    save_session_by_name(app, &session_name)
+                };
+                match saved {
                     Ok(name) => app.notify(format!("Saved session {name}"), false),
                     Err(e) => {
                         error!("Saving session: {}", e);
