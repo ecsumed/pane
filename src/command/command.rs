@@ -3,6 +3,7 @@ use std::fmt;
 use std::time::Duration;
 
 use chrono::NaiveDateTime;
+use ratatui::text::Line;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
@@ -58,6 +59,7 @@ pub struct Command {
     pub display_type: DisplayType,
     pub task_handle: Option<JoinHandle<()>>,
     pub control_tx: mpsc::UnboundedSender<CommandControl>,
+    pub diff_view: Option<Vec<Line<'static>>>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
