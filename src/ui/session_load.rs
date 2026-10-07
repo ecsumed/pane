@@ -13,7 +13,7 @@ use crate::ui::picker::{self, PickerStyle};
 
 const META_WIDTH: usize = 18;
 
-fn format_age(modified: Option<SystemTime>, now: SystemTime) -> String {
+pub fn format_age(modified: Option<SystemTime>, now: SystemTime) -> String {
     let Some(age) = modified.and_then(|m| now.duration_since(m).ok()) else {
         return String::new();
     };
@@ -156,7 +156,14 @@ pub fn draw_session_list(frame: &mut Frame, app: &mut App) {
         (70, None, 1)
     };
     let area = picker::popup_area(frame.area(), width, rows as u16);
-    let areas = picker::draw_frame(frame, area, &s, "Load session", &state.filter, list_width);
+    let areas = picker::draw_frame(
+        frame,
+        area,
+        &s,
+        "Load session",
+        picker::Prompt::filter(&state.filter),
+        list_width,
+    );
 
     if let Some(preview_area) = areas.preview {
         let preview = state

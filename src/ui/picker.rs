@@ -1,7 +1,9 @@
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph, Widget};
+use ratatui::widgets::{
+    Block, Borders, Clear, HighlightSpacing, List, ListItem, ListState, Paragraph, Widget,
+};
 use ratatui::Frame;
 use tui_input::Input;
 
@@ -41,6 +43,24 @@ impl PickerStyle {
     }
 }
 
+pub struct Prompt<'a> {
+    pub symbol: &'a str,
+    pub input: &'a Input,
+    pub focused: bool,
+    pub placeholder: &'a str,
+}
+
+impl<'a> Prompt<'a> {
+    pub fn filter(input: &'a Input) -> Self {
+        Self {
+            symbol: "/",
+            input,
+            focused: true,
+            placeholder: "",
+        }
+    }
+}
+
 pub struct PickerAreas {
     pub list: Rect,
     pub preview: Option<Rect>,
@@ -66,7 +86,7 @@ pub fn draw_frame(
     area: Rect,
     s: &PickerStyle,
     title: &str,
-    filter: &Input,
+    prompt: Prompt,
     list_width: Option<u16>,
 ) -> PickerAreas {
     Clear.render(area, frame.buffer_mut());
@@ -85,15 +105,26 @@ pub fn draw_frame(
     ])
     .areas(inner);
 
+    let prefix = format!(" {} ", prompt.symbol);
+    let prefix_width = prefix.chars().count() as u16 + 1;
+    let text_width = filter_area.width.saturating_sub(prefix_width) as usize;
+    let scroll = prompt.input.visual_scroll(text_width.saturating_sub(1));
+    let value: String = prompt.input.value().chars().skip(scroll).collect();
+    let text = if value.is_empty() && !prompt.focused {
+        Span::styled(prompt.placeholder.to_string(), s.muted)
+    } else {
+        Span::styled(value, s.text)
+    };
     let filter_line = Line::from(vec![
-        Span::styled(" / ", s.accent),
+        Span::styled(prefix, s.accent),
         Span::styled(" ", Style::default()),
-        Span::styled(filter.value().to_string(), s.text),
+        text,
     ]);
     frame.render_widget(Paragraph::new(filter_line), filter_area);
-    if filter_area.width > 0 && filter_area.height > 0 {
-        let cursor_x = (filter_area.x + 4 + filter.visual_cursor() as u16)
-            .min(filter_area.right().saturating_sub(1));
+    if prompt.focused && filter_area.width > 0 && filter_area.height > 0 {
+        let cursor = prompt.input.visual_cursor().saturating_sub(scroll) as u16;
+        let cursor_x =
+            (filter_area.x + prefix_width + cursor).min(filter_area.right().saturating_sub(1));
         frame.set_cursor_position((cursor_x, filter_area.y));
     }
 
@@ -131,7 +162,8 @@ pub fn draw_list(
 
     let list = List::new(rows)
         .highlight_style(s.selected)
-        .highlight_symbol("> ");
+        .highlight_symbol("> ")
+        .highlight_spacing(HighlightSpacing::Always);
     let mut state = ListState::default().with_selected(selected_row);
     frame.render_stateful_widget(list, area, &mut state);
 }

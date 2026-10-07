@@ -56,7 +56,14 @@ pub fn draw_display_type_select(frame: &mut Frame, app: &mut App) {
     }
 
     let area = picker::popup_area(frame.area(), 120, (state.items().len() + 4).max(20) as u16);
-    let areas = picker::draw_frame(frame, area, &s, "Display", &state.filter, Some(34));
+    let areas = picker::draw_frame(
+        frame,
+        area,
+        &s,
+        "Display",
+        picker::Prompt::filter(&state.filter),
+        Some(34),
+    );
     picker::draw_list(
         frame,
         areas.list,
