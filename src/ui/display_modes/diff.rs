@@ -1,5 +1,5 @@
 use ratatui::layout::Rect;
-use ratatui::text::{Line, Span, Text};
+use ratatui::text::{Line, Text};
 use ratatui::widgets::{Paragraph, Wrap};
 use ratatui::Frame;
 
@@ -22,39 +22,9 @@ fn compute<'a>(theme: &Theme, command: &'a Command, display_type: DisplayType) -
     }
 }
 
-fn owned(lines: Vec<Line<'_>>) -> Vec<Line<'static>> {
-    lines
-        .into_iter()
-        .map(|line| Line {
-            style: line.style,
-            alignment: line.alignment,
-            spans: line
-                .spans
-                .into_iter()
-                .map(|span| Span::styled(span.content.into_owned(), span.style))
-                .collect(),
-        })
-        .collect()
-}
-
-fn borrowed<'a>(lines: &'a [Line<'static>]) -> Vec<Line<'a>> {
-    lines
-        .iter()
-        .map(|line| Line {
-            style: line.style,
-            alignment: line.alignment,
-            spans: line
-                .spans
-                .iter()
-                .map(|span| Span::styled(span.content.as_ref(), span.style))
-                .collect(),
-        })
-        .collect()
-}
-
 pub fn refresh_view(theme: &Theme, command: &mut Command) {
     command.diff_view = matches!(command.display_type, DiffChar | DiffWord | DiffLine)
-        .then(|| owned(compute(theme, command, command.display_type)));
+        .then(|| diffs::owned(compute(theme, command, command.display_type)));
 }
 
 pub fn render(
@@ -65,7 +35,7 @@ pub fn render(
     display_type: DisplayType,
 ) {
     let lines = match &command.diff_view {
-        Some(view) if display_type == command.display_type => borrowed(view),
+        Some(view) if display_type == command.display_type => diffs::borrowed(view),
         _ => compute(&config.theme, command, display_type),
     };
 

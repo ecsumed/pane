@@ -43,6 +43,7 @@ pub fn draw(
         current_match,
         match_count,
         jump_to_match,
+        content_cache,
     } = mode_state
     {
         let Some(command) = commands.get(active_id) else {
@@ -82,6 +83,7 @@ pub fn draw(
                 current_match,
                 match_count,
                 jump_to_match,
+                cache: content_cache,
             },
         );
     }
@@ -290,6 +292,25 @@ pub(crate) mod tests {
         let (_, hints) = row_containing(&buffer, "↑↓ scroll");
         assert!(hints.contains("n/N match"), "{hints}");
         assert!(hints.contains("esc clear "), "{hints}");
+    }
+
+    #[tokio::test]
+    async fn test_observe_reuses_its_diff_until_the_run_or_mode_changes() {
+        let mut app = observe_app(&[("pods: 3", Some(0)), ("pods: 4", Some(0))]).await;
+        let buffer = render(&mut app, 120, 20);
+        row_containing(&buffer, "pods: 4");
+
+        if let AppMode::Observe { content_cache, .. } = &mut app.mode {
+            content_cache.as_mut().unwrap().lines = vec![ratatui::text::Line::from("CACHED-DIFF")];
+        }
+        let buffer = render(&mut app, 120, 20);
+        row_containing(&buffer, "CACHED-DIFF");
+
+        if let AppMode::Observe { diff_mode, .. } = &mut app.mode {
+            *diff_mode = crate::mode::DiffMode::Line;
+        }
+        let buffer = render(&mut app, 120, 20);
+        row_containing(&buffer, "pods: 4");
     }
 
     #[tokio::test]
