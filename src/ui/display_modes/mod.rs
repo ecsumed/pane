@@ -12,7 +12,6 @@ mod multiline;
 mod raw_text;
 mod sparkline;
 pub mod types;
-mod utils;
 
 pub use diff::refresh_view;
 pub use types::DisplayType;

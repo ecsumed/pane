@@ -1,12 +1,12 @@
 use std::collections::HashMap;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use chrono::NaiveDateTime;
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, List, ListItem};
-use similar::{ChangeTag, TextDiff};
+use similar::{capture_diff_slices_deadline, Algorithm, DiffOp};
 
-use crate::command::{Command, CommandOutput};
+use crate::command::{Command, CommandOutput, SharedText};
 use crate::config::AppConfig;
 use crate::ui::diffs::DIFF_TIMEOUT;
 use crate::ui::picker::PickerStyle;
@@ -16,16 +16,26 @@ pub type ChangeCounts = HashMap<NaiveDateTime, (usize, usize)>;
 
 const ROW_WIDTH: usize = 25;
 
-pub fn line_changes(previous: &str, current: &str) -> (usize, usize) {
-    TextDiff::configure()
-        .timeout(DIFF_TIMEOUT)
-        .diff_lines(previous, current)
-        .iter_all_changes()
-        .fold((0, 0), |(added, removed), change| match change.tag() {
-            ChangeTag::Insert => (added + 1, removed),
-            ChangeTag::Delete => (added, removed + 1),
-            ChangeTag::Equal => (added, removed),
-        })
+pub fn line_changes(previous: &SharedText, current: &SharedText) -> (usize, usize) {
+    if current.shares_storage_with(previous) {
+        return (0, 0);
+    }
+    let deadline = Instant::now() + DIFF_TIMEOUT;
+    capture_diff_slices_deadline(
+        Algorithm::Myers,
+        previous.lines(),
+        current.lines(),
+        Some(deadline),
+    )
+    .iter()
+    .fold((0, 0), |(added, removed), op| match *op {
+        DiffOp::Insert { new_len, .. } => (added + new_len, removed),
+        DiffOp::Delete { old_len, .. } => (added, removed + old_len),
+        DiffOp::Replace {
+            old_len, new_len, ..
+        } => (added + new_len, removed + old_len),
+        DiffOp::Equal { .. } => (added, removed),
+    })
 }
 
 pub fn update_change_counts(command: &Command, counts: &mut ChangeCounts) {
@@ -151,9 +161,10 @@ mod tests {
 
     #[test]
     fn test_line_changes_and_durations() {
-        assert_eq!(line_changes("a\nb\nc\n", "a\nb\nc\n"), (0, 0));
-        assert_eq!(line_changes("Mon 12:00:00\n", "Mon 12:00:10\n"), (1, 1));
-        assert_eq!(line_changes("a\n", "a\nb\nc\n"), (2, 0));
+        let changes = |a: &str, b: &str| line_changes(&a.into(), &b.into());
+        assert_eq!(changes("a\nb\nc\n", "a\nb\nc\n"), (0, 0));
+        assert_eq!(changes("Mon 12:00:00\n", "Mon 12:00:10\n"), (1, 1));
+        assert_eq!(changes("a\n", "a\nb\nc\n"), (2, 0));
         assert_eq!(describe_changes(Some((1, 1))), "+1 −1");
         assert_eq!(describe_changes(Some((2, 0))), "+2");
         assert_eq!(describe_changes(Some((0, 3))), "−3");

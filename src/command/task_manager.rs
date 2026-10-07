@@ -10,6 +10,17 @@ use crate::logging::{info, warn};
 use crate::pane::PaneKey;
 use crate::ui::DisplayType;
 
+fn share_lines(history: VecDeque<CommandOutput>) -> VecDeque<CommandOutput> {
+    let mut shared: VecDeque<CommandOutput> = VecDeque::with_capacity(history.len());
+    for mut entry in history {
+        if let Some(previous) = shared.back() {
+            entry.output = entry.output.share_with(&previous.output);
+        }
+        shared.push_back(entry);
+    }
+    shared
+}
+
 impl Command {
     pub fn spawn(
         id: PaneKey,
@@ -87,7 +98,7 @@ impl Command {
         Command {
             exec: state.exec,
             interval: state.interval,
-            output_history: state.output_history,
+            output_history: share_lines(state.output_history),
             state: state.state,
             display_type: state.display_type,
             task_handle: Some(task_handle),
@@ -134,7 +145,10 @@ impl Command {
         }
     }
 
-    pub fn record_output(&mut self, new_output: CommandOutput, max_history: usize) {
+    pub fn record_output(&mut self, mut new_output: CommandOutput, max_history: usize) {
+        if let Some(last) = self.output_history.back() {
+            new_output.output = new_output.output.share_with(&last.output);
+        }
         if self.output_history.len() >= max_history {
             self.output_history.pop_front();
         }

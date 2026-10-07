@@ -115,7 +115,7 @@ pub(crate) mod tests {
         for (i, (output, code)) in runs.iter().enumerate() {
             task.record_output(
                 CommandOutput {
-                    output: output.to_string(),
+                    output: (*output).into(),
                     time: start + chrono::Duration::seconds(10 * i as i64),
                     exit_status: *code,
                     duration: std::time::Duration::from_millis(1_500),

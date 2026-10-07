@@ -159,14 +159,18 @@ pub fn render(
         view.diff_mode,
     );
     if view.cache.as_ref().is_none_or(|cache| cache.key != key) {
-        let current_text = current_output.map_or("", |c| &c.output);
-        let previous_text = previous_output.map_or("", |c| &c.output);
+        let current_text = current_output
+            .map(|c| c.output.to_string())
+            .unwrap_or_default();
+        let previous_text = previous_output
+            .map(|c| c.output.to_string())
+            .unwrap_or_default();
         *view.cache = Some(ContentCache {
             key,
             lines: diffs::owned(diffs::render_diff(
                 &config.theme,
-                current_text,
-                previous_text,
+                &current_text,
+                &previous_text,
                 view.diff_mode,
             )),
         });
