@@ -27,6 +27,11 @@ pub enum AppControl {
 }
 
 const NOTICE_DURATION: Duration = Duration::from_secs(4);
+const FRAME_INTERVAL: Duration = Duration::from_millis(100);
+
+fn frame_due(dirty: bool, urgent: bool, since_last_draw: Duration) -> bool {
+    dirty && (urgent || since_last_draw >= FRAME_INTERVAL)
+}
 
 #[derive(Debug)]
 pub struct Notice {
@@ -89,32 +94,43 @@ impl App {
     {
         let mut tick_interval = interval(Duration::from_millis(250));
         let mut events = EventStream::new();
-        let mut needs_redraw = true;
+        let mut dirty = true;
+        let mut urgent = true;
+        let mut last_draw = Instant::now();
 
         loop {
-            if needs_redraw {
+            if frame_due(dirty, urgent, last_draw.elapsed()) {
                 terminal.draw(|frame| draw_ui(self, frame))?;
+                last_draw = Instant::now();
+                dirty = false;
+                urgent = false;
             }
+            let next_frame = tokio::time::Instant::from_std(last_draw + FRAME_INTERVAL);
 
-            needs_redraw = tokio::select! {
+            tokio::select! {
                 Some((id, event)) = self.output_rx.recv() => {
                     self.handle_command_event(id, event);
                     self.drain_command_events();
-                    true
+                    dirty = true;
                 },
                 Some(Ok(event)) = events.next().fuse() => {
                     controls::handle_event(self, event).await?;
-                    true
+                    dirty = true;
+                    urgent = true;
                 },
                 Some(control) = self.app_control_rx.recv() => {
                     self.handle_app_control(control).await;
                     while let Ok(control) = self.app_control_rx.try_recv() {
                         self.handle_app_control(control).await;
                     }
-                    true
+                    dirty = true;
+                    urgent = true;
                 },
-                _ = tick_interval.tick() => self.expire_notice(),
-            };
+                _ = tokio::time::sleep_until(next_frame), if dirty => {},
+                _ = tick_interval.tick() => {
+                    dirty |= self.expire_notice();
+                },
+            }
 
             if self.exit {
                 break;
@@ -786,6 +802,15 @@ mod tests {
 
         app.notice.as_mut().unwrap().shown_at = Instant::now() - NOTICE_DURATION;
         assert!(app.current_notice().is_none());
+    }
+
+    #[test]
+    fn test_command_output_redraws_at_most_ten_times_a_second() {
+        let soon = FRAME_INTERVAL / 2;
+        assert!(!frame_due(false, false, FRAME_INTERVAL));
+        assert!(!frame_due(true, false, soon));
+        assert!(frame_due(true, false, FRAME_INTERVAL));
+        assert!(frame_due(true, true, Duration::ZERO));
     }
 
     #[test]
