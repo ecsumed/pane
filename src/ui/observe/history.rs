@@ -8,6 +8,7 @@ use similar::{ChangeTag, TextDiff};
 
 use crate::command::{Command, CommandOutput};
 use crate::config::AppConfig;
+use crate::ui::diffs::DIFF_TIMEOUT;
 use crate::ui::picker::PickerStyle;
 use crate::ui::utils::BlockExt;
 
@@ -16,7 +17,9 @@ pub type ChangeCounts = HashMap<NaiveDateTime, (usize, usize)>;
 const ROW_WIDTH: usize = 25;
 
 pub fn line_changes(previous: &str, current: &str) -> (usize, usize) {
-    TextDiff::from_lines(previous, current)
+    TextDiff::configure()
+        .timeout(DIFF_TIMEOUT)
+        .diff_lines(previous, current)
         .iter_all_changes()
         .fold((0, 0), |(added, removed), change| match change.tag() {
             ChangeTag::Insert => (added + 1, removed),

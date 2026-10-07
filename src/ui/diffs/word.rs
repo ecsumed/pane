@@ -1,10 +1,14 @@
 use ratatui::text::{Line, Span};
 use similar::{ChangeTag, TextDiff};
 
+use super::DIFF_TIMEOUT;
+
 use crate::config::theme::Theme;
 
 pub fn render<'a>(theme: &Theme, current: &'a str, previous: &'a str) -> Vec<Line<'a>> {
-    let diff = TextDiff::from_words(previous, current);
+    let diff = TextDiff::configure()
+        .timeout(DIFF_TIMEOUT)
+        .diff_words(previous, current);
     let mut lines = Vec::new();
     let mut current_line_spans = Vec::new();
 
