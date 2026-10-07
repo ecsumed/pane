@@ -15,7 +15,7 @@ use crate::ui::utils::scrollbar;
 
 const SETTING_WIDTH: usize = 34;
 const SETTING_LABEL_WIDTH: usize = 19;
-const KEY_WIDTH: usize = 9;
+const KEY_GAP: usize = 2;
 const COLUMN_GAP: usize = 3;
 
 const MODES: [(KeyMode, &str); 8] = [
@@ -125,6 +125,15 @@ fn grid(cells: Vec<Cell>, cell_width: usize, width: usize) -> Vec<Line<'static>>
 }
 
 fn key_groups(c: &AppConfig, query: &str, s: &PickerStyle) -> Vec<Vec<Cell>> {
+    let key_width = c
+        .keybindings
+        .values()
+        .flat_map(|bindings| bindings.keys())
+        .map(|key| key.to_string().chars().count())
+        .max()
+        .unwrap_or(0)
+        + KEY_GAP;
+
     MODES
         .iter()
         .filter_map(|(mode, name)| {
@@ -149,7 +158,7 @@ fn key_groups(c: &AppConfig, query: &str, s: &PickerStyle) -> Vec<Vec<Cell>> {
             )]];
             group.extend(entries.into_iter().map(|(key, action)| {
                 vec![
-                    Span::styled(format!("{key:<KEY_WIDTH$}"), s.key),
+                    Span::styled(format!("{key:<key_width$}"), s.key),
                     Span::styled(action, s.text),
                 ]
             }));
@@ -365,6 +374,16 @@ mod tests {
 
         let nothing = text(&help_lines(&config, "zzzz", 118));
         assert_eq!(nothing, "No settings or keys match");
+    }
+
+    #[test]
+    fn test_long_key_names_keep_a_gap_before_the_action() {
+        let config = AppConfig::default();
+        let lines = text(&help_lines(&config, "resize", 118));
+        for line in lines.lines().filter(|l| l.contains("resize ")) {
+            let key = line.split("resize").next().unwrap();
+            assert!(key.ends_with("  "), "no gap after key: {line}");
+        }
     }
 
     #[test]
