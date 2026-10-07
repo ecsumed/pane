@@ -34,6 +34,7 @@ pub enum AppMode {
     },
     SessionSave {
         input: Input,
+        existing: Vec<SessionEntry>,
     },
     DisplayTypeSelect {
         picker: Picker<DisplayType>,
@@ -170,9 +171,10 @@ impl AppMode {
         }
     }
 
-    pub fn new_session_save() -> Self {
+    pub fn new_session_save(app: &App) -> Self {
         AppMode::SessionSave {
             input: Input::default(),
+            existing: session::fetch_sessions(&app.config).unwrap_or_default(),
         }
     }
 

@@ -141,7 +141,7 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
             }
             Action::EnterSessionSaveMode => {
                 info!("Saving sessions mode");
-                app.mode = AppMode::new_session_save();
+                app.mode = AppMode::new_session_save(app);
             }
             Action::EnterDisplaySelectMode => {
                 info!("Display select mode");

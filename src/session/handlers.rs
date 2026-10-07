@@ -6,6 +6,14 @@ use super::utils::generate_session_filename;
 use crate::app::App;
 
 pub fn save_session_by_name(app: &App, session_filename: &str) -> io::Result<String> {
+    let session_filename = session_filename.trim();
+    if session_filename.is_empty() || session_filename.contains(['/', '\\']) {
+        return Err(io::Error::new(
+            ErrorKind::InvalidInput,
+            "Session names can't be empty or contain slashes",
+        ));
+    }
+
     let session_state = SessionState {
         pane_manager: app.pane_manager.clone(),
         tasks: app
