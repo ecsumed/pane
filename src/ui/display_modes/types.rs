@@ -20,6 +20,7 @@ pub enum DisplayType {
     BarChart,
     ScatterChart,
     Counter,
+    BigText,
 }
 
 impl DisplayType {
@@ -37,6 +38,7 @@ impl DisplayType {
             DisplayType::BarChart => "Bar chart",
             DisplayType::ScatterChart => "Scatter chart",
             DisplayType::Counter => "Counter",
+            DisplayType::BigText => "Big text",
         }
     }
 
@@ -51,7 +53,7 @@ impl DisplayType {
             | DisplayType::LineChart
             | DisplayType::BarChart
             | DisplayType::ScatterChart => "Charts",
-            DisplayType::Counter => "Other",
+            DisplayType::Counter | DisplayType::BigText => "Other",
         }
     }
 
