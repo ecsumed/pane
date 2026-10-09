@@ -13,3 +13,20 @@ mod status_line;
 pub mod utils;
 
 pub use self::display_modes::{refresh_view, DisplayType};
+
+pub fn big_text_largest_level(
+    config: &crate::config::AppConfig,
+    command: &crate::command::Command,
+    pane: ratatui::layout::Rect,
+) -> u8 {
+    display_modes::big_text::largest_level(panes::content_area(config, command, pane))
+}
+
+pub fn big_text_auto_level(
+    config: &crate::config::AppConfig,
+    command: &crate::command::Command,
+    pane: ratatui::layout::Rect,
+) -> Option<u8> {
+    let area = panes::content_area(config, command, pane);
+    display_modes::big_text::auto_level(&display_modes::big_text::label_lines(command), area)
+}

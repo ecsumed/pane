@@ -5,6 +5,7 @@ use ratatui::Frame;
 use crate::command::Command;
 use crate::config::AppConfig;
 
+pub mod big_text;
 mod chart;
 mod counter;
 pub mod diff;
@@ -40,6 +41,9 @@ pub fn render_command_output(
         }
         DisplayType::Sparkline => {
             sparkline::render(frame, inner_area, config, command);
+        }
+        DisplayType::BigText => {
+            big_text::render(frame, inner_area, config, command);
         }
         DisplayType::Counter => {
             counter::render(frame, inner_area, config, command);

@@ -49,6 +49,8 @@ pub struct CommandSerializableState {
     pub output_history: VecDeque<CommandOutput>,
     pub state: CommandState,
     pub display_type: DisplayType,
+    #[serde(default)]
+    pub text_size: Option<u8>,
 }
 
 #[derive(Debug)]
@@ -61,6 +63,7 @@ pub struct Command {
     pub task_handle: Option<JoinHandle<()>>,
     pub control_tx: mpsc::UnboundedSender<CommandControl>,
     pub diff_view: Option<Vec<Line<'static>>>,
+    pub text_size: Option<u8>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -86,6 +89,7 @@ impl Command {
             output_history: self.output_history.clone(),
             state: self.state,
             display_type: self.display_type,
+            text_size: self.text_size,
         }
     }
 }

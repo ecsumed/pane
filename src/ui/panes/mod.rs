@@ -23,3 +23,11 @@ pub fn draw(
         node::draw_pane(frame, area, config, is_active, commands.get(&key));
     }
 }
+
+pub fn content_area(config: &AppConfig, command: &Command, pane: Rect) -> Rect {
+    border::create_pane_block(
+        config,
+        node_info::NodeInfo::with_command(config, false, command),
+    )
+    .inner(pane)
+}

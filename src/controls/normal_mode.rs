@@ -168,6 +168,9 @@ pub async fn handle_normal_mode_keys(app: &mut App, event: Event) -> io::Result<
                 app.pane_manager.move_border(CardinalDirection::Down);
             }
             Action::EqualizePanes => app.pane_manager.equalize(),
+            Action::TextLarger => app.step_text_size(Some(1)),
+            Action::TextSmaller => app.step_text_size(Some(-1)),
+            Action::TextSizeAuto => app.step_text_size(None),
             Action::EnterHelpMode => {
                 info!("Help mode");
                 app.mode = AppMode::new_help();

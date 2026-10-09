@@ -2,6 +2,7 @@ use std::borrow::Cow;
 
 use humantime::format_duration;
 
+use crate::ui::DisplayType;
 use crate::{
     command::Command, config::AppConfig, ui::panes::history_meter::generate_history_meter_string,
 };
@@ -38,7 +39,11 @@ impl<'a> NodeInfo<'a> {
             last_exec_time: Cow::Owned(last_exec_time),
             duration: Cow::Owned(duration),
             state_str: Cow::Owned(c.state.to_string()),
-            display_type_str: Cow::Owned(format!("{:?}", c.display_type)),
+            display_type_str: Cow::Owned(match (c.display_type, c.text_size) {
+                (DisplayType::BigText, Some(level)) => format!("BigText · size {level}"),
+                (DisplayType::BigText, None) => "BigText · auto".to_string(),
+                (display_type, _) => format!("{display_type:?}"),
+            }),
             history_limit: Cow::Owned(meter),
         }
     }

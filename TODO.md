@@ -9,7 +9,6 @@
 - [ ] Switch chrono to jiff
 
 ## Features
-- [ ] BigText display type for labels (`tui-big-text`, largest size that fits the pane)
 - [ ] Apply a display type to all panes
 - [ ] Observe: mark a run with `m` and diff any two runs
 - [ ] Observe: copy the visible output with `y`

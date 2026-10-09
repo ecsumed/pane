@@ -171,6 +171,41 @@ impl App {
         false
     }
 
+    pub fn step_text_size(&mut self, step: Option<i8>) {
+        let id = self.pane_manager.active_pane_id;
+        let Some(command) = self.tasks.get(&id) else {
+            return;
+        };
+        if command.display_type != DisplayType::BigText {
+            self.notify("Text size only applies to Big text panes", true);
+            return;
+        }
+
+        let pane = self
+            .pane_rects
+            .iter()
+            .find(|(key, _)| *key == id)
+            .map(|(_, rect)| *rect);
+        let level = step.map(|step| {
+            let current = command
+                .text_size
+                .or_else(|| crate::ui::big_text_auto_level(&self.config, command, pane?))
+                .unwrap_or(3) as i8;
+            let largest = pane.map_or(1, |pane| {
+                crate::ui::big_text_largest_level(&self.config, command, pane)
+            });
+            (current + step).clamp(1, largest.max(current as u8) as i8) as u8
+        });
+
+        if let Some(command) = self.tasks.get_mut(&id) {
+            command.text_size = level;
+        }
+        match level {
+            Some(level) => self.notify(format!("Text size {level}"), false),
+            None => self.notify("Text size automatic", false),
+        }
+    }
+
     pub fn notify(&mut self, text: impl Into<String>, is_error: bool) {
         self.notice = Some(Notice {
             text: text.into(),
@@ -637,6 +672,7 @@ mod tests {
             output_history: Default::default(),
             state: CommandState::Paused,
             display_type: DisplayType::RawText,
+            text_size: None,
         }
     }
 
